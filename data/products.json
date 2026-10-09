@@ -1,0 +1,473 @@
+{
+  "currency": "myr",
+  "currencySymbol": "RM",
+  "freeShippingThreshold": 500,
+  "shippingFlat": 15,
+  "shipToCountries": [
+    "MY",
+    "SG"
+  ],
+  "intentions": {
+    "Love": "Compassion, self-love & emotional harmony",
+    "Abundance": "Joy, prosperity & positive energy",
+    "Protection": "Grounding, shielding & stability",
+    "Clarity": "Calm, focus & spiritual insight",
+    "Growth": "Renewal, transformation & new beginnings",
+    "Courage": "Confidence, strength & willpower"
+  },
+  "products": [
+    {
+      "id": "star-rose-quartz-bracelet",
+      "name": "Star Rose Quartz Bracelet",
+      "collection": "Bracelets",
+      "intention": "Love",
+      "price": 480,
+      "image": "assets/img/bracelet-rose.svg",
+      "material": "Natural star rose quartz",
+      "description": "Translucent rose quartz beads that reveal a soft star of light when they catch the sun. Known as the love stone, rose quartz is associated with compassion, self-love and emotional harmony.",
+      "options": [
+        {
+          "label": "10mm",
+          "price": 480
+        },
+        {
+          "label": "11mm",
+          "price": 580
+        },
+        {
+          "label": "12mm",
+          "price": 580
+        },
+        {
+          "label": "17mm",
+          "price": 680
+        }
+      ],
+      "featured": true,
+      "stone": "rose-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "strawberry-quartz-bracelet",
+      "name": "Strawberry Quartz Bracelet",
+      "collection": "Bracelets",
+      "intention": "Love",
+      "price": 380,
+      "image": "assets/img/bracelet-strawberry.svg",
+      "material": "Natural strawberry quartz",
+      "description": "Rosy-red quartz flecked with natural inclusions — never dyed. A joyful stone associated with love, warmth and openness of the heart.",
+      "options": [],
+      "featured": true,
+      "stone": "strawberry-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "amethyst-bracelet",
+      "name": "Amethyst Bracelet",
+      "collection": "Bracelets",
+      "intention": "Clarity",
+      "price": 320,
+      "image": "assets/img/bracelet-amethyst.svg",
+      "material": "Natural amethyst",
+      "description": "Deep violet amethyst, known for its calming presence and often associated with balance, intuition and inner peace.",
+      "options": [],
+      "featured": true,
+      "stone": "amethyst",
+      "soldOut": false
+    },
+    {
+      "id": "rainbow-tourmaline-bracelet",
+      "name": "Rainbow Tourmaline Bracelet",
+      "collection": "Bracelets",
+      "intention": "Abundance",
+      "price": 680,
+      "image": "assets/img/bracelet-tourmaline.svg",
+      "material": "Natural rainbow tourmaline",
+      "description": "A colourful play of pink, green and gold — no two pieces are alike. Rainbow tourmaline symbolises creativity, positivity and vibrant energy.",
+      "options": [],
+      "featured": true,
+      "stone": "rainbow-tourmaline",
+      "soldOut": false
+    },
+    {
+      "id": "sunstone-bracelet",
+      "name": "Sunstone Bracelet",
+      "collection": "Bracelets",
+      "intention": "Abundance",
+      "price": 420,
+      "image": "assets/img/bracelet-sunstone.svg",
+      "material": "Natural sunstone",
+      "description": "Warm golden-orange feldspar with a sparkling glow from tiny mineral inclusions. A symbol of positivity, confidence and vitality.",
+      "options": [],
+      "featured": false,
+      "stone": "sunstone",
+      "soldOut": false
+    },
+    {
+      "id": "tiger-eye-bracelet",
+      "name": "Tiger Eye Bracelet",
+      "collection": "Bracelets",
+      "intention": "Courage",
+      "price": 260,
+      "image": "assets/img/bracelet-tigereye.svg",
+      "material": "Natural tiger eye",
+      "description": "Silky bands of gold and brown that shift in the light. The stone of courage, associated with confidence, strength and grounding energy.",
+      "options": [],
+      "featured": false,
+      "stone": "tiger-eye",
+      "soldOut": false
+    },
+    {
+      "id": "phantom-quartz-bracelet",
+      "name": "Phantom Quartz Bracelet",
+      "collection": "Bracelets",
+      "intention": "Growth",
+      "price": 520,
+      "image": "assets/img/bracelet-phantom.svg",
+      "material": "Natural phantom quartz",
+      "description": "Quartz holding ghost-like inner layers that record the crystal's own growth. A symbol of evolution, renewal and transformation.",
+      "options": [],
+      "featured": false,
+      "stone": "phantom-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "black-tourmaline-bracelet",
+      "name": "Black Tourmaline Bracelet",
+      "collection": "Bracelets",
+      "intention": "Protection",
+      "price": 280,
+      "image": "assets/img/bracelet-black.svg",
+      "material": "Natural black tourmaline",
+      "description": "October's stone of transformation and protection. Deep black tourmaline is associated with grounding and shielding from negative energy.",
+      "options": [],
+      "featured": false,
+      "stone": "black-tourmaline",
+      "soldOut": false
+    },
+    {
+      "id": "star-rose-quartz-dzi-pendant",
+      "name": "Star Rose Quartz Dzi Pendant",
+      "collection": "Pendants",
+      "intention": "Clarity",
+      "price": 880,
+      "image": "assets/img/pendant-dzi.svg",
+      "material": "Star rose quartz · Silk cord",
+      "description": "Star rose quartz carved in the traditional Dzi bead shape, hung on a hand-braided cord. Worn for focus and reflection.",
+      "options": [],
+      "featured": false,
+      "stone": "rose-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "rose-quartz-cabochon-pendant",
+      "name": "Rose Quartz Cabochon Pendant",
+      "collection": "Pendants",
+      "intention": "Love",
+      "price": 760,
+      "image": "assets/img/pendant-cabochon.svg",
+      "material": "Rose quartz · Gold-tone setting",
+      "description": "A smooth, glowing cabochon of high-clarity rose quartz framed in a fine setting. Quality you can see in the light.",
+      "options": [],
+      "featured": false,
+      "stone": "rose-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "rutilated-quartz-sphere",
+      "name": "Golden Rutilated Quartz Sphere",
+      "collection": "Crystal Spheres",
+      "intention": "Abundance",
+      "price": 1280,
+      "image": "assets/img/sphere-rutile.svg",
+      "material": "Natural rutilated quartz · Wooden stand",
+      "description": "Golden needles of rutile suspended in clear quartz — they look like scratches until the light finds them. Comes with a wooden stand.",
+      "options": [],
+      "featured": false,
+      "stone": "rutilated-quartz",
+      "soldOut": false
+    },
+    {
+      "id": "clear-quartz-sphere",
+      "name": "Clear Quartz Sphere with Light",
+      "collection": "Crystal Spheres",
+      "intention": "Clarity",
+      "price": 690,
+      "image": "assets/img/sphere-clear.svg",
+      "material": "Natural clear quartz · LED wooden base",
+      "description": "A luminous clear quartz sphere on a softly lit wooden base. Clear quartz is known as the master healer, associated with clarity and amplifying intention.",
+      "options": [],
+      "featured": false,
+      "stone": "clear-quartz",
+      "soldOut": false
+    }
+  ],
+  "stones": {
+    "rose-quartz": {
+      "name": "Rose Quartz",
+      "chinese": "粉晶",
+      "title": "The Love Stone",
+      "story": "A pink variety of quartz whose soft rosy colour comes from microscopic mineral inclusions within the crystal. Treasured throughout history as a symbol of love, rose quartz is associated with compassion, self-love and emotional harmony. Star rose quartz is rarer still: tiny aligned inclusions create a gentle star of light that appears when the bead catches the sun.",
+      "keywords": [
+        "Self-love",
+        "Compassion",
+        "Emotional harmony",
+        "Gentleness"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Heart",
+        "Colour": "Soft pink, translucent",
+        "Family": "Quartz"
+      },
+      "wear": "Traditionally worn on the left wrist, closest to the heart, to receive its gentle energy. Ideal for everyday wear and for anyone healing, opening up to love, or learning to be kinder to themselves.",
+      "real": "Natural rose quartz has a soft, slightly milky glow and small natural clouds. Perfectly clear, bubble-filled beads are usually glass, and colour that gathers in cracks is a sign of dye.",
+      "forYou": [
+        "Are healing your heart or opening up to love",
+        "Want to be kinder and gentler with yourself",
+        "Seek calm in relationships and family life",
+        "Are looking for a meaningful gift for someone you love"
+      ]
+    },
+    "strawberry-quartz": {
+      "name": "Strawberry Quartz",
+      "chinese": "草莓晶",
+      "title": "The Stone of Joyful Love",
+      "story": "Clear quartz speckled with tiny red mineral inclusions that look like the seeds of a strawberry. It is associated with warmth, romance and a light, joyful heart, and is loved for bringing playfulness back into relationships.",
+      "keywords": [
+        "Romance",
+        "Joy",
+        "Warmth",
+        "Openness"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Heart",
+        "Colour": "Clear with red flecks",
+        "Family": "Quartz"
+      },
+      "wear": "Wear it when you want to attract love or rekindle warmth in a relationship. Pairs beautifully with rose quartz.",
+      "real": "Look closely: real strawberry quartz shows individual red flecks floating inside clear quartz. Evenly bright red beads with no visible inclusions are usually dyed quartz or glass.",
+      "forYou": [
+        "Want to attract romance or rekindle warmth",
+        "Need more joy and lightness day to day",
+        "Love wearing colour with meaning",
+        "Pair crystals with rose quartz for love"
+      ]
+    },
+    "amethyst": {
+      "name": "Amethyst",
+      "chinese": "紫水晶",
+      "title": "The Stone of Calm",
+      "story": "A violet variety of quartz known for its calming appearance. Amethyst is often associated with balance, intuition and inner peace, and has long been kept close for restful sleep and a quieter mind.",
+      "keywords": [
+        "Calm",
+        "Intuition",
+        "Balance",
+        "Restful sleep"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Crown & third eye",
+        "Colour": "Lilac to deep violet",
+        "Family": "Quartz"
+      },
+      "wear": "Lovely for busy minds and stressful days. Many keep amethyst near the bed at night or wear it while meditating.",
+      "real": "Natural amethyst shows colour zoning: bands of lighter and deeper purple within a bead. Perfectly uniform, intensely purple beads deserve a second look.",
+      "forYou": [
+        "Have a busy, overthinking mind",
+        "Want more restful sleep and calm evenings",
+        "Meditate or are starting a spiritual practice",
+        "Seek balance during stressful seasons"
+      ]
+    },
+    "rainbow-tourmaline": {
+      "name": "Rainbow Tourmaline",
+      "chinese": "彩色碧玺",
+      "title": "The Stone of Creativity",
+      "story": "A colourful variety of tourmaline in which each bead carries its own combination of pink, green, yellow and peach. Rainbow tourmaline symbolises creativity, positivity and vibrant energy, with every strand completely one of a kind.",
+      "keywords": [
+        "Creativity",
+        "Positivity",
+        "Prosperity",
+        "Vibrant energy"
+      ],
+      "facts": {
+        "Mohs hardness": "7 – 7.5",
+        "Chakra": "All chakras",
+        "Colour": "Multi-colour",
+        "Family": "Tourmaline"
+      },
+      "wear": "A joyful everyday piece for creatives and anyone who wants more colour and abundance in their life.",
+      "real": "Real rainbow tourmaline varies from bead to bead in colour and clarity, with natural inclusions. Matching, candy-bright beads are often dyed jade or glass.",
+      "forYou": [
+        "Work in creative fields",
+        "Want to invite abundance and positivity",
+        "Love one-of-a-kind, colourful pieces",
+        "Need a joyful everyday bracelet"
+      ]
+    },
+    "sunstone": {
+      "name": "Sunstone",
+      "chinese": "太阳石",
+      "title": "The Stone of Joy & Abundance",
+      "story": "A variety of feldspar known for its warm golden-orange glow and sparkling aventurescence, created by tiny reflective inclusions of minerals such as hematite or goethite. Its radiant appearance resembles sunlight, making it a symbol of positivity, confidence and vitality.",
+      "keywords": [
+        "Joy",
+        "Confidence",
+        "Vitality",
+        "Leadership"
+      ],
+      "facts": {
+        "Mohs hardness": "6 – 6.5",
+        "Chakra": "Sacral & solar plexus",
+        "Colour": "Golden orange with sparkle",
+        "Family": "Feldspar"
+      },
+      "wear": "Suitable for everyday wear with proper care. Wear it when you need a lift in mood, motivation or self-belief.",
+      "real": "Natural sunstone sparkles irregularly when turned in the light. 'Goldstone' — man-made glass with evenly spread copper glitter — is often sold as sunstone.",
+      "forYou": [
+        "Want a lift in mood and motivation",
+        "Are stepping into leadership or a new role",
+        "Need confidence for big presentations",
+        "Love warm, sparkling tones"
+      ]
+    },
+    "tiger-eye": {
+      "name": "Tiger Eye",
+      "chinese": "虎眼石",
+      "title": "The Stone of Courage",
+      "story": "Its unique silky appearance is created by fibrous mineral inclusions within the crystal, producing a band of light that moves like the eye of a tiger. Tiger eye is often associated with confidence, strength and grounding energy.",
+      "keywords": [
+        "Courage",
+        "Confidence",
+        "Focus",
+        "Grounding"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Solar plexus",
+        "Colour": "Golden brown, chatoyant",
+        "Family": "Quartz"
+      },
+      "wear": "A favourite for work, exams and big decisions. Wear it when you need to stand firm and act with confidence.",
+      "real": "Turn a real tiger eye bead slowly: the golden shimmer glides across the surface. Glass 'cat's eye' imitations have rigid, perfectly regular stripes.",
+      "forYou": [
+        "Face exams, interviews or big decisions",
+        "Want to stand firm and act with courage",
+        "Need focus and grounding at work",
+        "Prefer earthy, understated jewellery"
+      ]
+    },
+    "phantom-quartz": {
+      "name": "Phantom Quartz",
+      "chinese": "幽灵水晶",
+      "title": "The Stone of Growth & Transformation",
+      "story": "A variety of quartz distinguished by its internal 'phantom' formations, created when earlier crystal growth was covered by a later layer of quartz over time. These ghost-like inclusions record the crystal's natural growth journey, symbolising evolution, renewal and transformation.",
+      "keywords": [
+        "Growth",
+        "Renewal",
+        "Transformation",
+        "New beginnings"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Crown",
+        "Colour": "Clear with green, red or white phantoms",
+        "Family": "Quartz"
+      },
+      "wear": "Durable enough for everyday wear. Meaningful for new chapters — a new job, a move, or letting go of the past.",
+      "real": "The phantoms in natural stones look like soft, layered gardens or mountains inside each bead, and no two are the same.",
+      "forYou": [
+        "Are beginning a new chapter in life",
+        "Want to let go of the past and grow",
+        "Value pieces with a natural story inside",
+        "Seek steady personal transformation"
+      ]
+    },
+    "black-tourmaline": {
+      "name": "Black Tourmaline",
+      "chinese": "黑碧玺",
+      "title": "The Stone of Protection",
+      "story": "One of October's month stones of transformation and protection. Deep black tourmaline has long been associated with grounding and with shielding its wearer from negative energy.",
+      "keywords": [
+        "Protection",
+        "Grounding",
+        "Stability",
+        "Clearing negativity"
+      ],
+      "facts": {
+        "Mohs hardness": "7 – 7.5",
+        "Chakra": "Root",
+        "Colour": "Opaque black",
+        "Family": "Tourmaline"
+      },
+      "wear": "Often worn on the right wrist or carried in crowded, high-pressure places to stay grounded.",
+      "real": "Natural black tourmaline is opaque with fine striations and a slightly uneven lustre. Overly glassy, perfectly smooth black beads are often obsidian or glass.",
+      "forYou": [
+        "Work in crowded or high-pressure places",
+        "Feel easily drained by other people's energy",
+        "Want a grounding, protective everyday piece",
+        "Are going through a period of change"
+      ]
+    },
+    "rutilated-quartz": {
+      "name": "Golden Rutilated Quartz",
+      "chinese": "金发晶",
+      "title": "The Stone of Wealth & Light",
+      "story": "You might think the golden lines inside are scratches — they are needles of rutile that grew naturally inside clear quartz. Prized across Asia as a stone of prosperity, it is associated with abundance, energy and attracting opportunity.",
+      "keywords": [
+        "Wealth",
+        "Opportunity",
+        "Energy",
+        "Willpower"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Solar plexus",
+        "Colour": "Clear with golden needles",
+        "Family": "Quartz"
+      },
+      "wear": "Displayed in the home or office — many place it in the wealth corner (far left from the entrance) to invite prosperity.",
+      "real": "Real rutile needles vary in thickness, angle and length and sit at different depths. Painted-looking, evenly spaced lines suggest an imitation.",
+      "forYou": [
+        "Want to invite prosperity into home or office",
+        "Are building a business or career",
+        "Love rare, statement crystals",
+        "Practise feng shui"
+      ]
+    },
+    "clear-quartz": {
+      "name": "Clear Quartz",
+      "chinese": "白水晶",
+      "title": "The Master Healer",
+      "story": "Clear quartz is known as the master healer — a versatile stone associated with clarity of mind and amplifying intention. Lit from below, a sphere fills the room with soft, calming light.",
+      "keywords": [
+        "Clarity",
+        "Focus",
+        "Amplifying intention",
+        "Cleansing"
+      ],
+      "facts": {
+        "Mohs hardness": "7",
+        "Chakra": "Crown",
+        "Colour": "Colourless, may hold clouds",
+        "Family": "Quartz"
+      },
+      "wear": "Placed in a living room, study or meditation corner. Set an intention while holding it before placing it on its stand.",
+      "real": "Natural quartz feels cool and heavy and usually holds faint clouds or fractures. Glass often contains round bubbles and warms quickly in the hand.",
+      "forYou": [
+        "Want a calm, light-filled corner at home",
+        "Meditate or set daily intentions",
+        "Need clarity and focus while working",
+        "Are new to crystals and want a versatile first piece"
+      ]
+    }
+  },
+  "whatsapp": "",
+  "announcements": [
+    "Jewellery with frequencies ✦ Complimentary shipping above RM 500",
+    "Every crystal is natural — each piece is one of a kind",
+    "Questions about a stone? WhatsApp us — we're happy to help you choose"
+  ]
+}
