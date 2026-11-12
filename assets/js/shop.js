@@ -69,13 +69,18 @@ function renderHome(){
   const [t1,t2]=(h.title||feat.name).split('|');
   const usedInts=Object.entries(INTENTS).filter(([k])=>CAT.some(m=>m.ints.includes(k)));
   const LIMIT=12,more=(id,n)=>n>LIMIT?`<button class="ghost show-all" data-act="showAll" data-sec="${id}">Show all ${n}</button>`:'',hid=i=>i>=LIMIT?' hidden data-more':'';
+  const mmA=m=>m.size?` data-mm="${m.size}"`:'';
+  // bead-size picker: only for bracelet sections with more than one size
+  const sizes=(id,items)=>{const n={};items.forEach(m=>{if(m.size&&/bracelet/i.test(m.name))n[m.size]=(n[m.size]||0)+1});const ks=Object.keys(n).map(Number).sort((a,b)=>a-b);
+    if(ks.length<2)return'';
+    return`<div class="sizes" role="group" aria-label="Bead size"><span class="sizes-lab">Bead size</span><div class="sizes-row"><button class="chip-s on" data-act="size" data-sec="${id}" data-mm="" aria-pressed="true">All</button>${ks.map(k=>`<button class="chip-s" data-act="size" data-sec="${id}" data-mm="${k}" aria-pressed="false">${k} mm<small>${n[k]}</small></button>`).join('')}</div><p class="sizes-tip">Smaller beads (4–7 mm) sit delicately; 8–10 mm is the everyday size; 12 mm and up makes a statement.</p></div>`};
   const intents=!usedInts.length?'':`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${usedInts.map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const items=layout==='bestsellers'?best:of(id);if(!items.length)return'';SPY.push(id);const few=items.length<=2;
     if(layout==='bestsellers')return`<section class="sec" id="sec-${id}"><div class="gx">${head(esc(name),zh,items.length)}</div><div class="rail gx">${items.map((m,i)=>card(m,'No.'+(i+1))).join('')}<span class="rail-end"></span></div></section>`;
-    if(layout==='feature')return`<section class="sec gx sec-feature" id="sec-${id}">${head(esc(name),zh,items.length)}${lead(items[0],W?'tall':'lead')}<div class="list"${W?'':' style="border-top:1px solid var(--line)"'}>${items.slice(1).map((m,i)=>row(m,W?'tall':'sq').replace('<button ',`<button${hid(i+1)} `)).join('')}</div>${more(id,items.length)}</section>`;
+    if(layout==='feature')return`<section class="sec gx sec-feature" id="sec-${id}">${head(esc(name),zh,items.length)}${sizes(id,items)}${lead(items[0],W?'tall':'lead').replace('<button ',`<button${mmA(items[0])} `)}<div class="list"${W?'':' style="border-top:1px solid var(--line)"'}>${items.slice(1).map((m,i)=>row(m,W?'tall':'sq').replace('<button ',`<button${hid(i+1)}${mmA(m)} `)).join('')}</div><p class="sz-none" hidden>No pieces in this size right now.</p>${more(id,items.length)}</section>`;
     if(layout==='grid')return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length)}<div class="grid2">${items.map((m,i)=>gcard(m,W&&few?'lead':'tall').replace('<button ',`<button${hid(i)} `)).join('')}</div>${more(id,items.length)}</section>`;
     return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length,id==='sets'?'sets':'pieces')}<div class="list">${items.map((m,i)=>row(m,W?(few?'lead':'tall'):'sq').replace('<button ',`<button${hid(i)} `)).join('')}</div>${more(id,items.length)}</section>`}).filter(Boolean);
   secs.splice(1,0,intents+spot);
@@ -256,7 +261,16 @@ const ACT={
   lDec(el){const{li,l}=lineOf(el);if(l.qty>1){l.qty--;save();renderBag();updateBagUI()}else removeLine(li,l)},
   lRemove(el){const{li,l}=lineOf(el);removeLine(li,l)},
   toCheckout(){if(!S.cart.length)return;renderCheckout();go('checkout')},
-  showAll(el){const sec=$('#sec-'+el.dataset.sec);sec.querySelectorAll('[data-more]').forEach(x=>x.hidden=false);el.remove()},
+  size(el){const sec=$('#sec-'+el.dataset.sec),mm=el.dataset.mm;
+    sec.querySelectorAll('.chip-s').forEach(b=>{const on=b===el;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+    const all=sec.querySelector('.show-all');let shown=0;
+    sec.querySelectorAll('[data-open]').forEach(x=>{const ok=!mm||x.dataset.mm===mm;
+      if(mm){x.hidden=!ok}else{x.hidden=x.hasAttribute('data-more')&&!!all}
+      if(!x.hidden)shown++});
+    if(all)all.hidden=!!mm;
+    sec.querySelector('.sz-none').hidden=shown>0;
+    const c=sec.querySelector('.sec-head .count');if(c){c.dataset.n=c.dataset.n||c.textContent;c.textContent=mm?`${shown} in ${mm} mm`:c.dataset.n}},
+  showAll(el){const sec=$('#sec-'+el.dataset.sec);sec.querySelectorAll('[data-more]').forEach(x=>{x.hidden=false;x.removeAttribute('data-more')});el.remove()},
   ship(el){setShip(el.dataset.k)},
   place:startCheckout,
   closeDone(){const d=$('#done');const end=()=>{d.hidden=true;d.innerHTML=''};if(d.animate)d.animate([{opacity:1},{opacity:0}],{duration:300}).finished.then(end,end);else end();toHome();$('#home').scrollTop=0},

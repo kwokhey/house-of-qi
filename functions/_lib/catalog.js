@@ -36,6 +36,7 @@ export function rowToProduct(r, settings) {
     intentions,
     description: r.description || defaultDescription(r, details),
     meaning: r.meaning || "",
+    size: r.size_mm ? +r.size_mm : null,
     art: { stone: r.stone, variant: r.variant, type: r.type, size: r.size_mm || 8 },
     groups: settings.addons ? [settings.addons] : [],
   };
