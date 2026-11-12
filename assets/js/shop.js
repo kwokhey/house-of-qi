@@ -205,7 +205,8 @@ window.addEventListener('pageshow',e=>{if(e.persisted)resetPlaceBtn()});
 
 const titleLines=(ls,d0=0)=>ls.map((l,i)=>`<span class="tl"><span style="--d:${(d0+i*.09).toFixed(2)}s">${esc(l)}</span></span>`).join('');
 const COMPANY=`<p class="co done-co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>`;
-function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const now=new Date().toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit'}).toLowerCase();
+const fmtT=ts=>ts?new Date(ts).toLocaleString('en-MY',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}).replace(',', ''):'';
+function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const idx={confirmed:0,packed:1,shipped:2,ready:2}[o.status]||0;const tm=[o.times?.confirmed,o.times?.packed,o.times?.shipped];
   const st=[['Order confirmed',o.paid?'Payment received':'Waiting for your bank to confirm'],['Cleansed & packed','Smudged, charged and gift wrapped'],o.pickup?['Ready for pick-up','We will WhatsApp you a time']:['Shipped','Tracking number sent to you']];
   return`<div class="done-in gx">
   <div class="d-top rise" style="--d:.05s"><span class="chip"><i></i><span>${o.paid?'Order confirmed':'Payment processing'}</span></span><span class="eta">${o.pickup?'Pick-up<b>We will WhatsApp you</b>':'Dispatch<b>Within 1–2 working days</b>'}</span></div>
@@ -213,11 +214,11 @@ function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const now=new
   <h1 class="disp d-title">${titleLines(o.paid?['Thank you','for your order']:['Almost','there'],.55)}</h1>
   <div class="d-meta rise" style="--d:.95s"><span class="ordno">${esc(o.orderNo||'')}</span><span class="sep"></span><span class="meta2">${pieces} piece${pieces===1?'':'s'} · ${RM(o.total)}</span></div>
   <p class="d-msg rise" style="--d:1.05s">${o.paid?`A receipt is on its way to ${o.email?esc(o.email):'your email'}. We are cleansing and packing your crystals by hand, and will let you know when ${o.pickup?'they are ready':'they ship'}.`:'Your bank is still confirming the payment. We will email you as soon as it clears.'}</p>
-  <ol class="trk rise" style="--d:1.2s"><span class="trk-rail"><span class="trk-fill"></span></span>${st.map((s,i)=>`<li class="st${i===0&&o.paid?' now':''}"><span class="st-dot"></span><span><b>${s[0]}</b><small>${s[1]}</small></span><time>${i===0&&o.paid?now:''}</time></li>`).join('')}</ol>
+  <ol class="trk rise" style="--d:1.2s"><span class="trk-rail"><span class="trk-fill" style="height:${o.paid?idx*50:0}%"></span></span>${st.map((s,i)=>{const done=o.paid&&(i<idx||(idx===2&&i===2)),now=o.paid&&i===idx&&idx<2;return`<li class="st${done?' done':''}${now?' now':''}"><span class="st-dot"></span><span><b>${s[0]}</b><small>${s[1]}</small></span><time>${done||now?fmtT(tm[i]):''}</time></li>`}).join('')}</ol>
   <div class="sum rise" style="--d:1.4s"><div class="sum-h"><span class="eyebrow">Order summary</span><span class="eyebrow">${esc(o.delivery||'')}</span></div><ul>${o.items.map(i=>`<li><span><span class="q">${i.qty}×</span>${esc(i.name)}</span><span class="num">${RM(i.amount)}</span></li>`).join('')}</ul>
     <div class="tr"><span>Delivery</span><span class="num">${o.shipping?RM(o.shipping):'Free'}</span></div><div class="tot"><span>Total paid</span><span class="num">${RM(o.total)}</span></div></div>
   ${COMPANY.replace('done-co','done-co2')}
-  <div class="d-actions rise" style="--d:1.55s"><button class="ghost" data-act="closeDone">Continue shopping</button></div></div>`}
+  <div class="d-actions rise" style="--d:1.55s">${o.paid&&o.trackUrl?`<p class="track-note">Save this link to follow your order any time.</p><a class="cta track-cta" href="${esc(o.trackUrl)}">Track this order</a>`:''}<button class="ghost" data-act="closeDone">Continue shopping</button></div></div>`}
 async function showConfirmation(id){const d=$('#done');d.hidden=false;d.classList.remove('play');
   d.innerHTML=`<div class="done-scroll"><div class="done-in gx"><div class="loading"><span class="spin"></span>Confirming your order…</div></div></div>`;
   let o=null;for(let k=0;k<3&&!o;k++){try{const r=await fetch('/api/order?session_id='+encodeURIComponent(id));const j=await r.json();if(r.ok)o=j;else if(r.status===404)break}catch(e){}if(!o)await wait(1200)}

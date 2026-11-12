@@ -8,6 +8,12 @@
  */
 import { priceOrder, orderNumber, json, loadCatalog } from "../_lib/pricing.js";
 
+/** Random key that lets the customer's tracking link open their order */
+function trackKey() {
+  const abc = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return [...crypto.getRandomValues(new Uint8Array(18))].map((b) => abc[b % abc.length]).join("");
+}
+
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: "Payments are not switched on yet. Please try again later." }, 503);
 
@@ -69,7 +75,12 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   if (!s.pickup) (catalog.shipToCountries || ["MY"]).forEach((c, n) => p.append(`shipping_address_collection[allowed_countries][${n}]`, c));
 
   const notes = order.lines.filter((l) => l.note).map((l) => `${l.product.name}: ${l.note}`).join(" | ");
-  const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };
+  const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", track_key: trackKey(), fulfil_status: "confirmed", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };
+  // Each item's options, so the order page shows bead size, wrist size, add-ons
+  order.lines.forEach((l, i) => {
+    const desc = [`${l.qty}× ${l.product.name}`, ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    meta[`i${i + 1}`] = desc.slice(0, 500);
+  });
   for (const [key, val] of Object.entries(meta)) {
     p.append(`metadata[${key}]`, val);
     p.append(`payment_intent_data[metadata][${key}]`, val);

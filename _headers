@@ -15,3 +15,10 @@
 
 /data/*
   Cache-Control: public, max-age=60
+
+/admin*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/track*
+  X-Robots-Tag: noindex

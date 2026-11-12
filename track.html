@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Track your order · House of Qi</title>
+<link rel="icon" href="/assets/img/favicon.png">
+<meta name="theme-color" content="#F0E0D3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/css/page.css?v=2">
+<link rel="stylesheet" href="/assets/css/admin.css?v=1">
+</head>
+<body>
+<div class="wrap track">
+  <header><a class="brand" href="/"><span class="mark" aria-hidden="true"></span><b>House of Qi</b></a><a class="back" href="/">Back to shop</a></header>
+
+  <section id="formView" hidden>
+    <h1>Track your order</h1>
+    <p class="lede">Enter the order number from your confirmation and the email you used at checkout.</p>
+    <form id="tkForm" class="tk-form">
+      <label for="ord">Order number</label>
+      <input id="ord" placeholder="HQ-261112-AB12" autocomplete="off" autocapitalize="characters" required>
+      <label for="em">Email</label>
+      <input id="em" type="email" autocomplete="email" required>
+      <button class="btn" type="submit">Track order</button>
+      <p class="err" id="tkErr" hidden></p>
+    </form>
+  </section>
+
+  <section id="loadView" class="lede" hidden>Finding your order…</section>
+  <section id="tkView" class="tk" hidden aria-live="polite"></section>
+
+  <footer>House of Qi · Crystals<br>by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<br>202201006345 (1452042-H)</footer>
+</div>
+<script src="/assets/js/track.js?v=1"></script>
+</body>
+</html>
