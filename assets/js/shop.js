@@ -28,8 +28,11 @@ const subLine=m=>{const t=[m.details,m.zh?`<span class="zh">${m.zh}</span>`:''].
    ===================================================================== */
 const KEY='house-of-qi-bag-v1';
 let S={cart:[],ship:'std'};
-try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.cart))S={cart:v.cart,ship:v.ship||'std'}}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.cart))S={cart:v.cart,ship:v.ship||'std',code:typeof v.code==='string'?v.code:''}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({cart:S.cart,ship:S.ship,code:S.code||''}))}catch(e){}};
+/* discount code: checked by the server for this exact bag + delivery; any change means it is checked again */
+const bagSig=()=>JSON.stringify([S.ship,S.cart.map(l=>[l.id,l.qty,l.sel])]);
+const promoOK=()=>!!(S.promo&&S.promo.sig===bagSig());
 const R2=n=>Math.round(n*100+1e-9)/100;
 const RM=n=>'RM'+n.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const $=(s,el=document)=>el.querySelector(s);
@@ -41,7 +44,9 @@ const unit=(m,sel)=>R2(m.price+m.groups.reduce((t,g)=>{const v=sel[g.id];if(g.ty
 const hasFrom=m=>m.groups.some(g=>g.type==='one'&&g.opts.some(o=>o[2]>0));
 function optText(m,sel){const out=[];for(const g of m.groups){const v=sel[g.id];if(g.type==='many'){g.opts.filter(o=>v.includes(o[0])).forEach(o=>out.push(o[1]));continue}const o=g.opts.find(o=>o[0]===v);if(o)out.push(o[4]||o[1])}return out}
 const lineTotal=l=>R2(unit(BY[l.id],l.sel)*l.qty);
-function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||SHIP.std;const fee=s.freeOver&&sub>=FREE_AT?0:s.fee;return{sub,fee,total:R2(sub+fee),count:lines.reduce((t,l)=>t+l.qty,0)}}
+function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||SHIP.std;let fee=s.freeOver&&sub>=FREE_AT?0:s.fee;
+  const p=lines===S.cart&&ship===S.ship&&promoOK()?S.promo:null;if(p&&p.freeShip)fee=0;const disc=p?p.discount:0;
+  return{sub,fee,disc,code:p?p.code:'',freeCode:!!(p&&p.freeShip),total:R2(sub-disc+fee),count:lines.reduce((t,l)=>t+l.qty,0)}}
 function pruneCart(){S.cart=S.cart.filter(l=>{const m=BY[l.id];if(!m||m.soldOut||!l.sel)return false;for(const g of m.groups){const v=l.sel[g.id];if(g.type==='many'){if(!Array.isArray(v))return false}else if(!g.opts.some(o=>o[0]===v))return false}return true});if(!SHIP[S.ship])S.ship=Object.keys(SHIP)[0];save()}
 
 const IC={
@@ -56,8 +61,8 @@ const IC={
 /* =====================================================================
    SHOP
    ===================================================================== */
-const priceHTML=m=>`${hasFrom(m)?'<span class="from">From</span>':''}<span class="price">${RM(m.price)}</span>`;
-const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag">${stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
+const priceHTML=m=>`${hasFrom(m)?'<span class="from">From</span>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}`;
+const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
 const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
 const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.desc}</span></button>`;
@@ -85,11 +90,12 @@ function renderHome(){
     return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length,id==='sets'?'sets':'pieces')}<div class="list">${items.map((m,i)=>row(m,W?(few?'lead':'tall'):'sq').replace('<button ',`<button${hid(i)} `)).join('')}</div>${more(id,items.length)}</section>`}).filter(Boolean);
   secs.splice(1,0,intents+spot);
   $('#homeBody').innerHTML=`
+  ${CFG.announce?`<div class="ann-bar">${CFG.announce.link?`<a href="${esc(CFG.announce.link)}">${esc(CFG.announce.text)}</a>`:`<span>${esc(CFG.announce.text)}</span>`}</div>`:''}
   <div class="strip gx"><span class="dia"></span><span>Jewellery with frequencies</span><span class="dia"></span><span>Free shipping over RM${FREE_AT}</span></div>
   <button class="feature" data-open="${feat.id}" aria-label="${esc(feat.name)}">
     <span class="feature-img"><img src="${img(feat.id,W?'banner':'wide')}" alt="" decoding="async"></span>
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
-    <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
+    <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
@@ -125,8 +131,8 @@ let DR=null;
 function defaults(m){const s={};for(const g of m.groups)s[g.id]=g.type==='many'?[]:(g.def||g.opts[0][0]);return s}
 function openDetail(id){const m=BY[id];if(!m)return;DR={m,sel:defaults(m),qty:1};
   $('#shImg').src=img(id,WIDE.matches?'portrait':'hero');$('#shImg').alt=m.name;$('#sheetScroll').scrollTop=0;$('#shImg').style.transform='';
-  const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
-  $('#shBody').innerHTML=`${tags?`<div class="d-tags">${tags}</div>`:''}<h2 class="disp d-name">${m.name}</h2>${[m.details,m.zh].some(Boolean)?`<div class="d-zh">${[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(" · ")}</div>`:""}<p class="d-desc">${m.desc}</p><div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}<span class="price">${RM(m.price)}</span></div>
+  const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
+  $('#shBody').innerHTML=`${tags?`<div class="d-tags">${tags}</div>`:''}<h2 class="disp d-name">${m.name}</h2>${[m.details,m.zh].some(Boolean)?`<div class="d-zh">${[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(" · ")}</div>`:""}<p class="d-desc">${m.desc}</p><div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}</div>${m.sale?`<p class="sale-note">${esc(m.sale.name)}${m.sale.ends?` · ends ${new Date(m.sale.ends).toLocaleDateString('en-MY',{day:'numeric',month:'short'})}`:''}</p>`:''}
   ${m.meaning?`<div class="meaning"><span class="eyebrow">Meaning</span><p>${m.meaning}</p><div class="ints">${m.ints.filter(i=>INTENTS[i]).map(i=>`<span>${INTENTS[i][0]}</span>`).join('')}</div></div>`:''}
   <div class="specs"><div><span class="eyebrow">Stone</span><b>${m.stone}</b></div><div><span class="eyebrow">${m.specLabel||"Quality"}</span><b>${m.grade||"Natural"}</b></div><div><span class="eyebrow">Ships</span><b>1–2 days</b></div></div>${CFG.whatsapp?`<a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+m.name)}" target="_blank" rel="noopener">${IC.wa}Ask about this piece on WhatsApp</a>`:''}`+
   m.groups.map(g=>{if(g.type==='many')return`<div class="og" role="group" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em>Optional</em></div>${g.opts.map(o=>`<button class="chk" data-act="chk" data-g="${g.id}" data-o="${o[0]}" role="checkbox" aria-checked="false"><span class="chk-l">${o[1]}</span><span class="chk-p">${o[2]?'+'+RM(o[2]):'Complimentary'}</span><span class="box">${IC.check}</span></button>`).join('')}</div>`;
@@ -188,18 +194,37 @@ function removeLine(li,l){vib(8);const h=li.offsetHeight;const done=()=>{S.cart=
 
 /* ---------- checkout ---------- */
 function coSum(){const t=totals();return`<span class="eyebrow">Your order · ${t.count} piece${t.count===1?'':'s'}</span><ul>${S.cart.map(l=>{const m=BY[l.id];return`<li><img src="${img(l.id)}" alt=""><span class="n">${l.qty>1?l.qty+'× ':''}${esc(m.name)}<small>${optText(m,l.sel).slice(0,2).join(' · ')}</small></span><span class="num">${RM(lineTotal(l))}</span></li>`}).join('')}</ul>${totHTML()}`}
-function totHTML(){const t=totals();return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>${SHIP[S.ship].label}</span><span class="num">${t.fee?RM(t.fee):'Free'}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
+function totHTML(){const t=totals();return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${t.fee?RM(t.fee):'Free'}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
+function codeHTML(){if(!CFG.codes&&!S.code)return'';const on=promoOK();
+  return`<div class="fs" id="codeFs"><div class="fs-h"><b>Discount code</b></div>${on?`<div class="code-on"><span class="code-tag">${esc(S.promo.code)}</span><span class="code-txt">${esc(S.promo.label)}${S.promo.discount?` · you save ${RM(S.promo.discount)}`:''}</span><button class="link-btn" data-act="removeCode">Remove</button></div>`:
+  `<div class="code-row"><input id="codeIn" placeholder="Enter code" value="${esc(S.code||'')}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Discount code" maxlength="24"><button class="ghost code-btn" data-act="applyCode" id="codeBtn">Apply</button></div>`}<p class="code-msg" id="codeMsg" role="status" hidden></p></div>`}
+function refreshCo(){if(!$('#coBody')||!$('#coSum'))return;$('#coSum').innerHTML=coSum();$('#coTot').innerHTML=totHTML();$('#placeAmt').textContent=RM(totals().total);
+  document.querySelectorAll('[data-fee]').forEach(x=>{const k=x.dataset.fee,f=k===S.ship?totals().fee:totals(S.cart,k).fee;x.textContent=f?RM(f):'Free';x.classList.toggle('free',!f)});
+  const fs=$('#codeFs');if(fs){const msg=$('#codeMsg');const keep=msg&&!msg.hidden?[msg.textContent,msg.className]:null;fs.outerHTML=codeHTML();bindCode();if(keep){const m=$('#codeMsg');m.textContent=keep[0];m.className=keep[1];m.hidden=false}}}
+function bindCode(){const i=$('#codeIn');if(i)i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();applyCode()}}}
+let codeBusy=0;
+async function applyCode(code){const inp=$('#codeIn');code=((code??(inp?inp.value:S.code))||'').trim().toUpperCase();const msg=()=>$('#codeMsg');
+  if(!code){S.code='';S.promo=null;save();refreshCo();return}
+  const my=++codeBusy;const b=$('#codeBtn');if(b){b.disabled=true;b.textContent='Checking…'}
+  try{const r=await fetch('/api/coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,ship:S.ship,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty}))})});const d=await r.json().catch(()=>({}));
+    if(my!==codeBusy)return;
+    if(r.ok&&d.ok){S.code=d.code;S.promo={...d,sig:bagSig()};save();vib(10);refreshCo();const m=msg();if(m){m.textContent=d.freeShip?'Free delivery applied.':`Code applied. You save ${RM(d.discount)}.`;m.className='code-msg ok';m.hidden=false}}
+    else{S.promo=null;S.code=code;save();refreshCo();const m=msg();if(m){m.textContent=d.error||'That code can’t be used right now.';m.className='code-msg bad';m.hidden=false}}
+  }catch(e){if(my===codeBusy){const bb=$('#codeBtn');if(bb){bb.disabled=false;bb.textContent='Apply'}const m=msg();if(m){m.textContent='Couldn’t check the code. Please try again.';m.className='code-msg bad';m.hidden=false}}}}
+/* bag or delivery changed: check the saved code again */
+function recheckCode(){if(S.code&&!promoOK())applyCode(S.code)}
 const payText=()=>`Next, you’ll enter your ${SHIP[S.ship].pickup?'contact details':'delivery address'} and pay on Stripe’s secure page with a card, FPX online banking or the other methods shown there.`;
 function renderCheckout(){
   $('#coBody').innerHTML=`<div class="cols"><div class="col-main"><h1 class="disp page-h">Checkout</h1>
   <div class="fs"><div class="fs-h"><b>Delivery</b></div>${Object.entries(SHIP).map(([k,s])=>{const fee=totals(S.cart,k).fee;return`<button class="radio${S.ship===k?' on':''}" data-act="ship" data-k="${k}" role="radio" aria-checked="${S.ship===k}"><span class="dot"></span><span><b>${esc(s.label)}</b><small>${esc(s.note||'')}</small></span><span class="rp${fee?'':' free'}" data-fee="${k}">${fee?RM(fee):'Free'}</span></button>`}).join('')}</div>
+  ${codeHTML()}
   <div class="fs"><div class="fs-h"><b>Payment</b></div><div class="pay-box">${IC.lock}<div><b>Secure payment by Stripe</b><p id="payText">${payText()}</p><div class="pay-marks"><span class="pay-ic">VISA</span><span class="pay-ic">MASTERCARD</span><span class="pay-ic">FPX</span></div></div></div></div>
   <div class="co-mob" id="coTot">${totHTML()}</div>
   <p class="co-err" id="coErr" hidden></p></div>
   <aside class="col-side co-sum" id="coSum">${coSum()}</aside></div>`;
-  $('#placeAmt').textContent=RM(totals().total);resetPlaceBtn()}
+  $('#placeAmt').textContent=RM(totals().total);resetPlaceBtn();bindCode();recheckCode()}
 function setShip(k){if(!SHIP[k])return;S.ship=k;save();vib(6);document.querySelectorAll('[data-act=ship]').forEach(b=>{const on=b.dataset.k===k;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
-  $('#coSum').innerHTML=coSum();$('#coTot').innerHTML=totHTML();$('#payText').textContent=payText();$('#placeAmt').textContent=RM(totals().total)}
+  $('#payText').textContent=payText();refreshCo();recheckCode()}
 
 /* =====================================================================
    PAYMENT → STRIPE → THANK YOU
@@ -209,8 +234,9 @@ function resetPlaceBtn(){placing=false;const pb=$('#placeBtn');pb.classList.remo
 async function startCheckout(){if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
   pb.classList.add('press');await wait(120);pb.classList.remove('press');pb.classList.add('sending');
   try{
-    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
+    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,coupon:promoOK()?S.promo.code:undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
     const d=await r.json().catch(()=>({}));
+    if(d.coupon===false){S.promo=null;refreshCo()}
     if(!r.ok||!d.url)throw new Error(d.error||'We couldn’t open the payment page. Please try again.');
     location.href=d.url;
   }catch(e){resetPlaceBtn();err.textContent=e.message||'We couldn’t open the payment page. Please check your connection and try again.';err.hidden=false;err.scrollIntoView({behavior:'smooth',block:'center'})}}
@@ -229,14 +255,14 @@ function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const idx={co
   <p class="d-msg rise" style="--d:1.05s">${o.paid?`A receipt is on its way to ${o.email?esc(o.email):'your email'}. We are cleansing and packing your crystals by hand, and will let you know when ${o.pickup?'they are ready':'they ship'}.`:'Your bank is still confirming the payment. We will email you as soon as it clears.'}</p>
   <ol class="trk rise" style="--d:1.2s"><span class="trk-rail"><span class="trk-fill" style="height:${o.paid?idx*50:0}%"></span></span>${st.map((s,i)=>{const done=o.paid&&(i<idx||(idx===2&&i===2)),now=o.paid&&i===idx&&idx<2;return`<li class="st${done?' done':''}${now?' now':''}"><span class="st-dot"></span><span><b>${s[0]}</b><small>${s[1]}</small></span><time>${done||now?fmtT(tm[i]):''}</time></li>`}).join('')}</ol>
   <div class="sum rise" style="--d:1.4s"><div class="sum-h"><span class="eyebrow">Order summary</span><span class="eyebrow">${esc(o.delivery||'')}</span></div><ul>${o.items.map(i=>`<li><span><span class="q">${i.qty}×</span>${esc(i.name)}</span><span class="num">${RM(i.amount)}</span></li>`).join('')}</ul>
-    <div class="tr"><span>Delivery</span><span class="num">${o.shipping?RM(o.shipping):'Free'}</span></div><div class="tot"><span>Total paid</span><span class="num">${RM(o.total)}</span></div></div>
+    ${o.discount?`<div class="tr"><span>Discount${o.coupon?` (${esc(o.coupon)})`:''}</span><span class="num">−${RM(o.discount)}</span></div>`:''}<div class="tr"><span>Delivery</span><span class="num">${o.shipping?RM(o.shipping):'Free'}</span></div><div class="tot"><span>Total paid</span><span class="num">${RM(o.total)}</span></div></div>
   ${COMPANY.replace('done-co','done-co2')}
   <div class="d-actions rise" style="--d:1.55s">${o.paid&&o.trackUrl?`<p class="track-note">Save this link to follow your order any time.</p><a class="cta track-cta" href="${esc(o.trackUrl)}">Track this order</a>`:''}<button class="ghost" data-act="closeDone">Continue shopping</button></div></div>`}
 async function showConfirmation(id){const d=$('#done');d.hidden=false;d.classList.remove('play');
   d.innerHTML=`<div class="done-scroll"><div class="done-in gx"><div class="loading"><span class="spin"></span>Confirming your order…</div></div></div>`;
   let o=null;for(let k=0;k<3&&!o;k++){try{const r=await fetch('/api/order?session_id='+encodeURIComponent(id));const j=await r.json();if(r.ok)o=j;else if(r.status===404)break}catch(e){}if(!o)await wait(1200)}
   if(!o){d.innerHTML=`<div class="done-scroll"><div class="done-in gx"><h1 class="disp d-title" style="font-size:44px">We couldn’t load your order</h1><p class="d-msg">If you completed the payment, your receipt from Stripe is in your email. Contact us if anything looks wrong.</p><div class="d-actions"><button class="ghost" data-act="closeDone">Continue shopping</button></div></div></div>`;return}
-  if(o.paid){S.cart=[];save();updateBagUI()}
+  if(o.paid){S.cart=[];S.code='';S.promo=null;save();updateBagUI()}
   d.innerHTML=`<div class="done-scroll">${doneHTML(o)}</div>`;void d.offsetWidth;d.classList.add('play')}
 
 /* =====================================================================
@@ -273,6 +299,8 @@ const ACT={
   showAll(el){const sec=$('#sec-'+el.dataset.sec);sec.querySelectorAll('[data-more]').forEach(x=>{x.hidden=false;x.removeAttribute('data-more')});el.remove()},
   ship(el){setShip(el.dataset.k)},
   place:startCheckout,
+  applyCode(){applyCode()},
+  removeCode(){S.code='';S.promo=null;save();refreshCo();const m=$('#codeMsg');if(m)m.hidden=true;setTimeout(()=>$('#codeIn')?.focus(),30)},
   closeDone(){const d=$('#done');const end=()=>{d.hidden=true;d.innerHTML=''};if(d.animate)d.animate([{opacity:1},{opacity:0}],{duration:300}).finished.then(end,end);else end();toHome();$('#home').scrollTop=0},
 };
 document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(o&&!o.closest('[hidden]')){openDetail(o.dataset.open);return}

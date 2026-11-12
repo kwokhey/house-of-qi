@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F0E0D3">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/css/page.css?v=2">
-<link rel="stylesheet" href="/assets/css/admin.css?v=2">
+<link rel="stylesheet" href="/assets/css/admin.css?v=3">
 </head>
 <body>
 <div class="wrap admin">
@@ -18,7 +18,7 @@
     <a class="brand" href="/"><span class="mark" aria-hidden="true"></span><b>House of Qi</b></a>
     <span class="head-r"><span class="mode" id="mode" hidden>Test mode</span><button class="link" id="logout" hidden>Log out</button></span>
   </header>
-  <nav class="tabs-top" id="tabs" hidden aria-label="Sections"><button data-tab="orders" class="on">Orders</button><button data-tab="stock">Stock</button></nav>
+  <nav class="tabs-top" id="tabs" hidden aria-label="Sections"><button data-tab="orders" class="on">Orders</button><button data-tab="stock">Stock</button><button data-tab="marketing">Marketing</button></nav>
 
   <section id="loginView" hidden>
     <h1>Orders</h1>
@@ -61,13 +61,36 @@
     <div id="sSetup" hidden class="setup-box"></div>
   </section>
 
+  <section id="marketingView" hidden>
+    <div class="titlebar"><h1>Marketing</h1><button class="link" id="mRefresh">Refresh</button></div>
+    <div class="sum-tiles" id="mTiles"></div>
+    <div class="m-sec">
+      <div class="m-h"><h2>Announcement bar</h2></div>
+      <p class="m-lede">A short line across the top of the shop, e.g. “11.11 Sale · 15% off everything with code QI1111”.</p>
+      <form id="mAnn" class="m-ann"></form>
+    </div>
+    <div class="m-sec">
+      <div class="m-h"><h2>Coupon codes</h2><button class="btn gold sm" id="mNewCode">+ New code</button></div>
+      <p class="m-lede">Customers type the code at checkout. Share it on Instagram, WhatsApp or with VIP customers.</p>
+      <div id="mCodes" class="m-list"></div>
+    </div>
+    <div class="m-sec">
+      <div class="m-h"><h2>Sales</h2><button class="btn gold sm" id="mNewSale">+ New sale</button></div>
+      <p class="m-lede">Automatic % off, no code needed. The shop shows the old price crossed out and a “Sale” label.</p>
+      <div id="mSales" class="m-list"></div>
+    </div>
+    <div id="mSetup" hidden class="setup-box"></div>
+  </section>
+
+  <dialog id="mEdit" class="sheet-d"></dialog>
   <dialog id="sEdit" class="sheet-d"></dialog>
   <dialog id="sImp" class="sheet-d"></dialog>
   <div class="toast" id="toast" role="status"></div>
 </div>
 <script src="/assets/js/stock-import.js?v=1"></script>
 <script src="/assets/js/art.js?v=3"></script>
-<script src="/assets/js/admin.js?v=2"></script>
+<script src="/assets/js/admin.js?v=3"></script>
 <script src="/assets/js/stock.js?v=1"></script>
+<script src="/assets/js/marketing.js?v=1"></script>
 </body>
 </html>

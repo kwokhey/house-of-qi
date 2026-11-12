@@ -4,6 +4,7 @@
  * If the database is not connected yet, the sample products in catalog.json are used.
  */
 import { db, hasDB, itemName, itemDetails } from "./db.js";
+import { applySales, liveSales, shopPromo } from "./promo.js";
 
 export async function loadSettings(env, origin) {
   const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
@@ -62,7 +63,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();
     if (!count.n) return { ...settings, source: "sample" }; // nothing imported yet
   }
-  const products = results.map((r) => rowToProduct(r, settings));
+  const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
   const hero = products.find((p) => p.bestseller) || [...products].sort((a, b) => b.price - a.price)[0];
   const heroCfg = hero
     ? {
@@ -72,5 +73,6 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
         text: hero.details ? `${hero.details}. Hand-picked natural stone.` : "Hand-picked natural stone.",
       }
     : settings.hero;
-  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory" };
+  const promo = await shopPromo(env);
+  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes };
 }

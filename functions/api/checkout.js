@@ -1,12 +1,13 @@
 /**
  * POST /api/checkout  (Cloudflare Pages Function)
- * Body: { items: [{ id, sel, qty, note }], ship: "std" | "exp" | "pick" }
+ * Body: { items: [{ id, sel, qty, note }], ship: "std" | "exp" | "pick", coupon?: "CODE" }
  * Returns: { url } of a Stripe Checkout page.
  *
  * Needs the secret STRIPE_SECRET_KEY in Cloudflare:
  *   Pages project → Settings → Variables and Secrets.
  */
 import { priceOrder, orderNumber, json, loadCatalog } from "../_lib/pricing.js";
+import { checkCoupon } from "../_lib/promo.js";
 
 /** Random key that lets the customer's tracking link open their order */
 function trackKey() {
@@ -27,6 +28,20 @@ export async function onRequestPost({ request, env }) {
   const order = priceOrder(catalog, body?.items, body?.ship);
   if (order.error) return json({ error: order.error }, 400);
 
+  // Coupon code (checked again here, so the price can't be changed in the browser)
+  let promo = null;
+  if (body?.coupon) {
+    promo = await checkCoupon(env, body.coupon, order);
+    if (promo.error) return json({ error: promo.error, coupon: false }, 400);
+    order.fee = promo.fee;
+    order.total = promo.total;
+    order.promo = promo;
+    if (promo.discount > 0) {
+      try { promo.stripeCoupon = await stripeCoupon(env, promo, catalog.currency || "myr"); }
+      catch (e) { console.error("coupon", e.message); return json({ error: "We couldn't apply your code just now. Please try again." }, 502); }
+    }
+  }
+
   const params = buildSessionParams(catalog, order, origin, orderNumber());
   const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
@@ -39,6 +54,24 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "We couldn't open the payment page. Please try again in a moment." }, 502);
   }
   return json({ url: session.url });
+}
+
+/**
+ * Stripe needs a coupon object to show a discount on its payment page.
+ * One is made per code + amount (e.g. HQ-QI10-1250 = RM12.50 off) and reused after that.
+ */
+async function stripeCoupon(env, promo, cur) {
+  const cents = Math.round(promo.discount * 100);
+  const id = `HQ-${promo.code}-${cents}`;
+  const auth = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` };
+  const got = await fetch(`https://api.stripe.com/v1/coupons/${encodeURIComponent(id)}`, { headers: auth });
+  if (got.ok) return id;
+  const p = new URLSearchParams({ id, amount_off: String(cents), currency: cur, duration: "once", name: `${promo.code} · ${promo.label}`.slice(0, 40) });
+  const res = await fetch("https://api.stripe.com/v1/coupons", { method: "POST", headers: { ...auth, "Content-Type": "application/x-www-form-urlencoded" }, body: p });
+  if (res.ok) return id;
+  const e = await res.json().catch(() => ({}));
+  if (e?.error?.code === "resource_already_exists") return id;
+  throw new Error(e?.error?.message || `stripe ${res.status}`);
 }
 
 function buildSessionParams(catalog, order, origin, orderNo) {
@@ -63,7 +96,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   // Delivery: the customer already picked it on our site, so we pass exactly one option
   const s = order.ship, r = "shipping_options[0][shipping_rate_data]";
   p.append(`${r}[type]`, "fixed_amount");
-  p.append(`${r}[display_name]`, order.fee === 0 && s.fee > 0 ? `${s.label} (free)` : s.label);
+  p.append(`${r}[display_name]`, order.fee === 0 && s.fee > 0 ? (order.promo?.freeShip ? `${s.label} (free with ${order.promo.code})` : `${s.label} (free)`) : s.label);
   p.append(`${r}[fixed_amount][amount]`, String(Math.round(order.fee * 100)));
   p.append(`${r}[fixed_amount][currency]`, cur);
   if (s.days) {
@@ -76,16 +109,21 @@ function buildSessionParams(catalog, order, origin, orderNo) {
 
   const notes = order.lines.filter((l) => l.note).map((l) => `${l.product.name}: ${l.note}`).join(" | ");
   const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", track_key: trackKey(), fulfil_status: "confirmed", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };
+  // Stripe allows 50 metadata keys; with 20 bag lines × 2 keys, the code uses 2 at most
+  if (order.promo) { meta.coupon = order.promo.code; meta.coupon_off = order.promo.freeShip ? "free delivery" : String(order.promo.discount); }
+  // what each piece actually sold for after sale + code (for profit figures on the Stock page)
+  const factor = order.promo?.discount ? 1 - order.promo.discount / order.subtotal : 1;
   // Each item's options, so the order page shows bead size, wrist size, add-ons
   order.lines.forEach((l, i) => {
-    const desc = [`${l.qty}× ${l.product.name}`, l.product.details || "", ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    const desc = [`${l.qty}× ${l.product.name}`, l.product.details || "", ...l.chosen, l.product.sale ? `Sale ${l.product.sale.percent}% off (was RM${l.product.was})` : "", l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     meta[`i${i + 1}`] = desc.slice(0, 500);
-    meta[`s${i + 1}`] = `${l.product.id}:${l.qty}`; // used to deduct stock once paid
+    meta[`s${i + 1}`] = `${l.product.id}:${l.qty}:${Math.round(l.product.price * factor * 100) / 100}`; // used to deduct stock once paid
   });
   for (const [key, val] of Object.entries(meta)) {
     p.append(`metadata[${key}]`, val);
     p.append(`payment_intent_data[metadata][${key}]`, val);
   }
+  if (order.promo?.stripeCoupon) p.append("discounts[0][coupon]", order.promo.stripeCoupon);
   p.append("payment_intent_data[description]", `House of Qi order ${orderNo}`);
   p.append("client_reference_id", orderNo);
 

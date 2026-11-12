@@ -12,8 +12,9 @@ export function stockLines(meta = {}) {
   const out = [];
   for (const [k, v] of Object.entries(meta)) {
     if (!/^s\d+$/.test(k)) continue;
-    const m = String(v).match(/^(.+):(\d+)$/);
-    if (m) out.push({ id: m[1], qty: Number(m[2]) });
+    // "ID:qty" or, since sales/coupons, "ID:qty:price actually paid per piece"
+    const m = String(v).match(/^([^:]+):(\d+)(?::(\d+(?:\.\d+)?))?$/);
+    if (m) out.push({ id: m[1], qty: Number(m[2]), price: m[3] != null ? Number(m[3]) : null });
   }
   return out;
 }
@@ -29,11 +30,17 @@ export async function recordSession(D, s) {
     const item = await D.prepare("SELECT price, cost FROM items WHERE id = ?").bind(l.id).first();
     const ins = await D.prepare(
       "INSERT OR IGNORE INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, ref, note, created_at) VALUES (?, 'sale', ?, ?, ?, 'Website', ?, ?, ?)"
-    ).bind(l.id, -l.qty, item ? item.price : null, item ? item.cost : null, s.id, s.metadata?.order_no || "", (s.created || 0) * 1000 || now).run();
+    ).bind(l.id, -l.qty, l.price != null ? l.price : item ? item.price : null, item ? item.cost : null, s.id, s.metadata?.order_no || "", (s.created || 0) * 1000 || now).run();
     if (ins.meta.changes > 0) {
       await D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(l.qty, now, l.id).run();
       n++;
     }
+  }
+  // coupon usage (counts towards the code's limit and shows on the Marketing page)
+  if (s.metadata?.coupon) {
+    await D.prepare("INSERT OR IGNORE INTO coupon_uses (ref, code, discount, total, order_no, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(s.id, s.metadata.coupon, (s.total_details?.amount_discount ?? (Math.round(Number(s.metadata.coupon_off) * 100) || 0)) / 100,
+        (s.amount_total || 0) / 100, s.metadata.order_no || "", (s.created || 0) * 1000 || now).run();
   }
   return n;
 }

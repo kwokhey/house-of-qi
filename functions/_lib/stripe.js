@@ -41,7 +41,7 @@ export function toOrder(s, { full = false } = {}) {
     name: li.description,
     options: sm[`i${i + 1}`] || "",
     qty: li.quantity,
-    amount: li.amount_total / 100,
+    amount: (li.amount_subtotal ?? li.amount_total) / 100,
   }));
   const order = {
     orderNo: sm.order_no || s.client_reference_id || "",
@@ -52,6 +52,8 @@ export function toOrder(s, { full = false } = {}) {
     items,
     subtotal: (s.amount_subtotal || 0) / 100,
     shipping: (s.total_details?.amount_shipping || 0) / 100,
+    discount: (s.total_details?.amount_discount || 0) / 100,
+    coupon: sm.coupon || "",
     total: (s.amount_total || 0) / 100,
     status,
     courier: pm.courier || "",

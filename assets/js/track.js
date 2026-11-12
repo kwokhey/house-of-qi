@@ -28,6 +28,7 @@ function render(o) {
     }).join("")}</ol>
     ${o.status === "shipped" && o.tracking ? `<div class="tracking">${esc(o.courier || "Courier")} tracking number: <b>${esc(o.tracking)}</b></div>` : ""}
     <div class="tk-sum"><ul>${o.items.map((i) => `<li><span>${i.qty}× ${esc(i.name)}</span><span>${RM(i.amount)}</span></li>`).join("")}</ul>
+      ${o.discount ? `<div class="tot disc"><span>Discount${o.coupon ? ` (${esc(o.coupon)})` : ""}</span><span>−${RM(o.discount)}</span></div>` : ""}
       <div class="tot"><span>Total paid</span><span>${RM(o.total)}</span></div></div>
     <p class="again"><a href="/track">Track another order</a> · <a href="/">Back to shop</a></p>`;
   views("tkView");

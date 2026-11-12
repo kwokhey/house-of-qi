@@ -6,6 +6,9 @@
  *   movements  every change to stock: online sale, offline sale, restock, adjustment
  *   images     product photos (JPEG, resized in the browser before upload)
  *   settings   small key/value store (e.g. when Stripe sales were last synced)
+ *   coupons    discount codes customers type at checkout
+ *   sales      automatic % off for the whole shop, a section, stones or single pieces
+ *   coupon_uses one row per paid website order that used a code
  */
 
 const SCHEMA = [
@@ -53,6 +56,41 @@ const SCHEMA = [
     updated_at INTEGER NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS coupons (
+    code TEXT PRIMARY KEY,
+    kind TEXT NOT NULL DEFAULT 'percent',
+    value REAL NOT NULL DEFAULT 0,
+    min_spend REAL NOT NULL DEFAULT 0,
+    starts_at INTEGER NOT NULL DEFAULT 0,
+    ends_at INTEGER NOT NULL DEFAULT 0,
+    max_uses INTEGER NOT NULL DEFAULT 0,
+    exclude_sale INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    note TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS coupon_uses (
+    ref TEXT PRIMARY KEY,
+    code TEXT NOT NULL,
+    discount REAL NOT NULL DEFAULT 0,
+    total REAL NOT NULL DEFAULT 0,
+    order_no TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS coupon_uses_code ON coupon_uses(code)`,
+  `CREATE TABLE IF NOT EXISTS sales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    percent REAL NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'all',
+    targets TEXT NOT NULL DEFAULT '[]',
+    starts_at INTEGER NOT NULL DEFAULT 0,
+    ends_at INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
 ];
 
 let ready = null;

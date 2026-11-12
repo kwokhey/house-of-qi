@@ -10,14 +10,16 @@ let ORDERS = [], NEXT = null, FILTER = "todo";
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
 function show(id) {
-  ["loginView", "setupView", "ordersView", "stockView"].forEach((v) => ($("#" + v).hidden = v !== id));
-  const inside = id === "ordersView" || id === "stockView";
+  ["loginView", "setupView", "ordersView", "stockView", "marketingView"].forEach((v) => ($("#" + v).hidden = v !== id));
+  const inside = ["ordersView", "stockView", "marketingView"].includes(id);
   $("#logout").hidden = !inside; $("#tabs").hidden = !inside;
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", (b.dataset.tab + "View") === id));
 }
 function openTab(tab) {
   try { localStorage.setItem("hq-admin-tab", tab); } catch {}
-  if (tab === "stock" && window.Stock) { show("stockView"); window.Stock.load(); } else load();
+  if (tab === "stock" && window.Stock) { show("stockView"); window.Stock.load(); }
+  else if (tab === "marketing" && window.Marketing) { show("marketingView"); window.Marketing.load(); }
+  else load();
 }
 const savedTab = () => { try { return localStorage.getItem("hq-admin-tab") || "orders"; } catch { return "orders"; } };
 async function api(path, opt = {}) {
@@ -64,6 +66,7 @@ function card(o) {
     <div class="oc-c"><b>${esc(o.name)}</b>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : ""}${o.email ? `<span>${esc(o.email)}</span>` : ""}</div>
     <ul>${items}</ul>
     ${o.notes ? `<div class="note">Gift message: ${esc(o.notes)}</div>` : ""}
+    ${o.coupon ? `<div class="note promo">Code <b>${esc(o.coupon)}</b>${o.discount ? ` · −${RM(o.discount)}` : " · free delivery"}</div>` : ""}
     <div class="deliv"><span><b>${esc(o.delivery || (o.pickup ? "Self pick-up" : "Delivery"))}</b></span><span class="tot">${RM(o.total)}</span>
       ${o.address.length ? `<span class="addr">${o.address.map(esc).join("<br>")}</span><button class="link" data-copy="${esc([o.name, ...o.address, o.phone].join("\n"))}">Copy address</button>` : ""}</div>
     <div class="act">${act}
@@ -89,7 +92,7 @@ async function load(more = false) {
     ORDERS = more ? ORDERS.concat(d.orders) : d.orders;
     NEXT = d.more ? d.next : null;
     $("#mode").hidden = d.mode !== "test";
-    if (!$("#stockView").hidden) return render();
+    if (!$("#stockView").hidden || !$("#marketingView").hidden) return render();
     show("ordersView"); render();
   } catch (e) { toast(e.message); }
 }

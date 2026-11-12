@@ -88,6 +88,12 @@ Stock lives in a Cloudflare **D1** database (free tier). Setup, once:
 
 Until the database is connected, the shop shows the sample products from `data/catalog.json`. Cost prices and suppliers are only visible on the order page, never in the shop.
 
+**Marketing tab:**
+- **Coupon codes**: % off, RM off or free delivery. Optional minimum spend, start/end dates, a limit on how many orders can use it, and "don't discount pieces already on sale". Customers type the code at checkout (the box only appears while a code is live). Each code shows how many paid orders used it and the discount given. A code that has been used can be switched off but not deleted.
+- **Sales**: automatic % off for the whole shop, a shop section, chosen stones or chosen pieces, between two dates. The shop shows the old price crossed out, the % off and the sale name. If two sales cover a piece, the bigger one wins. Prices round to the nearest ringgit.
+- **Announcement bar**: one line across the top of the shop, with optional dates.
+- Everything is checked again on the server at payment, and Stripe shows the discount on its payment page and receipt. Profit on the Stock page uses what the customer actually paid.
+
 ---
 
 ## Everyday edits (`data/catalog.json`)
