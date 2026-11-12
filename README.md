@@ -1,122 +1,121 @@
-# House of Qi — Online Boutique
+# House of Qi · online shop
 
-An elegant crystal-jewellery storefront that runs on **Cloudflare Pages (free)** or **Vercel (Pro plan for commercial sites)**, with secure payments through **Stripe Checkout** (cards, FPX, GrabPay and other methods you enable in Stripe).
+Crystal jewellery shop for **House of Qi** (Soleil Trinity Infinite Resources Sdn. Bhd., 202201006345 (1452042-H)).
+
+- Hosting: **Cloudflare Pages** (free), one link for phone and desktop
+- Payments: **Stripe Checkout** (cards, FPX and any other methods switched on in Stripe)
+- No database and no build step. Products live in one file: `data/catalog.json`
 
 ```
-house-of-qi/
-├── index.html, shop.html, product.html, about.html, policies.html, success.html, 404.html
-├── assets/css/style.css     ← brand colours & fonts (top of file)
-├── assets/js/app.js         ← cart, product pages, checkout button
-├── assets/img/              ← product images (replace the placeholders)
-├── data/products.json       ← THE product catalogue: names, prices, sizes, images
-├── lib/stripe-checkout.mjs  ← Stripe payment logic (shared by both hosts)
-├── functions/api/checkout.js← checkout endpoint for Cloudflare Pages
-├── api/checkout.mjs         ← checkout endpoint for Vercel
-├── vercel.json              ← Vercel security & caching headers
-└── _headers                 ← security & caching headers
+index.html               the shop (one page)
+policies.html            shipping, returns, care, privacy
+404.html                 page-not-found
+assets/css/shop.css      shop design (colours and fonts at the top)
+assets/css/page.css      design for policies / 404
+assets/js/shop.js        shop behaviour: bag, product sheet, checkout, thank-you screen
+assets/js/art.js         drawn product pictures, used until real photos are added
+assets/img/              logo, icons, product photos
+data/catalog.json        products, prices, shipping, homepage settings
+functions/api/checkout.js  creates the Stripe payment page (prices checked on the server)
+functions/api/order.js     reads the paid order for the thank-you screen
+functions/_lib/pricing.js  shared price rules
+_headers                 security and caching headers
 ```
-
-No build step, no database, no monthly fees.
 
 ---
 
-## 1. Put the code on GitHub
+## 1. Deploy on Cloudflare Pages
 
-1. In GitHub click **New repository** → name it `house-of-qi` → **Private** → Create.
-2. On the empty repo page click **uploading an existing file**, drag in **everything inside** the `house-of-qi` folder (not the folder itself), then **Commit changes**.
-   *(Or with Git: `git init && git add . && git commit -m "Initial store" && git branch -M main && git remote add origin https://github.com/YOU/house-of-qi.git && git push -u origin main`)*
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → choose this repository.
+2. Project name: `house-of-qi` (this gives `house-of-qi.pages.dev`).
+3. Build settings: **Framework preset: None**, **Build command:** leave empty, **Build output directory:** `/`
+4. **Save and Deploy.**
 
-## 2. Deploy on Cloudflare Pages
+Every push to GitHub redeploys the site automatically.
 
-1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → pick `house-of-qi`.
-2. Build settings: **Framework preset: None**, **Build command: (leave empty)**, **Build output directory: `/`**.
-3. Click **Save and Deploy**. You get a link like `house-of-qi.pages.dev`.
+> Use **Connect to Git**, not drag-and-drop upload. Drag-and-drop does not include the `functions` folder, so checkout would not work.
 
-Every time you push to GitHub, Cloudflare redeploys automatically.
+## 2. Connect the client's Stripe account
 
-## 3. Connect Stripe (the client's account)
+The secret key should be added by the client (or with them), so it never travels by chat or email.
 
-1. Ask the client to invite you to their Stripe account (Settings → Team) or to send you the **secret key**.
-2. Stripe Dashboard → **Developers → API keys** → copy the **Secret key** (`sk_test_…` for testing).
-3. Cloudflare → your Pages project → **Settings → Variables and Secrets** → **Add** →
-   Name `STRIPE_SECRET_KEY`, type **Secret**, value = the key. Add it for **Production** (and Preview if you like).
-4. **Deployments → Retry deployment** so the key takes effect.
-5. Stripe → **Settings → Payment methods**: switch on Cards, **FPX**, **GrabPay**, Apple Pay / Google Pay — they appear on checkout automatically.
-6. Stripe → **Settings → Customer emails**: turn on **Successful payments** so buyers get a receipt, and **Settings → Notifications** so the client is emailed for every order.
+1. Stripe Dashboard → **Developers → API keys**. Start with **Test mode** and copy the **Secret key** (`sk_test_…`).
+   - Tidier option: **Create restricted key** with only **Checkout Sessions: Write** (and Read). Use that instead of the full secret key.
+2. Cloudflare → the Pages project → **Settings → Variables and Secrets** → **Add**
+   Name `STRIPE_SECRET_KEY`, type **Secret**, value = the key, environment **Production**.
+3. **Deployments** → latest → **Retry deployment** so the key takes effect.
+4. Stripe → **Settings → Payment methods**: switch on **Cards** and **FPX** (and GrabPay, Apple Pay / Google Pay if wanted).
+5. Stripe → **Settings → Customer emails**: turn on **Successful payments** (customers get a receipt).
+   Stripe → **Settings → Team and security → Notifications**: turn on email for **Successful payments** (the client is told about every order).
+6. Stripe → **Settings → Business → Public details**: set the website to the shop link.
 
-**Test:** add items to the bag → Secure Checkout → pay with card `4242 4242 4242 4242`, any future date, any CVC.
-**Go live:** replace the key with the `sk_live_…` key and redeploy.
+**Test:** add items → Checkout → Continue to payment → card `4242 4242 4242 4242`, any future date, any CVC.
+You should land on the "Thank you for your order" screen, and the payment appears in Stripe → **Payments**.
 
-Orders (with shipping address and phone) appear in Stripe → **Payments**.
+**Go live:** in Stripe switch off Test mode, copy the live key (`sk_live_…` or a live restricted key), replace the value in Cloudflare, retry the deployment, and place one real small order to confirm.
 
-## 4. Custom domain (optional, free on Cloudflare)
+### Where orders appear
 
-Pages project → **Custom domains** → **Set up a custom domain** → e.g. `houseofqi.com`.
+Stripe → **Payments** → click a payment. You'll see:
+- the items with their options (bead size, wrist size, add-ons) and any gift message
+- the delivery choice, customer name, email, phone and shipping address
+- the order number (e.g. `HQ-261112-K7PQ`) under **Metadata**, also shown to the customer
 
-## Alternative: deploy on Vercel instead of Cloudflare
+## 3. Custom domain (later)
 
-> Vercel's free **Hobby** plan is for non-commercial use only. A store that takes payments needs **Vercel Pro**. Cloudflare Pages allows commercial sites on its free plan.
-
-1. Push the code to GitHub (step 1 above).
-2. vercel.com → **Add New… → Project** → **Import** the `house-of-qi` repo.
-3. **Framework Preset: Other**. Leave Build Command and Output Directory empty / default. Root Directory: `./`.
-4. Open **Environment Variables** on the same screen → add `STRIPE_SECRET_KEY` = the client's `sk_test_…` key → **Deploy**.
-5. You get `house-of-qi.vercel.app`. Test checkout with card `4242 4242 4242 4242`.
-6. Custom domain: Project → **Settings → Domains** → add `houseofqi.com` and follow the DNS instructions.
-7. If you change the key later: **Settings → Environment Variables**, edit, then **Deployments → ⋯ → Redeploy**.
-
-Every push to GitHub redeploys automatically, the same as Cloudflare.
+Buy the domain in Cloudflare (**Domain Registration → Register Domains**), then Pages project → **Custom domains** → **Set up a custom domain** → add `yourdomain.com` and `www.yourdomain.com`. No code change is needed. Update the website address in Stripe's public details afterwards.
 
 ---
 
-## Everyday edits
+## Everyday edits (`data/catalog.json`)
 
-**Add / change a product** — edit `data/products.json`:
+**Product**
 
 ```json
 {
-  "id": "unique-url-name",
-  "name": "Product Name",
-  "collection": "Bracelets",          // Bracelets, Pendants, Crystal Spheres (or a new one)
-  "intention": "Love",                 // Love, Abundance, Protection, Clarity, Growth, Courage
-  "price": 480,                        // in RM (the starting price)
-  "image": "assets/img/my-photo.jpg",
-  "material": "Natural rose quartz",
-  "description": "One or two lines about the piece.",
-  "options": [                         // [] if there are no sizes
-    { "label": "10mm", "price": 480 }, // each size can have its own price
-    { "label": "12mm", "price": 580 }
-  ],
-  "featured": true                     // shows on the home page
+  "id": "star-rose-bracelet",          // unique, lowercase, no spaces (never change once orders exist)
+  "name": "Star Rose Quartz Bracelet",
+  "short": "Star Rose Quartz",          // optional shorter name for small cards
+  "zh": "星光粉晶手链",
+  "collection": "bracelets",            // must match an id in "collections"
+  "price": 480,                         // base price in RM
+  "image": "assets/img/products/star-rose.jpg",   // leave "" to use the drawn picture
+  "soldOut": false,
+  "bestseller": 1,                      // optional rank in Bestsellers
+  "signature": true,                    // optional "Signature" label
+  "spotlight": true,                    // optional: shows in the monthly spotlight section
+  "stone": "Star rose quartz",
+  "quality": "Clear, 6-ray star",
+  "intentions": ["love"],               // keys from "intentions"
+  "description": "Short description shown on the card and product page.",
+  "meaning": "Text for the Meaning box on the product page.",
+  "groups": [ ...options, see below... ]
 }
 ```
 
-Each product also has `"stone": "rose-quartz"`, which links it to the **About the stone** explanation on its product page. The explanations live in the `"stones"` section of the same file (name, Chinese name, meaning, keywords, facts, how to wear, how to know it's real). Several products can share one stone, so write each explanation once. Remove the `"stone"` line and that product simply shows no stone section.
+**Options** (`groups`): each group is either `"type": "one"` (pick one, e.g. bead size) or `"type": "many"` (tick boxes, e.g. gift box). Each option's `price` is **added** to the base price.
 
-Prices are checked on the server, so customers can't change them in the browser.
-
-**WhatsApp button** — put the client's number in `"whatsapp"` at the top of `data/products.json`, country code first with no "+" or spaces (e.g. `"60123456789"`). A floating WhatsApp button and an "Ask us on WhatsApp" link on each product page then appear automatically, with a pre-filled message naming the piece and size. Leave it empty to hide them.
-
-**Sold out** — set `"soldOut": true` on a product. It shows a "Sold out" badge, can't be added to the bag or bought, and the product page offers a WhatsApp enquiry instead. Set it back to `false` when restocked.
-
-**Announcement bar** — edit the `"announcements"` list; the messages rotate every few seconds.
-
-**Crystal Guide page** (`guide.html`) — built automatically from the `"stones"` section, and the "Shop by Chakra" filters read each stone's `"Chakra"` fact. Add a stone once and it appears everywhere.
-
-**Product photos** — upload square or 4:5 JPG/PNG/WebP images (≈1200px, under 300 KB) to `assets/img/` and point `"image"` at them. Real photos also appear on the Stripe payment page. Photos on a white/cream background look best with this design.
-
-**Brand colours & fonts** — top of `assets/css/style.css` (`--gold`, `--ink`, `--ivory` …). Fonts load from Google Fonts in each page's `<head>`.
-
-**Logo** — the "Qi" mark and wordmark are drawn in `assets/js/app.js` (`renderLayout`). To use the real logo file, replace the `<span class="logo-mark">…</span><span class="logo-word">…</span>` with `<img src="assets/img/logo.svg" alt="House of Qi" style="height:44px">`.
-
-**Shipping** — `freeShippingThreshold`, `shippingFlat`, `shipToCountries` in `data/products.json`.
-
-**Text** — announcement bar, footer, email address: `assets/js/app.js`. Home page copy: `index.html`. Policies: `policies.html` (review with the client before launch).
-
-## Test locally (optional)
-
-```bash
-npm i -g wrangler
-cp .dev.vars.example .dev.vars   # put your sk_test_ key inside
-wrangler pages dev .
+```json
+{ "id": "bead", "label": "Bead size", "type": "one",
+  "opts": [ { "id": "10", "label": "10 mm", "price": 0 },
+            { "id": "12", "label": "12 mm", "price": 100 } ] }
 ```
+
+**Photos:** square or 4:5 JPG/WebP, about 1200 px and under 300 KB, in `assets/img/products/`. Set the product's `"image"`. Real photos also appear on the Stripe payment page.
+
+**Shipping:** `"shipping"` (labels, fees, delivery days) and `"freeShippingFrom"`. Standard delivery has `"freeOver": true`. Keep `policies.html` in step with any change.
+
+**Homepage:** `"hero"` (featured product and text; `|` splits the title onto two lines), `"spotlight"` (monthly stones title and note), `"collections"` (order of sections; `layout` is `bestsellers`, `feature`, `grid` or `list`).
+
+**WhatsApp:** put the number in `"whatsapp"`, country code first, digits only (e.g. `"60123456789"`). A WhatsApp link then appears on each product and in the footer.
+
+**Sold out:** `"soldOut": true`. It can't be added to the bag or paid for.
+
+After editing, bump `?v=1` to `?v=2` in `index.html` if you changed CSS or JS (so browsers fetch the new file). Catalog changes appear within a minute.
+
+## Before launch checklist
+
+- [ ] Real products, prices, photos and meanings in `data/catalog.json`
+- [ ] Shipping fees and the returns policy in `policies.html` confirmed by the client
+- [ ] Business address and a contact (WhatsApp / email) added to the site (expected for Malaysian online sellers and by Stripe)
+- [ ] Test-mode order works end to end, then live key added

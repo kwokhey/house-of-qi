@@ -2,134 +2,77 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>House of Qi — Jewellery with Frequencies</title>
-<meta name="description" content="House of Qi — jewellery with frequencies. Natural crystal bracelets, pendants and crystal spheres, chosen with intention. Shop online in Malaysia.">
-<meta property="og:title" content="House of Qi — Jewellery with Frequencies">
-<meta property="og:description" content="House of Qi — jewellery with frequencies. Natural crystal bracelets, pendants and crystal spheres, chosen with intention. Shop online in Malaysia.">
-<meta name="theme-color" content="#F2E2D8">
-<link rel="icon" href="assets/img/favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<meta property="og:image" content="assets/img/logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>House of Qi · Crystals &amp; jewellery with frequencies</title>
+<meta name="description" content="Natural crystal bracelets, pendants and spheres from House of Qi, Malaysia. Star rose quartz, amethyst, citrine and more, cleansed before dispatch.">
+<meta name="theme-color" content="#F0E0D3">
+<link rel="icon" href="/assets/img/favicon.png">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="House of Qi · Crystals">
+<meta property="og:description" content="Jewellery with frequencies. Natural crystal bracelets, pendants and spheres.">
+<meta property="og:image" content="/assets/img/logo.png">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/app.js" defer></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="/assets/css/shop.css?v=1">
 </head>
-<body data-page="home">
-
-<main>
-  <section class="hero" style="padding:0">
-    <div class="hero-copy">
-      <span class="eyebrow">Natural Crystals &amp; Gemstones</span>
-      <h1>Jewellery with <em>frequencies</em></h1>
-      <p>Natural crystal jewellery chosen with intention — for love, clarity, protection and abundance. Each stone is one of a kind.</p>
-      <div class="hero-actions">
-        <a href="shop.html" class="btn">Shop the collection</a>
-        <a href="#intentions" class="btn btn-ghost">Shop by intention</a>
+<body>
+<div id="app">
+  <main id="home" class="screen" aria-label="Shop">
+    <header class="topbar gx" id="topbar">
+      <button class="brand" id="brand" data-act="top" type="button" aria-label="House of Qi, back to top">
+        <span class="mark" aria-hidden="true"></span>
+        <span class="brand-txt"><span class="brand-name">House of Qi</span><span class="brand-sub">Crystals</span></span>
+      </button>
+      <nav class="dnav" id="dnav" aria-label="Collections"></nav>
+      <div class="top-actions">
+        <button class="icon-btn" data-act="search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg></button>
+        <button class="icon-btn" id="bagBtn" data-act="bag" aria-label="View bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke-linecap="round"/></svg><span class="badge" id="badge">0</span></button>
       </div>
-    </div>
-    <div class="hero-visual"><img src="assets/img/bracelet-rose.svg" alt="Star rose quartz bracelet"></div>
+      <div class="search gx">
+        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg><input id="q" type="search" placeholder="Search rose quartz, citrine, bracelet…" autocomplete="off" enterkeyhint="search"></label>
+        <button class="cancel" data-act="searchClose">Cancel</button>
+      </div>
+    </header>
+    <div id="homeBody"></div>
+    <div id="results" class="gx" hidden></div>
+  </main>
+
+  <div id="dim" data-act="dimClose"></div>
+  <section id="bag" class="screen push" hidden aria-label="Your bag">
+    <header class="nav gx"><button class="icon-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="nav-t">Shopping bag</span><span class="steps"><i class="on"></i><i></i></span></header>
+    <div class="page gx" id="bagBody"></div>
+    <div class="bottom gx"><button class="cta" id="toCheckout" data-act="toCheckout">Checkout</button></div>
   </section>
 
-  <section id="intentions">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Find your stone</span>
-        <h2>Shop by <span class="script">Intention</span></h2>
-        <p class="muted">Every crystal carries its own energy. Choose what you'd like to invite into your life.</p>
-        <div class="divider"></div>
-      </div>
-      <div class="intentions">
-        <a href="shop.html?i=Love" class="intention reveal"><span class="script">Love</span><p>Compassion, self-love &amp; emotional harmony</p><span class="arrow">↗</span></a>
-        <a href="shop.html?i=Abundance" class="intention reveal"><span class="script">Abundance</span><p>Joy, prosperity &amp; positive energy</p><span class="arrow">↗</span></a>
-        <a href="shop.html?i=Protection" class="intention reveal"><span class="script">Protection</span><p>Grounding, shielding &amp; stability</p><span class="arrow">↗</span></a>
-        <a href="shop.html?i=Clarity" class="intention reveal"><span class="script">Clarity</span><p>Calm, focus &amp; spiritual insight</p><span class="arrow">↗</span></a>
-        <a href="shop.html?i=Growth" class="intention reveal"><span class="script">Growth</span><p>Renewal, transformation &amp; new beginnings</p><span class="arrow">↗</span></a>
-        <a href="shop.html?i=Courage" class="intention reveal"><span class="script">Courage</span><p>Confidence, strength &amp; willpower</p><span class="arrow">↗</span></a>
-      </div>
-    </div>
+  <section id="checkout" class="screen push" hidden aria-label="Checkout">
+    <header class="nav gx"><button class="icon-btn" data-act="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="nav-t">Checkout</span><span class="steps"><i class="on"></i><i class="on"></i></span></header>
+    <div class="page gx" id="coBody"></div>
+    <div class="bottom gx"><button class="cta hero" id="placeBtn" data-act="place"><span class="sheen"></span><span class="lbl">Continue to payment <i></i> <span class="p" id="placeAmt">RM0.00</span></span><span class="lbl2"><span class="spin"></span>Opening secure payment…</span></button></div>
   </section>
 
-  <section style="padding-top:0">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Most Loved</span>
-        <h2>Signature Pieces</h2>
-        <div class="divider"></div>
-      </div>
-      <div class="product-grid" id="featured-grid"></div>
-      <div style="text-align:center;margin-top:60px"><a href="shop.html" class="btn btn-ghost">View the full collection</a></div>
-    </div>
-  </section>
 
-  <section style="padding-top:0">
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Balance your energy</span>
-        <h2>Shop by <span class="script">Chakra</span></h2>
-        <p class="muted">Each energy centre is traditionally linked with its own colours and crystals.</p>
-        <div class="divider"></div>
-      </div>
-      <div class="chakra-row" id="chakra-row"></div>
+  <button class="cartbar" id="cartbar" data-act="bag" aria-label="View bag"><span class="cb-thumbs" id="cbThumbs"></span><span class="cb-info"><span class="cb-count" id="cbCount">0 items</span><span class="cb-total" id="cbTotal">RM0.00</span></span><span class="cb-go">View bag<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+
+  <div id="backdrop" data-act="close"></div>
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Product details">
+    <div class="sheet-scroll" id="sheetScroll">
+      <div class="sheet-hero"><img id="shImg" alt=""></div>
+      <div class="sheet-body gx" id="shBody"></div>
+    </div>
+    <button class="sheet-close" data-act="close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="sheet-cta gx">
+      <div class="stepper" aria-label="Quantity"><button data-act="qDec" id="qDec" aria-label="Fewer"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button><output id="qOut">1</output><button data-act="qInc" aria-label="More"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg></button></div>
+      <button class="cta" id="addBtn" data-act="add">Add to bag <span>·</span> <span class="p" id="addAmt">RM0.00</span></button>
     </div>
   </section>
 
-  <section class="month">
-    <div class="container month-grid">
-      <div class="reveal">
-        <span class="eyebrow">October Month Stone</span>
-        <h2>Transformation &amp; <span class="script">Protection</span></h2>
-        <p class="muted">This month we honour the grounding stones — crystals associated with shielding your energy and moving through change with strength.</p>
-        <a href="shop.html?i=Protection" class="btn" style="margin-top:14px">Shop protection stones</a>
-      </div>
-      <div class="month-stones reveal">
-        <div class="stone"><div class="stone-dot" style="background:#1c1b1b"></div><span>Black Tourmaline</span></div>
-        <div class="stone"><div class="stone-dot" style="background:#0e0e10"></div><span>Obsidian</span></div>
-        <div class="stone"><div class="stone-dot" style="background:conic-gradient(from 40deg,#3d5a63,#4f8fa3,#c9b35a,#2f4a52,#6aa3b0,#3d5a63)"></div><span>Labradorite</span></div>
-        <div class="stone"><div class="stone-dot" style="background:radial-gradient(circle at 35% 30%,#d9c3ae,#7c5f48 65%,#4a3628)"></div><span>Smoky Quartz</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <div class="section-head reveal">
-        <span class="eyebrow">Our Promise</span>
-        <h2>Real crystals, <span class="script">honestly</span> chosen</h2>
-        <p class="muted">Dyed stones and glass imitations are everywhere. Here's what makes a natural crystal real.</p>
-        <div class="divider"></div>
-      </div>
-      <div class="trust-grid">
-        <div class="trust reveal"><div class="num">01</div><h3>Natural inclusions</h3><p>Tiny clouds, lines and "imperfections" are nature's fingerprint — not flaws.</p></div>
-        <div class="trust reveal"><div class="num">02</div><h3>Natural colour variation</h3><p>Real stones show gentle shifts in tone. Perfectly uniform colour is often a sign of dye.</p></div>
-        <div class="trust reveal"><div class="num">03</div><h3>Cool to the touch</h3><p>Genuine crystal feels cool and has a satisfying weight in the hand.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="story">
-    <div class="container story-grid">
-      <div class="story-visual reveal"><img src="assets/img/logo.png" alt="House of Qi emblem"></div>
-      <div class="reveal">
-        <span class="eyebrow">The House</span>
-        <h2>The energy you <em>wear</em></h2>
-        <p>In Chinese philosophy, Qi (气) is the life force that flows through all things. Our emblem brings together the crown, the flower of life and the lotus — sovereignty, harmony and growth.</p>
-        <p>We select each crystal and gemstone by hand, so the piece you receive is truly one of a kind.</p>
-        <a href="about.html" class="btn btn-light" style="margin-top:18px">Read our story</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="newsletter">
-    <div class="container reveal">
-      <span class="eyebrow">Join the House</span>
-      <h2 class="display" style="font-size:clamp(34px,4vw,50px);margin-top:14px">Learn the language of <span class="script">stones</span></h2>
-      <p class="muted" style="max-width:480px;margin:16px auto 34px">Crystal guides, rare pearl stories, new arrivals and month stones — follow us on Instagram.</p>
-      <a class="btn" href="https://www.instagram.com/house_of_qi/" target="_blank" rel="noopener">Follow @house_of_qi</a>
-    </div>
-  </section>
-</main>
+  <section id="done" hidden aria-live="polite"></section>
+  <div class="toast" id="toast"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="goldStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8F6834"/><stop offset=".35" stop-color="#D2AC6C"/><stop offset=".5" stop-color="#F1DCAA"/><stop offset=".7" stop-color="#C49A5B"/><stop offset="1" stop-color="#94703A"/></linearGradient></defs></svg>
+</div>
+<script src="/assets/js/art.js?v=1"></script>
+<script src="/assets/js/shop.js?v=1"></script>
 </body>
 </html>

@@ -1,0 +1,1330 @@
+{
+  "_readme": "House of Qi catalogue. Edit products here; prices are in RM. The website and the Stripe checkout both read this file, so a price changed here is what customers pay.",
+  "currency": "myr",
+  "whatsapp": "",
+  "shipToCountries": [
+    "MY"
+  ],
+  "freeShippingFrom": 300,
+  "shipping": {
+    "std": {
+      "label": "Standard delivery",
+      "note": "West Malaysia · 3–5 working days",
+      "fee": 10,
+      "freeOver": true,
+      "days": [
+        3,
+        5
+      ]
+    },
+    "exp": {
+      "label": "Express delivery",
+      "note": "West Malaysia · 1–2 working days",
+      "fee": 20,
+      "days": [
+        1,
+        2
+      ]
+    },
+    "pick": {
+      "label": "Self pick-up",
+      "note": "By appointment, we will WhatsApp you",
+      "fee": 0,
+      "pickup": true
+    }
+  },
+  "hero": {
+    "product": "star-rose-bracelet",
+    "eyebrow": "Signature · The love stone",
+    "title": "Star Rose|Quartz",
+    "text": "Six-ray asterism you can see in daylight. Bead sizes from 10 to 13 mm."
+  },
+  "spotlight": {
+    "title": "November stones",
+    "note": "Gratitude & Prosperity: citrine, pyrite and green aventurine."
+  },
+  "collections": [
+    {
+      "id": "best",
+      "name": "Bestsellers",
+      "zh": "人气",
+      "layout": "bestsellers"
+    },
+    {
+      "id": "bracelets",
+      "name": "Bracelets",
+      "zh": "手链",
+      "layout": "feature"
+    },
+    {
+      "id": "pendants",
+      "name": "Pendants",
+      "zh": "吊坠",
+      "layout": "grid"
+    },
+    {
+      "id": "decor",
+      "name": "Spheres & Décor",
+      "zh": "摆件",
+      "layout": "grid"
+    },
+    {
+      "id": "sets",
+      "name": "Gift Sets",
+      "zh": "礼盒",
+      "layout": "list"
+    }
+  ],
+  "intentions": {
+    "love": {
+      "name": "Love",
+      "colour": "#E9A9B9"
+    },
+    "abundance": {
+      "name": "Abundance",
+      "colour": "#E8B851"
+    },
+    "calm": {
+      "name": "Calm",
+      "colour": "#A47BC9"
+    },
+    "clarity": {
+      "name": "Clarity",
+      "colour": "#E9E6E1"
+    },
+    "protection": {
+      "name": "Protection",
+      "colour": "#8A6A2E"
+    },
+    "courage": {
+      "name": "Courage",
+      "colour": "#B9792A"
+    },
+    "joy": {
+      "name": "Joy",
+      "colour": "#8CC07A"
+    },
+    "intuition": {
+      "name": "Intuition",
+      "colour": "#9CC3E6"
+    }
+  },
+  "products": [
+    {
+      "id": "star-rose-bracelet",
+      "name": "Star Rose Quartz Bracelet",
+      "short": "Star Rose Quartz",
+      "zh": "星光粉晶手链",
+      "collection": "bracelets",
+      "price": 480,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 1,
+      "signature": true,
+      "stone": "Star rose quartz",
+      "quality": "Clear, 6-ray star",
+      "intentions": [
+        "love"
+      ],
+      "description": "Hand-picked star rose quartz beads that show a soft six-ray star under direct light. Strung on durable elastic with a gold-plated spacer.",
+      "meaning": "The stone of unconditional love, traditionally kept close for self-love, compassion and emotional healing.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 0,
+              "short": "10 mm"
+            },
+            {
+              "id": "12",
+              "label": "12 mm",
+              "price": 100,
+              "short": "12 mm"
+            },
+            {
+              "id": "13",
+              "label": "13 mm",
+              "price": 200,
+              "short": "13 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "amethyst-bracelet",
+      "name": "Amethyst Bracelet",
+      "zh": "紫水晶手链",
+      "collection": "bracelets",
+      "price": 168,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 4,
+      "stone": "Amethyst",
+      "quality": "Deep purple",
+      "intentions": [
+        "calm",
+        "clarity"
+      ],
+      "description": "Even, deep violet amethyst beads with natural cloud inclusions.",
+      "meaning": "The stone of spiritual clarity, traditionally used for calm, restful sleep and a quieter mind.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 mm",
+              "price": 0,
+              "short": "8 mm"
+            },
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 40,
+              "short": "10 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "citrine-bracelet",
+      "name": "Citrine Bracelet",
+      "zh": "黄水晶手链",
+      "collection": "bracelets",
+      "price": 198,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 3,
+      "spotlight": true,
+      "stone": "Citrine",
+      "quality": "Honey gold",
+      "intentions": [
+        "abundance",
+        "joy"
+      ],
+      "description": "Warm honey-gold citrine with a single gold-plated accent bead.",
+      "meaning": "A November stone of gratitude and prosperity, traditionally linked with abundance and optimism.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 mm",
+              "price": 0,
+              "short": "8 mm"
+            },
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 60,
+              "short": "10 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rutile-bracelet",
+      "name": "Golden Rutilated Quartz Bracelet",
+      "short": "Golden Rutile",
+      "zh": "金发晶手链",
+      "collection": "bracelets",
+      "price": 388,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 5,
+      "stone": "Rutilated quartz",
+      "quality": "Fine gold needles",
+      "intentions": [
+        "abundance",
+        "courage"
+      ],
+      "description": "Clear quartz threaded with fine golden rutile needles. No two beads are alike.",
+      "meaning": "Traditionally worn for manifestation, confidence and drive.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 0,
+              "short": "10 mm"
+            },
+            {
+              "id": "12",
+              "label": "12 mm",
+              "price": 120,
+              "short": "12 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tourmaline-bracelet",
+      "name": "Rainbow Tourmaline Bracelet",
+      "short": "Rainbow Tourmaline",
+      "zh": "彩虹碧玺手链",
+      "collection": "bracelets",
+      "price": 458,
+      "image": "",
+      "soldOut": false,
+      "stone": "Tourmaline",
+      "quality": "Mixed hues",
+      "intentions": [
+        "joy"
+      ],
+      "description": "Pink, green, honey and blue tourmaline in one strand.",
+      "meaning": "Traditionally associated with joy, energy and emotional balance.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 mm",
+              "price": 0,
+              "short": "8 mm"
+            },
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 140,
+              "short": "10 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tiger-eye-bracelet",
+      "name": "Tiger's Eye Bracelet",
+      "zh": "虎眼石手链",
+      "collection": "bracelets",
+      "price": 128,
+      "image": "",
+      "soldOut": false,
+      "stone": "Tiger's eye",
+      "quality": "Strong chatoyancy",
+      "intentions": [
+        "courage",
+        "protection"
+      ],
+      "description": "Golden-brown tiger’s eye with a silky band of light that moves as you turn your wrist.",
+      "meaning": "The stone of courage, traditionally worn for focus, willpower and protection.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 mm",
+              "price": 0,
+              "short": "8 mm"
+            },
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 20,
+              "short": "10 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aquamarine-bracelet",
+      "name": "Aquamarine Bracelet",
+      "zh": "海蓝宝手链",
+      "collection": "bracelets",
+      "price": 298,
+      "image": "",
+      "soldOut": false,
+      "stone": "Aquamarine",
+      "quality": "Sea blue",
+      "intentions": [
+        "calm"
+      ],
+      "description": "Soft sea-blue aquamarine beads with a gentle glow.",
+      "meaning": "Traditionally linked with calm, courageous communication and emotional ease.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 mm",
+              "price": 0,
+              "short": "8 mm"
+            },
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 80,
+              "short": "10 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clear-quartz-bracelet",
+      "name": "Clear Quartz Bracelet",
+      "zh": "白水晶手链",
+      "collection": "bracelets",
+      "price": 138,
+      "image": "",
+      "soldOut": false,
+      "stone": "Clear quartz",
+      "quality": "Water clear",
+      "intentions": [
+        "clarity"
+      ],
+      "description": "Bright, water-clear quartz with a gold-plated accent bead.",
+      "meaning": "Known as the master healer, traditionally used to amplify intention and clear the mind.",
+      "groups": [
+        {
+          "id": "bead",
+          "label": "Bead size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "10",
+              "label": "10 mm",
+              "price": 0,
+              "short": "10 mm"
+            },
+            {
+              "id": "12",
+              "label": "12 mm",
+              "price": 30,
+              "short": "12 mm"
+            }
+          ]
+        },
+        {
+          "id": "wrist",
+          "label": "Wrist size",
+          "type": "one",
+          "default": "m",
+          "opts": [
+            {
+              "id": "s",
+              "label": "S",
+              "price": 0,
+              "note": "14–15 cm",
+              "short": "Wrist S"
+            },
+            {
+              "id": "m",
+              "label": "M",
+              "price": 0,
+              "note": "15.5–16.5 cm",
+              "short": "Wrist M"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "price": 0,
+              "note": "17–18 cm",
+              "short": "Wrist L"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            },
+            {
+              "id": "charm",
+              "label": "Gold-plated Qi charm",
+              "price": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "star-rose-pendant",
+      "name": "Star Rose Quartz Pendant",
+      "short": "Star Rose Pendant",
+      "zh": "星光粉晶吊坠",
+      "collection": "pendants",
+      "price": 328,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 2,
+      "stone": "Star rose quartz",
+      "quality": "Marquise cabochon",
+      "intentions": [
+        "love"
+      ],
+      "description": "A marquise-cut star rose quartz cabochon set in a gold-plated bezel.",
+      "meaning": "Worn close to the heart for focus, self-love and gentle reflection.",
+      "groups": [
+        {
+          "id": "chain",
+          "label": "Chain",
+          "type": "one",
+          "opts": [
+            {
+              "id": "gp",
+              "label": "18K gold-plated silver",
+              "price": 0,
+              "note": "Warm gold",
+              "short": "Gold-plated chain"
+            },
+            {
+              "id": "ss",
+              "label": "Sterling silver",
+              "price": 0,
+              "note": "Cool white",
+              "short": "Silver chain"
+            }
+          ]
+        },
+        {
+          "id": "len",
+          "label": "Length",
+          "type": "one",
+          "default": "45",
+          "opts": [
+            {
+              "id": "40",
+              "label": "40 cm",
+              "price": 0,
+              "note": "Choker",
+              "short": "40 cm"
+            },
+            {
+              "id": "45",
+              "label": "45 cm",
+              "price": 0,
+              "note": "Classic",
+              "short": "45 cm"
+            },
+            {
+              "id": "50",
+              "label": "50 cm",
+              "price": 0,
+              "note": "Long",
+              "short": "50 cm"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moonstone-pendant",
+      "name": "Moonstone Pendant",
+      "zh": "月光石吊坠",
+      "collection": "pendants",
+      "price": 268,
+      "image": "",
+      "soldOut": false,
+      "stone": "Moonstone",
+      "quality": "Blue flash",
+      "intentions": [
+        "calm",
+        "intuition"
+      ],
+      "description": "An oval moonstone with a blue flash that drifts across the surface.",
+      "meaning": "The stone of intuition, traditionally linked with new beginnings and emotional balance.",
+      "groups": [
+        {
+          "id": "chain",
+          "label": "Chain",
+          "type": "one",
+          "opts": [
+            {
+              "id": "gp",
+              "label": "18K gold-plated silver",
+              "price": 0,
+              "note": "Warm gold",
+              "short": "Gold-plated chain"
+            },
+            {
+              "id": "ss",
+              "label": "Sterling silver",
+              "price": 0,
+              "note": "Cool white",
+              "short": "Silver chain"
+            }
+          ]
+        },
+        {
+          "id": "len",
+          "label": "Length",
+          "type": "one",
+          "default": "45",
+          "opts": [
+            {
+              "id": "40",
+              "label": "40 cm",
+              "price": 0,
+              "note": "Choker",
+              "short": "40 cm"
+            },
+            {
+              "id": "45",
+              "label": "45 cm",
+              "price": 0,
+              "note": "Classic",
+              "short": "45 cm"
+            },
+            {
+              "id": "50",
+              "label": "50 cm",
+              "price": 0,
+              "note": "Long",
+              "short": "50 cm"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quartz-sphere",
+      "name": "Clear Quartz Sphere",
+      "zh": "白水晶球",
+      "collection": "decor",
+      "price": 420,
+      "image": "",
+      "soldOut": false,
+      "stone": "Clear quartz",
+      "quality": "Hand-polished",
+      "intentions": [
+        "clarity"
+      ],
+      "description": "A hand-polished quartz sphere with natural rainbow and cloud inclusions. Comes with a stand.",
+      "meaning": "Traditionally placed in a home or workspace to clear stagnant energy and bring focus.",
+      "groups": [
+        {
+          "id": "size",
+          "label": "Diameter",
+          "type": "one",
+          "opts": [
+            {
+              "id": "8",
+              "label": "8 cm",
+              "price": 0,
+              "short": "8 cm"
+            },
+            {
+              "id": "10",
+              "label": "10 cm",
+              "price": 260,
+              "short": "10 cm"
+            }
+          ]
+        },
+        {
+          "id": "stand",
+          "label": "Stand",
+          "type": "one",
+          "opts": [
+            {
+              "id": "wood",
+              "label": "Walnut stand",
+              "price": 0,
+              "short": "Walnut stand"
+            },
+            {
+              "id": "brass",
+              "label": "Brass ring",
+              "price": 18,
+              "short": "Brass ring"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "amethyst-cluster",
+      "name": "Amethyst Cluster",
+      "zh": "紫晶簇",
+      "collection": "decor",
+      "price": 260,
+      "image": "",
+      "soldOut": false,
+      "bestseller": 6,
+      "stone": "Amethyst",
+      "quality": "Uruguay-style deep",
+      "intentions": [
+        "calm"
+      ],
+      "description": "A natural cluster of deep purple points on its matrix base.",
+      "meaning": "Traditionally used to cleanse other crystals and calm a room.",
+      "groups": [
+        {
+          "id": "size",
+          "label": "Size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "m",
+              "label": "Medium",
+              "price": 0,
+              "note": "approx. 10 cm",
+              "short": "Medium"
+            },
+            {
+              "id": "l",
+              "label": "Large",
+              "price": 180,
+              "note": "approx. 15 cm",
+              "short": "Large"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pyrite-cluster",
+      "name": "Pyrite Cluster",
+      "zh": "黄铁矿",
+      "collection": "decor",
+      "price": 158,
+      "image": "",
+      "soldOut": false,
+      "spotlight": true,
+      "stone": "Pyrite",
+      "quality": "Cubic crystals",
+      "intentions": [
+        "abundance",
+        "protection"
+      ],
+      "description": "Brassy cubic pyrite crystals grown naturally on matrix.",
+      "meaning": "A November stone, traditionally kept on a desk or cash counter for prosperity and protection.",
+      "groups": [
+        {
+          "id": "size",
+          "label": "Size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "s",
+              "label": "Small",
+              "price": 0,
+              "note": "approx. 6 cm",
+              "short": "Small"
+            },
+            {
+              "id": "m",
+              "label": "Medium",
+              "price": 70,
+              "note": "approx. 9 cm",
+              "short": "Medium"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "selenite-plate",
+      "name": "Selenite Charging Plate",
+      "short": "Selenite Plate",
+      "zh": "透石膏净化板",
+      "collection": "decor",
+      "price": 68,
+      "image": "",
+      "soldOut": false,
+      "stone": "Selenite",
+      "quality": "Satin spar",
+      "intentions": [
+        "calm",
+        "clarity"
+      ],
+      "description": "A satin-white selenite plate for resting your bracelets and crystals overnight.",
+      "meaning": "Traditionally used to cleanse and recharge other stones. Keep it dry.",
+      "groups": [
+        {
+          "id": "size",
+          "label": "Size",
+          "type": "one",
+          "opts": [
+            {
+              "id": "s",
+              "label": "Small",
+              "price": 0,
+              "note": "15 × 8 cm",
+              "short": "Small"
+            },
+            {
+              "id": "l",
+              "label": "Large",
+              "price": 30,
+              "note": "20 × 10 cm",
+              "short": "Large"
+            }
+          ]
+        },
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prosperity-set",
+      "name": "Gratitude & Prosperity Set",
+      "short": "Prosperity Set",
+      "zh": "招财礼盒",
+      "collection": "sets",
+      "price": 138,
+      "image": "",
+      "soldOut": false,
+      "spotlight": true,
+      "stone": "Citrine, pyrite, aventurine",
+      "quality": "Tumbled",
+      "intentions": [
+        "abundance"
+      ],
+      "description": "November’s stones in one box: tumbled citrine, pyrite and green aventurine, with a meaning card.",
+      "meaning": "Three stones traditionally associated with gratitude, prosperity and new opportunities.",
+      "groups": [
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "self-love-set",
+      "name": "Self-Love Ritual Set",
+      "short": "Self-Love Set",
+      "zh": "自爱礼盒",
+      "collection": "sets",
+      "price": 168,
+      "image": "",
+      "soldOut": false,
+      "stone": "Rose quartz, amethyst",
+      "quality": "Heart & tumbled",
+      "intentions": [
+        "love",
+        "calm"
+      ],
+      "description": "A rose quartz heart, a tumbled rose quartz and an amethyst, boxed with a meaning card.",
+      "meaning": "Traditionally gifted for self-love, comfort and calm.",
+      "groups": [
+        {
+          "id": "add",
+          "label": "Finishing touches",
+          "type": "many",
+          "opts": [
+            {
+              "id": "moon",
+              "label": "Full-moon cleanse & charge",
+              "price": 0
+            },
+            {
+              "id": "box",
+              "label": "Gift box & handwritten card",
+              "price": 15
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
