@@ -11,7 +11,7 @@
   const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["decor", "Spheres & Décor"], ["sets", "Gift Sets"]];
   const KIND = { sale: "Sold", restock: "Stock in", adjust: "Adjusted" };
 
-  let ITEMS = [], MONTH = {}, FILTER = "all", Q = "", loaded = false;
+  let ITEMS = [], MONTH = {}, FILTER = "all", Q = "", loaded = false, COLS = [];
 
   async function api(path, opt = {}) {
     const r = await fetch(path, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...opt });
@@ -63,7 +63,7 @@
   async function load() {
     try {
       const d = await api("/api/admin/items");
-      ITEMS = d.items; MONTH = d.month || {}; loaded = true;
+      ITEMS = d.items; MONTH = d.month || {}; COLS = d.colours || []; loaded = true;
       $("#sSetup").hidden = true; $("#sList").hidden = false;
       render();
     } catch (e) {
@@ -102,6 +102,7 @@
         ${isNew ? field("eQty", "Stock now", i.stock, 'inputmode="numeric"') : ""}
         ${field("eSup", "Supplier", i.supplier)}
         ${field("eZh", "Chinese name", i.zh, 'placeholder="optional"')}
+        ${selectF("eColour", "Bead colour (Shop by colour)", [["", `Automatic · ${(COLS.find((c) => c.id === (i.auto_colour || "")) || { name: "set from stone" }).name}`], ...COLS.map((c) => [c.id, c.name])], i.colour || "")}
       </div>
       <p class="margin" id="eMargin"></p>
       <label class="f full"><span>Description (shown in the shop)</span><textarea id="eDesc" rows="2" placeholder="Leave empty for an automatic line">${esc(i.description)}</textarea></label>
@@ -122,7 +123,7 @@
       const body = {
         id: $("#eId").value, stone: $("#eStone").value, type: $("#eType").value, variant: $("#eVar").value, size_mm: $("#eSize").value,
         collection: $("#eCol").value, cost: $("#eCost").value, price: $("#ePrice").value, supplier: $("#eSup").value, zh: $("#eZh").value,
-        description: $("#eDesc").value, meaning: $("#eMean").value, published: $("#ePub").checked, featured: $("#eFeat").checked ? (i.featured || 1) : 0,
+        description: $("#eDesc").value, meaning: $("#eMean").value, colour: $("#eColour").value, published: $("#ePub").checked, featured: $("#eFeat").checked ? (i.featured || 1) : 0,
         intentions: (() => { try { return JSON.parse(i.intentions || "[]"); } catch { return []; } })(), isNew, stock: isNew ? $("#eQty").value : undefined,
       };
       $("#edSave").disabled = true;

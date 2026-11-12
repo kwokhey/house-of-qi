@@ -210,3 +210,7 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .pick small{font-size:12px;color:var(--ink-3);white-space:nowrap}
 .muted{color:var(--ink-3);font-size:13px}
 .note.promo{background:#FBF4EA;color:#7A5426}
+.m-coll{grid-template-columns:52px minmax(0,1fr) auto}
+.m-cov{width:52px;height:52px;border-radius:6px;overflow:hidden;background:var(--card)}
+.m-cov img{width:100%;height:100%;object-fit:cover;display:block}
+.m-main b small.zh{font-size:12px;color:var(--ink-3);font-weight:400}

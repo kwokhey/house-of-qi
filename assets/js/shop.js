@@ -20,6 +20,11 @@ async function loadCatalog(){
   Object.values(FAM).forEach(f=>{f.sort((a,b)=>(a.size||0)-(b.size||0)||a.price-b.price);const n={},k={};f.forEach(m=>{m.optLabel=m.details||m.grade||'Standard';n[m.optLabel]=(n[m.optLabel]||0)+1});
     f.forEach(m=>{if(n[m.optLabel]>1){k[m.optLabel]=(k[m.optLabel]||0)+1;m.optLabel+=` · No.${k[m.optLabel]}`}})})}
 let FAM={},SZSEL='';
+/* colour families + curated collections (set on the order page) */
+const colSw=c=>c.hex.startsWith('#')?`background:${c.hex}`:`background:${c.hex}`;
+const byIds=ids=>ids.map(id=>BY[id]).filter(Boolean);
+function showFiltered(title,sub,items){$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;
+  const fams=famList(items);showResults(title,`${fams.length} design${fams.length===1?'':'s'}${sub?` · ${sub}`:''}`,fams)}
 /** The card shown in lists for a family of pieces */
 function famCard(m){const f=FAM[m.fam]||[m];if(f.length<2)return m;const rep=f.find(x=>x.image)||m;const min=f.reduce((a,b)=>b.price<a.price?b:a);
   const mm=[...new Set(f.map(x=>x.size).filter(Boolean))].sort((a,b)=>a-b);
@@ -93,6 +98,12 @@ function renderHome(){
     return`<div class="sizes" role="group" aria-label="Bead size"><span class="sizes-lab">Bead size</span><div class="sizes-row"><button class="chip-s on" data-act="size" data-sec="${id}" data-mm="" aria-pressed="true">All</button>${ks.map(k=>`<button class="chip-s" data-act="size" data-sec="${id}" data-mm="${k}" aria-pressed="false">${k} mm<small>${n[k]}</small></button>`).join('')}</div><p class="sizes-tip">Smaller beads (4–7 mm) sit delicately; 8–10 mm is the everyday size; 12 mm and up makes a statement.</p></div>`};
   const intents=!usedInts.length?'':`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${usedInts.map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
+  const cols=(CFG.curated||[]).filter(c=>byIds(c.ids).length);
+  const collSec=!cols.length?'':`<section class="sec disc" id="sec-colls"><div class="gx"><div class="sec-head"><h3 class="disp">Our <em>collections</em></h3><span class="count">${cols.length}</span></div></div>
+    <div class="rail gx coll-rail">${cols.map(c=>{const n=byIds(c.ids).length;return`<button class="coll" data-act="coll" data-id="${c.id}"><span class="coll-img"><img src="${img(c.cover||c.ids[0],W?'tall':'tall')}" alt="" decoding="async" loading="lazy"></span><span class="coll-txt"><b>${esc(c.name)}</b>${c.zh?`<span class="zh">${esc(c.zh)}</span>`:''}${c.blurb?`<small>${esc(c.blurb)}</small>`:''}<em>${n} piece${n===1?'':'s'}</em></span></button>`}).join('')}<span class="rail-end"></span></div></section>`;
+  const colours=(CFG.colours||[]);
+  const colSec=colours.length<2?'':`<section class="sec disc gx" id="sec-colour"><div class="sec-head"><h3 class="disp">Shop by <em>colour</em></h3></div>
+    <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const raw=layout==='bestsellers'?best:of(id);if(!raw.length)return'';SPY.push(id);const items=layout==='bestsellers'?raw:famList(raw);const few=items.length<=2;
@@ -109,14 +120,27 @@ function renderHome(){
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>
+  ${collSec}${colSec}
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
     <nav class="foot-links"><a href="/policies.html">Shipping &amp; returns</a><a href="/policies.html#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
     <p>Prices in Malaysian Ringgit. Natural stones vary slightly in colour and pattern.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
-  document.querySelectorAll('#dnav .tab').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
+  document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
+  renderMega();
   setTab(SPY[0],false);
 }
+
+/* desktop "Shop" menu: by colour, category, collection, intention, bead size */
+function renderMega(){const m=$('#mega');if(!m)return;const cols=(CFG.curated||[]).filter(c=>byIds(c.ids).length);
+  const sizes=[...new Set(CAT.filter(x=>x.cat==='bracelets'&&x.size).map(x=>x.size))].sort((a,b)=>a-b);
+  const usedInts=Object.entries(INTENTS).filter(([k])=>CAT.some(x=>x.ints.includes(k)));
+  const col=(h,body)=>body?`<div class="mg-col"><h4>${h}</h4>${body}</div>`:'';
+  m.innerHTML=`<div class="mg-in">${col('By colour',(CFG.colours||[]).map(c=>`<button data-act="colour" data-k="${c.id}"><i style="${colSw(c)}"></i>${esc(c.name)}<small>${c.n}</small></button>`).join(''))}
+    ${col('By category',TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button data-act="tab" data-cat="${id}">${esc(n)}<small>${CAT.filter(x=>x.cat===id).length}</small></button>`).join(''))}
+    ${col('By collection',cols.map(c=>`<button data-act="coll" data-id="${c.id}">${esc(c.name)}<small>${byIds(c.ids).length}</small></button>`).join(''))}
+    ${col('By intention',usedInts.map(([k,[n,c]])=>`<button data-act="intent" data-k="${k}"><i class="dot" style="background:${c}"></i>${esc(n)}</button>`).join(''))}
+    ${col('Bracelets by bead size',sizes.length?`<div class="mg-sizes">${sizes.map(z=>`<button data-act="sizeGo" data-mm="${z}">${z} mm</button>`).join('')}</div>`:'')}</div>`}
 let spyLock=0;
 let SPY=[];
 function hdrH(){return $('#topbar').offsetHeight+($('.tabs')?.offsetHeight||0)}
@@ -324,9 +348,13 @@ function closeSearch(){$('#topbar').classList.remove('searching');$('#home').cla
 const ACT={
   top(){$('#home').scrollTo({top:0,behavior:'smooth'})},
   search:openSearch,searchClose:closeSearch,
-  intent(el){const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
+  mega(el){const m=$('#mega'),open=m.hidden;m.hidden=!open;el.setAttribute('aria-expanded',open);el.classList.toggle('open',open)},
+  colour(el){closeMega();const c=(CFG.colours||[]).find(x=>x.id===el.dataset.k);if(!c)return;$('#q').value=c.name;showFiltered(`<em>${esc(c.name)}</em> beads`,'',CAT.filter(m=>m.colour===c.id))},
+  coll(el){closeMega();const c=(CFG.curated||[]).find(x=>String(x.id)===el.dataset.id);if(!c)return;$('#q').value=c.name;showFiltered(esc(c.name)+(c.zh?` <span class="zh">${esc(c.zh)}</span>`:''),c.blurb?esc(c.blurb):'',byIds(c.ids))},
+  sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
+  intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
     const items=CAT.filter(m=>m.ints.includes(k));showResults(`For <em>${esc(INTENTS[k][0].toLowerCase())}</em>`,`${items.length} piece${items.length===1?'':'s'}`,items)},
-  tab(el){const id=el.dataset.cat,sec=$('#sec-'+id);if(!sec)return;setTab(id);spyLock=Date.now()+800;$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'})},
+  tab(el){closeMega();if($('#home').classList.contains('is-search'))closeSearch();const id=el.dataset.cat,sec=$('#sec-'+id);if(!sec)return;setTab(id);spyLock=Date.now()+800;$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'})},
   bag(){if($('#sheet').classList.contains('open'))closeDetail();renderBag();go('bag')},
   back,close:closeDetail,dimClose(){if(stack[stack.length-1]==='bag')back()},
   opt(el){DR.sel[el.dataset.g]=el.dataset.o;vib(6);updateDetail(false)},
@@ -357,6 +385,9 @@ const ACT={
 };
 document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(o&&!o.closest('[hidden]')){openDetail(o.dataset.open);return}
   const a=e.target.closest('[data-act]');if(a&&ACT[a.dataset.act]&&!a.disabled)ACT[a.dataset.act](a,e)});
+function closeMega(){const m=$('#mega');if(m&&!m.hidden){m.hidden=true;const b=$('.mg-btn');if(b){b.setAttribute('aria-expanded','false');b.classList.remove('open')}}}
+document.addEventListener('click',e=>{if(!e.target.closest('#mega')&&!e.target.closest('.mg-btn'))closeMega()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMega()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#sheet').classList.contains('open'))closeDetail();else if(stack.length>1)back()}});
 WIDE.addEventListener('change',()=>{if(!CAT.length)return;const h=$('#home'),y=h.scrollTop;renderHome();h.scrollTop=y;spy()});
 window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelector('.tab.on')?.dataset.cat||TABS[0][0],false)});
@@ -364,7 +395,8 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
 /* boot */
 (async()=>{
   try{await loadCatalog()}catch(e){$('#homeBody').innerHTML='<p class="empty-q gx">The shop is unavailable right now. Please refresh in a moment.</p>';return}
-  $('#dnav').innerHTML=TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
+  $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
+  $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
   const q=new URLSearchParams(location.search),clean=()=>{try{history.replaceState(null,'',location.pathname)}catch(e){}};
   if(q.get('session_id')){const id=q.get('session_id');clean();showConfirmation(id)}

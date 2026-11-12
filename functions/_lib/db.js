@@ -9,6 +9,7 @@
  *   coupons    discount codes customers type at checkout
  *   sales      automatic % off for the whole shop, a section, stones or single pieces
  *   coupon_uses one row per paid website order that used a code
+ *   collections curated groups shown in the shop (e.g. Rare Finds), picked by section, stone or piece
  */
 
 const SCHEMA = [
@@ -91,13 +92,31 @@ const SCHEMA = [
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS collections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    zh TEXT NOT NULL DEFAULT '',
+    blurb TEXT NOT NULL DEFAULT '',
+    scope TEXT NOT NULL DEFAULT 'stones',
+    targets TEXT NOT NULL DEFAULT '[]',
+    max_price REAL NOT NULL DEFAULT 0,
+    cover TEXT NOT NULL DEFAULT '',
+    sort INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
 ];
+// columns added after the first release (ignored if they already exist)
+const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`];
 
 let ready = null;
 export function hasDB(env) { return !!(env && env.DB && typeof env.DB.prepare === "function"); }
 export async function db(env) {
   if (!hasDB(env)) throw new Error("no-db");
-  if (!ready) ready = env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s))).catch((e) => { ready = null; throw e; });
+  if (!ready) ready = env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s)))
+    .then(async () => { for (const sql of ADD_COLUMNS) { try { await env.DB.prepare(sql).run(); } catch { /* already there */ } } })
+    .catch((e) => { ready = null; throw e; });
   await ready;
   return env.DB;
 }

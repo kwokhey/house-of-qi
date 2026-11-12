@@ -4,7 +4,8 @@
  *   POST   /api/admin/marketing  { type: "coupon", code, kind, value, min_spend, starts, ends, max_uses, exclude_sale, active, note }
  *                                { type: "sale", id?, name, percent, scope, targets, starts, ends, active }
  *                                { type: "announce", text, link, active, starts, ends }
- *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3
+ *                                { type: "collection", id?, name, zh, blurb, scope, targets, max_price, cover, sort, active }
+ *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3 | ?type=collection&id=2
  * Dates are "YYYY-MM-DD" in Malaysia time; a sale/code runs from the start of the first day to the end of the last.
  */
 import { isAdmin } from "../../_lib/auth.js";
@@ -34,10 +35,12 @@ export async function onRequestGet({ request, env }) {
     FROM coupons c LEFT JOIN coupon_uses u ON u.code = c.code GROUP BY c.code ORDER BY c.active DESC, c.created_at DESC`).all();
   const { results: sales } = await D.prepare("SELECT * FROM sales ORDER BY active DESC, created_at DESC").all();
   const { results: stones } = await D.prepare("SELECT stone, COUNT(*) AS n FROM items WHERE published = 1 GROUP BY stone ORDER BY stone").all();
-  const { results: items } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, stock, collection FROM items WHERE published = 1 ORDER BY sort, id").all();
+  const { results: items } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, stock, collection, image_v FROM items WHERE published = 1 AND stock > 0 ORDER BY sort, id").all();
+  const { results: collections } = await D.prepare("SELECT * FROM collections ORDER BY sort, id").all();
   let announce = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
-  return json({ coupons, sales: sales.map((s) => ({ ...s, targets: JSON.parse(s.targets || "[]") })), stones, items, announce, now: Date.now() });
+  const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]") });
+  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, now: Date.now() });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -90,6 +93,19 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true });
   }
 
+  if (b.type === "collection") {
+    const name = str(b.name, 50);
+    if (!name) return json({ error: "Give the collection a name, e.g. Rare Finds." }, 400);
+    const scope = ["all", "collection", "stones", "items"].includes(b.scope) ? b.scope : "stones";
+    const targets = scope === "all" ? [] : (Array.isArray(b.targets) ? b.targets : []).map((x) => str(x, 80)).filter(Boolean).slice(0, 300);
+    if (scope !== "all" && !targets.length) return json({ error: "Choose which stones or pieces are in this collection." }, 400);
+    const f = [name, str(b.zh, 30), str(b.blurb, 160), scope, JSON.stringify(targets), Math.max(0, num(b.max_price)), str(b.cover, 40), Math.floor(num(b.sort)), b.active === false ? 0 : 1];
+    const id = Math.floor(num(b.id));
+    if (id) await D.prepare("UPDATE collections SET name=?, zh=?, blurb=?, scope=?, targets=?, max_price=?, cover=?, sort=?, active=?, updated_at=? WHERE id=?").bind(...f, now, id).run();
+    else await D.prepare("INSERT INTO collections (name, zh, blurb, scope, targets, max_price, cover, sort, active, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)").bind(...f, now, now).run();
+    return json({ ok: true });
+  }
+
   if (b.type === "announce") {
     const a = { text: str(b.text, 140), link: str(b.link, 300), active: !!b.active && !!str(b.text), starts_at: dayStart(b.starts), ends_at: dayEnd(b.ends) };
     await setSetting(D, "announce", JSON.stringify(a));
@@ -107,6 +123,10 @@ export async function onRequestDelete({ request, env }) {
     const used = await D.prepare("SELECT COUNT(*) AS n FROM coupon_uses WHERE code = ?").bind(code).first();
     if (used.n) return json({ error: `${code} has been used on ${used.n} order${used.n === 1 ? "" : "s"}, so it's kept for your records. Switch it off instead.` }, 409);
     await D.prepare("DELETE FROM coupons WHERE code = ?").bind(code).run();
+    return json({ ok: true });
+  }
+  if (q.get("type") === "collection") {
+    await D.prepare("DELETE FROM collections WHERE id = ?").bind(Math.floor(num(q.get("id")))).run();
     return json({ ok: true });
   }
   if (q.get("type") === "sale") {

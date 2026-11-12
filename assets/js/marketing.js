@@ -62,6 +62,7 @@
       <div><span>Discount given</span><b>${RM(given)}</b><small>through codes</small></div>`;
     renderAnn();
     $("#mCodes").innerHTML = D.coupons.length ? D.coupons.map(codeRow).join("") : `<p class="m-empty">No codes yet. Try one like <b>WELCOME10</b> for 10% off a first order.</p>`;
+    $("#mColls").innerHTML = (D.collections || []).length ? D.collections.map(collRow).join("") : `<p class="m-empty">No collections yet. They appear as picture tiles on the shop's home page.</p>`;
     $("#mSales").innerHTML = D.sales.length ? D.sales.map(saleRow).join("") : `<p class="m-empty">No sales yet. A sale lowers prices automatically between the dates you choose.</p>`;
   }
 
@@ -97,6 +98,82 @@
     return `<button class="m-row" data-sale="${s.id}">
       <span class="m-main"><b>${esc(s.name)}</b><small>${+s.percent}% off · ${esc(scopeText(s))} · ${dates(s)}</small></span>
       <span class="m-num"><em class="st ${st[0]}">${st[1]}</em><small>${n} piece${n === 1 ? "" : "s"}</small></span></button>`;
+  }
+
+  const inColl = (c) => covered(c).filter((i) => !c.max_price || i.price <= c.max_price);
+  const thumbOf = (i) => (i && i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : i && typeof ART !== "undefined" ? ART.get(i.id, "sq", { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }) : "");
+  function collRow(c) {
+    const items = inColl(c), cover = items.find((i) => i.id === c.cover) || items.find((i) => i.image_v) || items[0];
+    return `<button class="m-row m-coll" data-coll="${c.id}">
+      <span class="m-cov">${cover ? `<img src="${thumbOf(cover)}" alt="">` : ""}</span>
+      <span class="m-main"><b>${esc(c.name)}${c.zh ? ` <small class="zh">${esc(c.zh)}</small>` : ""}</b><small>${esc(scopeText(c))}${c.max_price ? ` · up to ${RM(c.max_price)}` : ""}${c.blurb ? ` · ${esc(c.blurb)}` : ""}</small></span>
+      <span class="m-num"><em class="st ${c.active ? "live" : "off"}">${c.active ? "Shown" : "Hidden"}</em><small>${items.length} piece${items.length === 1 ? "" : "s"}</small></span></button>`;
+  }
+
+  /* ---------- collection editor ---------- */
+  function openColl(c) {
+    const isNew = !c;
+    c = c || { id: 0, name: "", zh: "", blurb: "", scope: "stones", targets: [], max_price: 0, cover: "", sort: (D.collections || []).length + 1, active: 1 };
+    let targets = new Set(c.targets), q = "";
+    const d = $("#mEdit");
+    d.innerHTML = `<form class="ed" id="kForm">
+      <div class="ed-h"><b>${isNew ? "New collection" : esc(c.name)}</b><button type="button" class="link" data-x>Close</button></div>
+      <div class="grid-f">
+        <label class="f"><span>Name</span><input id="kName" maxlength="50" value="${esc(c.name)}" placeholder="e.g. Rare Finds" required></label>
+        <label class="f"><span>Chinese name (optional)</span><input id="kZh" maxlength="30" value="${esc(c.zh)}" placeholder="e.g. 珍稀"></label>
+      </div>
+      <label class="f"><span>Short line (optional)</span><input id="kBlurb" maxlength="160" value="${esc(c.blurb)}" placeholder="e.g. Stones you rarely see, one piece each"></label>
+      <label class="f"><span>Pieces in this collection</span><select id="kScope">${SCOPES.map(([v, l]) => `<option value="${v}"${c.scope === v ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div id="kPick"></div>
+      <div class="grid-f">
+        <label class="f"><span>Only pieces up to (RM, optional)</span><input id="kMax" inputmode="decimal" value="${+c.max_price || ""}" placeholder="Any price"></label>
+        <label class="f"><span>Order on the page</span><input id="kSort" inputmode="numeric" value="${+c.sort || 0}"></label>
+      </div>
+      <label class="f"><span>Cover picture</span><select id="kCover"></select></label>
+      <div class="toggles"><label><input type="checkbox" id="kOn"${c.active ? " checked" : ""}> Show in the shop</label></div>
+      <p class="m-sum" id="kSum"></p>
+      <p class="err" id="kErr" hidden></p>
+      <div class="ed-f"><button class="btn" type="submit">${isNew ? "Create collection" : "Save changes"}</button>${isNew ? "" : '<button type="button" class="link danger" id="kDel">Delete collection</button>'}</div>
+    </form>`;
+    const scope = () => $("#kScope").value;
+    const rule = () => ({ scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 });
+    const sum = () => {
+      const items = inColl(rule());
+      $("#kSum").textContent = `${items.length} piece${items.length === 1 ? "" : "s"} in stock will show in this collection.`;
+      const cur = $("#kCover").value || c.cover;
+      $("#kCover").innerHTML = `<option value="">Automatic (first piece with a photo)</option>` + items.map((i) => `<option value="${esc(i.id)}"${i.id === cur ? " selected" : ""}>${esc(`${i.stone} ${i.type}${i.size_mm ? ` · ${+i.size_mm} mm` : ""}${i.variant ? ` · ${i.variant}` : ""} (${i.id})${i.image_v ? " · photo" : ""}`)}</option>`).join("");
+    };
+    const pick = () => {
+      const sc = scope();
+      if (sc === "all") { $("#kPick").innerHTML = ""; return sum(); }
+      let opts;
+      if (sc === "collection") opts = COLLECTIONS.map(([v, l]) => [v, l, D.items.filter((i) => collectionOf(i) === v).length]).filter((o) => o[2]);
+      else if (sc === "stones") opts = D.stones.map((x) => [x.stone, x.stone, x.n]);
+      else opts = D.items.filter((i) => !q || `${i.id} ${i.stone} ${i.variant} ${i.size_mm}`.toLowerCase().includes(q)).map((i) => [i.id, `${i.stone} ${i.type}${i.size_mm ? ` · ${+i.size_mm} mm` : ""}${i.variant ? ` · ${i.variant}` : ""}`, `${i.id} · ${RM(i.price)}`]);
+      $("#kPick").innerHTML = `${sc === "items" ? `<input type="search" id="kQ" placeholder="Search ID, stone, size…" value="${esc(q)}">` : ""}
+        <div class="pick-h"><small>${targets.size} chosen</small><span><button type="button" class="link" data-all>Select all${sc === "items" && q ? " shown" : ""}</button> · <button type="button" class="link" data-none>Clear</button></span></div>
+        <div class="pick">${opts.map(([v, l, n]) => `<label><input type="checkbox" value="${esc(v)}"${targets.has(v) ? " checked" : ""}><span>${esc(l)}</span><small>${esc(n)}</small></label>`).join("")}</div>`;
+      $("#kPick").querySelectorAll(".pick input").forEach((x) => (x.onchange = () => { x.checked ? targets.add(x.value) : targets.delete(x.value); $("#kPick .pick-h small").textContent = `${targets.size} chosen`; sum(); }));
+      $("#kPick [data-all]").onclick = () => { opts.forEach(([v]) => targets.add(v)); pick(); };
+      $("#kPick [data-none]").onclick = () => { targets.clear(); pick(); };
+      if ($("#kQ")) $("#kQ").oninput = (e) => { q = e.target.value.toLowerCase(); pick(); $("#kQ").focus(); $("#kQ").setSelectionRange(q.length, q.length); };
+      sum();
+    };
+    $("#kScope").onchange = () => { targets.clear(); q = ""; pick(); };
+    $("#kMax").oninput = sum;
+    pick();
+    d.querySelector("[data-x]").onclick = () => d.close();
+    $("#kForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const body = { type: "collection", id: c.id, name: $("#kName").value, zh: $("#kZh").value, blurb: $("#kBlurb").value, ...rule(), cover: $("#kCover").value, sort: $("#kSort").value, active: $("#kOn").checked };
+      try { await api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) }); toast(isNew ? "Collection created. The shop updates within a minute." : "Saved"); d.close(); load(); }
+      catch (x) { $("#kErr").textContent = x.message; $("#kErr").hidden = false; }
+    };
+    if ($("#kDel")) $("#kDel").onclick = async () => {
+      if ($("#kDel").dataset.sure !== "1") { $("#kDel").dataset.sure = "1"; $("#kDel").textContent = "Tap again to delete"; return; }
+      try { await api(`/api/admin/marketing?type=collection&id=${c.id}`, { method: "DELETE" }); toast("Collection deleted"); d.close(); load(); } catch (x) { toast(x.message); }
+    };
+    d.showModal();
   }
 
   /* ---------- code editor ---------- */
@@ -210,9 +287,11 @@
   document.addEventListener("click", (e) => {
     const c = e.target.closest("[data-code]"); if (c) return openCode(D.coupons.find((x) => x.code === c.dataset.code));
     const s = e.target.closest("[data-sale]"); if (s) return openSale(D.sales.find((x) => String(x.id) === s.dataset.sale));
+    const k = e.target.closest("[data-coll]"); if (k) return openColl(D.collections.find((x) => String(x.id) === k.dataset.coll));
   });
   $("#mNewCode").onclick = () => openCode(null);
   $("#mNewSale").onclick = () => openSale(null);
+  $("#mNewColl").onclick = () => openColl(null);
   $("#mRefresh").onclick = load;
   window.Marketing = { load };
 })();

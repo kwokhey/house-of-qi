@@ -4,7 +4,8 @@
  * If the database is not connected yet, the sample products in catalog.json are used.
  */
 import { db, hasDB, itemName, itemDetails } from "./db.js";
-import { applySales, liveSales, shopPromo } from "./promo.js";
+import { applySales, liveSales, shopPromo, saleCovers } from "./promo.js";
+import { COLOURS, colourOf } from "./colours.js";
 
 export async function loadSettings(env, origin) {
   const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
@@ -38,6 +39,7 @@ export function rowToProduct(r, settings) {
     description: r.description || defaultDescription(r, details),
     meaning: r.meaning || "",
     size: r.size_mm ? +r.size_mm : null,
+    colour: colourOf(r),
     art: { stone: r.stone, variant: r.variant, type: r.type, size: r.size_mm || 8 },
     groups: settings.addons ? [settings.addons] : [],
   };
@@ -74,5 +76,17 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
       }
     : settings.hero;
   const promo = await shopPromo(env);
-  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes };
+  // colour families in use, in palette order
+  const colours = COLOURS.map(([id, name, hex]) => ({ id, name, hex, n: products.filter((p) => p.colour === id).length })).filter((c) => c.n);
+  // curated collections (Marketing tab) with the pieces they hold right now
+  const { results: cols } = await D.prepare("SELECT * FROM collections WHERE active = 1 ORDER BY sort, id").all();
+  const collections = cols.map((c) => {
+    const rule = { scope: c.scope, targets: safeArr(c.targets) };
+    const ids = products.filter((p) => saleCovers(rule, p) && (!c.max_price || p.price <= c.max_price)).map((p) => p.id);
+    const cover = ids.includes(c.cover) ? c.cover : ids.find((id) => products.find((p) => p.id === id).image) || ids[0];
+    return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, ids };
+  }).filter((c) => c.ids.length);
+  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
 }
+
+function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }

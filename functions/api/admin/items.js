@@ -10,6 +10,7 @@ import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { json } from "../../_lib/stripe.js";
+import { COLOURS, autoColour, isColour } from "../../_lib/colours.js";
 
 const ID_RE = /^[A-Z0-9][A-Z0-9-]{0,39}$/;
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -34,7 +35,7 @@ export async function onRequestGet({ request, env }) {
   const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
   const m = await D.prepare(`SELECT COALESCE(-SUM(qty),0) AS pcs, COALESCE(SUM(-qty*COALESCE(unit_price,0)),0) AS revenue,
       COALESCE(SUM(-qty*(COALESCE(unit_price,0)-COALESCE(unit_cost,0))),0) AS profit FROM movements WHERE kind='sale' AND created_at >= ?`).bind(month.getTime()).first();
-  return json({ items: results, month: m });
+  return json({ items: results.map((r) => ({ ...r, auto_colour: autoColour(r) })), month: m, colours: COLOURS.map(([id, name, hex]) => ({ id, name, hex })) });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -55,6 +56,7 @@ export async function onRequestPost({ request, env }) {
     published: b.published ? 1 : 0, featured: Math.max(0, Math.floor(num(b.featured))),
     zh: str(b.zh, 80), description: str(b.description, 1200), meaning: str(b.meaning, 1200),
     intentions: JSON.stringify(Array.isArray(b.intentions) ? b.intentions.map((x) => str(x, 30)).slice(0, 8) : []),
+    colour: isColour(b.colour) ? b.colour : "",
   };
   const exists = await D.prepare("SELECT id FROM items WHERE id = ?").bind(id).first();
   if (b.isNew && exists) return json({ error: `${id} already exists. Use a different item ID.` }, 409);
@@ -62,14 +64,14 @@ export async function onRequestPost({ request, env }) {
   if (!exists) {
     const qty = Math.max(0, Math.floor(num(b.stock)));
     await D.batch([
-      D.prepare(`INSERT INTO items (id, stone, type, variant, size_mm, supplier, collection, cost, price, stock_in, stock, published, featured, zh, description, meaning, intentions, sort, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort),0)+1 FROM items), ?, ?)`)
-        .bind(id, f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, qty, qty, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, now, now),
+      D.prepare(`INSERT INTO items (id, stone, type, variant, size_mm, supplier, collection, cost, price, stock_in, stock, published, featured, zh, description, meaning, intentions, colour, sort, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort),0)+1 FROM items), ?, ?)`)
+        .bind(id, f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, qty, qty, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, now, now),
       ...(qty ? [D.prepare("INSERT INTO movements (item_id, kind, qty, unit_cost, channel, note, created_at) VALUES (?, 'restock', ?, ?, '', 'Opening stock', ?)").bind(id, qty, f.cost, now)] : []),
     ]);
   } else {
-    await D.prepare(`UPDATE items SET stone=?, type=?, variant=?, size_mm=?, supplier=?, collection=?, cost=?, price=?, published=?, featured=?, zh=?, description=?, meaning=?, intentions=?, updated_at=? WHERE id=?`)
-      .bind(f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, now, id).run();
+    await D.prepare(`UPDATE items SET stone=?, type=?, variant=?, size_mm=?, supplier=?, collection=?, cost=?, price=?, published=?, featured=?, zh=?, description=?, meaning=?, intentions=?, colour=?, updated_at=? WHERE id=?`)
+      .bind(f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, now, id).run();
   }
   const item = await D.prepare("SELECT * FROM items WHERE id = ?").bind(id).first();
   return json({ ok: true, item });
