@@ -37,7 +37,7 @@ export function priceLine(catalog, raw) {
     }
   }
 
-  const note = typeof raw.note === "string" ? raw.note.trim().slice(0, 140) : "";
+  const note = typeof raw.note === "string" ? raw.note.trim().slice(0, 300) : "";
   return { product, qty, unit: round2(unit), chosen, note };
 }
 
