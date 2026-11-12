@@ -4,7 +4,7 @@ Crystal jewellery shop for **House of Qi** (Soleil Trinity Infinite Resources Sd
 
 - Hosting: **Cloudflare Pages** (free), one link for phone and desktop
 - Payments: **Stripe Checkout** (cards, FPX and any other methods switched on in Stripe)
-- No database and no build step. Products live in one file: `data/catalog.json`
+- No build step. Products and stock live in a Cloudflare D1 database, managed from the order page (`/admin` → Stock). Shop settings (shipping, homepage sections) live in `data/catalog.json`
 
 ```
 index.html               the shop (one page)
