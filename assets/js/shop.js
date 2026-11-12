@@ -5,17 +5,23 @@
    ===================================================================== */
 let CFG={},CAT=[],BY={},TABS=[],INTENTS={},SHIP={},FREE_AT=300;
 async function loadCatalog(){
-  const r=await fetch('/data/catalog.json',{cache:'no-cache'});if(!r.ok)throw new Error('catalog');const d=await r.json();
+  let r=await fetch('/api/catalog',{cache:'no-cache'}).catch(()=>null);
+  if(!r||!r.ok)r=await fetch('/data/catalog.json',{cache:'no-cache'});
+  if(!r.ok)throw new Error('catalog');const d=await r.json();
   CFG=d;FREE_AT=d.freeShippingFrom;
   SHIP=Object.fromEntries(Object.entries(d.shipping).map(([k,s])=>[k,{...s,sub:s.note,eta:s.days?`${s.days[0]}–${s.days[1]} working days`:'By appointment'}]));
   TABS=d.collections.map(c=>[c.id,c.name,c.zh,c.layout]);
   INTENTS=Object.fromEntries(Object.entries(d.intentions).map(([k,v])=>[k,[v.name,v.colour]]));
-  CAT=d.products.map(p=>({...p,cat:p.collection,best:p.bestseller||0,sig:p.signature,nov:p.spotlight,desc:p.description||'',ints:p.intentions||[],grade:p.quality||'',meaning:p.meaning||'',zh:p.zh||'',stone:p.stone||'',
+  CAT=d.products.map(p=>({...p,details:p.details||'',cat:p.collection,best:p.bestseller||0,sig:p.signature,nov:p.spotlight,desc:p.description||'',ints:p.intentions||[],grade:p.quality||'',meaning:p.meaning||'',zh:p.zh||'',stone:p.stone||'',
     groups:(p.groups||[]).map(g=>({...g,def:g.default,opts:g.opts.map(o=>[o.id,o.label,o.price||0,o.note,o.short])}))}));
   BY=Object.fromEntries(CAT.map(m=>[m.id,m]))}
 /* Real photos: set "image" on a product in catalog.json (e.g. "assets/img/products/star-rose-12mm.jpg").
    Products without a photo use the drawn artwork from art.js. */
-const img=(id,v='sq')=>(BY[id]&&BY[id].image)?'/'+BY[id].image.replace(/^\//,''):ART.get(id,v);
+const img=(id,v='sq')=>(BY[id]&&BY[id].image)?'/'+BY[id].image.replace(/^\//,''):ART.get(id,v,BY[id]&&BY[id].art);
+const maxQty=m=>typeof m.stock==='number'?Math.min(20,m.stock):20;
+const inBag=id=>S.cart.filter(l=>l.id===id).reduce((t,l)=>t+l.qty,0);
+const stockTag=m=>typeof m.stock!=='number'?'':m.stock===1?'One of a kind':m.stock<=3?`Only ${m.stock} left`:'';
+const subLine=m=>{const t=[m.details,m.zh?`<span class="zh">${m.zh}</span>`:''].filter(Boolean).join(' · ');return t?`<span class="ri-zh">${t}</span>`:''};
 
 /* =====================================================================
    STATE  (the bag is kept in this browser only)
@@ -51,25 +57,27 @@ const IC={
    SHOP
    ===================================================================== */
 const priceHTML=m=>`${hasFrom(m)?'<span class="from">From</span>':''}<span class="price">${RM(m.price)}</span>`;
-const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag">${m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
+const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag">${stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
-const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"><span class="ri-txt"><span class="ri-name">${m.name}</span><span class="ri-zh zh">${m.zh}</span><span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
-const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span><span class="ri-zh zh">${m.zh}</span><span class="ri-desc">${m.desc}</span></button>`;
-const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"><span class="gc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span><span class="ri-name">${m.short||m.name}</span><span class="ri-zh zh">${m.zh}</span><span>${priceHTML(m)}</span></button>`;
-const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span><span>${priceHTML(m)}</span></button>`;
+const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
+const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.desc}</span></button>`;
+const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"><span class="gc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span><span class="ri-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
+const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
 function renderHome(){
   const W=WIDE.matches,h=CFG.hero||{},feat=BY[h.product]||CAT[0],best=CAT.filter(m=>m.best).sort((a,b)=>a.best-b.best),nov=CAT.filter(m=>m.nov),of=c=>CAT.filter(m=>m.cat===c);
   const head=(name,zh,n,unit='pieces')=>`<div class="sec-head"><h3 class="disp">${name}</h3>${zh?`<span class="zh">${esc(zh)}</span>`:''}<span class="count">${n} ${unit}</span></div>`;
   const [t1,t2]=(h.title||feat.name).split('|');
-  const intents=`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${Object.entries(INTENTS).filter(([k])=>CAT.some(m=>m.ints.includes(k))).map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
+  const usedInts=Object.entries(INTENTS).filter(([k])=>CAT.some(m=>m.ints.includes(k)));
+  const LIMIT=12,more=(id,n)=>n>LIMIT?`<button class="ghost show-all" data-act="showAll" data-sec="${id}">Show all ${n}</button>`:'',hid=i=>i>=LIMIT?' hidden data-more':'';
+  const intents=!usedInts.length?'':`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${usedInts.map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const items=layout==='bestsellers'?best:of(id);if(!items.length)return'';SPY.push(id);const few=items.length<=2;
     if(layout==='bestsellers')return`<section class="sec" id="sec-${id}"><div class="gx">${head(esc(name),zh,items.length)}</div><div class="rail gx">${items.map((m,i)=>card(m,'No.'+(i+1))).join('')}<span class="rail-end"></span></div></section>`;
-    if(layout==='feature')return`<section class="sec gx sec-feature" id="sec-${id}">${head(esc(name),zh,items.length)}${lead(items[0],W?'tall':'lead')}<div class="list"${W?'':' style="border-top:1px solid var(--line)"'}>${items.slice(1).map(m=>row(m,W?'tall':'sq')).join('')}</div></section>`;
-    if(layout==='grid')return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length)}<div class="grid2">${items.map(m=>gcard(m,W&&few?'lead':'tall')).join('')}</div></section>`;
-    return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length,id==='sets'?'sets':'pieces')}<div class="list">${items.map(m=>row(m,W?(few?'lead':'tall'):'sq')).join('')}</div></section>`}).filter(Boolean);
+    if(layout==='feature')return`<section class="sec gx sec-feature" id="sec-${id}">${head(esc(name),zh,items.length)}${lead(items[0],W?'tall':'lead')}<div class="list"${W?'':' style="border-top:1px solid var(--line)"'}>${items.slice(1).map((m,i)=>row(m,W?'tall':'sq').replace('<button ',`<button${hid(i+1)} `)).join('')}</div>${more(id,items.length)}</section>`;
+    if(layout==='grid')return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length)}<div class="grid2">${items.map((m,i)=>gcard(m,W&&few?'lead':'tall').replace('<button ',`<button${hid(i)} `)).join('')}</div>${more(id,items.length)}</section>`;
+    return`<section class="sec gx${few?' few':''}" id="sec-${id}">${head(esc(name),zh,items.length,id==='sets'?'sets':'pieces')}<div class="list">${items.map((m,i)=>row(m,W?(few?'lead':'tall'):'sq').replace('<button ',`<button${hid(i)} `)).join('')}</div>${more(id,items.length)}</section>`}).filter(Boolean);
   secs.splice(1,0,intents+spot);
   $('#homeBody').innerHTML=`
   <div class="strip gx"><span class="dia"></span><span>Jewellery with frequencies</span><span class="dia"></span><span>Free shipping over RM${FREE_AT}</span></div>
@@ -100,7 +108,7 @@ $('#home').addEventListener('scroll',()=>requestAnimationFrame(spy),{passive:tru
 
 function showResults(title,sub,items){const box=$('#results');box.innerHTML=`<div class="res-head"><h3 class="disp">${title}</h3><span>${sub}</span></div>`+(items.length?`<div class="list">${items.map(m=>row(m,WIDE.matches?'tall':'sq')).join('')}</div>`:`<p class="empty-q">Nothing matches yet.</p>`)}
 function search(q){q=q.trim().toLowerCase();if(!q){$('#results').innerHTML='<p class="empty-q">Try “rose quartz”, “citrine” or “pendant”.</p>';return}
-  const hits=CAT.filter(m=>(m.name+' '+m.zh+' '+m.desc+' '+m.stone+' '+m.cat+' '+m.ints.map(i=>INTENTS[i][0]).join(' ')).toLowerCase().includes(q));
+  const hits=CAT.filter(m=>(m.name+' '+m.zh+' '+m.details+' '+m.id+' '+m.desc+' '+m.stone+' '+m.cat+' '+m.ints.map(i=>INTENTS[i][0]).join(' ')).toLowerCase().includes(q));
   hits.length?showResults('Results',`${hits.length} for “${esc(q)}”`,hits):($('#results').innerHTML=`<p class="empty-q">No pieces match “${esc(q)}”.</p>`)}
 $('#q').addEventListener('input',e=>search(e.target.value));
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
@@ -112,10 +120,10 @@ let DR=null;
 function defaults(m){const s={};for(const g of m.groups)s[g.id]=g.type==='many'?[]:(g.def||g.opts[0][0]);return s}
 function openDetail(id){const m=BY[id];if(!m)return;DR={m,sel:defaults(m),qty:1};
   $('#shImg').src=img(id,WIDE.matches?'portrait':'hero');$('#shImg').alt=m.name;$('#sheetScroll').scrollTop=0;$('#shImg').style.transform='';
-  const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
-  $('#shBody').innerHTML=`${tags?`<div class="d-tags">${tags}</div>`:''}<h2 class="disp d-name">${m.name}</h2><div class="d-zh zh">${m.zh}</div><p class="d-desc">${m.desc}</p><div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}<span class="price">${RM(m.price)}</span></div>
+  const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
+  $('#shBody').innerHTML=`${tags?`<div class="d-tags">${tags}</div>`:''}<h2 class="disp d-name">${m.name}</h2>${[m.details,m.zh].some(Boolean)?`<div class="d-zh">${[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(" · ")}</div>`:""}<p class="d-desc">${m.desc}</p><div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}<span class="price">${RM(m.price)}</span></div>
   ${m.meaning?`<div class="meaning"><span class="eyebrow">Meaning</span><p>${m.meaning}</p><div class="ints">${m.ints.filter(i=>INTENTS[i]).map(i=>`<span>${INTENTS[i][0]}</span>`).join('')}</div></div>`:''}
-  <div class="specs"><div><span class="eyebrow">Stone</span><b>${m.stone}</b></div><div><span class="eyebrow">Quality</span><b>${m.grade}</b></div><div><span class="eyebrow">Ships</span><b>1–2 days</b></div></div>${CFG.whatsapp?`<a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+m.name)}" target="_blank" rel="noopener">${IC.wa}Ask about this piece on WhatsApp</a>`:''}`+
+  <div class="specs"><div><span class="eyebrow">Stone</span><b>${m.stone}</b></div><div><span class="eyebrow">${m.specLabel||"Quality"}</span><b>${m.grade||"Natural"}</b></div><div><span class="eyebrow">Ships</span><b>1–2 days</b></div></div>${CFG.whatsapp?`<a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+m.name)}" target="_blank" rel="noopener">${IC.wa}Ask about this piece on WhatsApp</a>`:''}`+
   m.groups.map(g=>{if(g.type==='many')return`<div class="og" role="group" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em>Optional</em></div>${g.opts.map(o=>`<button class="chk" data-act="chk" data-g="${g.id}" data-o="${o[0]}" role="checkbox" aria-checked="false"><span class="chk-l">${o[1]}</span><span class="chk-p">${o[2]?'+'+RM(o[2]):'Complimentary'}</span><span class="box">${IC.check}</span></button>`).join('')}</div>`;
     return`<div class="og" role="radiogroup" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em class="req">Choose 1</em></div><div class="seg" style="--n:${g.opts.length}">${g.opts.map(o=>`<button class="opt" data-act="opt" data-g="${g.id}" data-o="${o[0]}" role="radio"><span>${o[1]}</span><small>${o[2]?'+'+RM(o[2]):(o[3]||'Included')}</small></button>`).join('')}</div></div>`}).join('')+
   `<div class="og note"><div class="og-h"><b>Gift message or request</b><em>Optional</em></div><textarea id="note" rows="2" maxlength="140" placeholder="e.g. Happy birthday, with love"></textarea></div>`;
@@ -136,7 +144,7 @@ function fly(src,from,to){const app=$('#app').getBoundingClientRect(),size=128;
   if(!el.animate){el.remove();return Promise.resolve()}
   return el.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${dx*.35}px,${dy*.35-60}px) scale(.6)`,offset:.4},{transform:`translate(${dx}px,${dy}px) scale(.14)`,opacity:.9}],{duration:720,easing:'cubic-bezier(.5,0,.15,1)',fill:'forwards'}).finished.then(()=>el.remove(),()=>el.remove())}
 async function addToBag(){if(!DR||DR.m.soldOut)return;const btn=$('#addBtn');if(btn.disabled)return;btn.disabled=true;
-  const{m,sel,qty}=DR;const note=($('#note')?.value||'').trim();addLine(m.id,sel,qty,note);vib(12);
+  const{m,sel,qty}=DR;if(inBag(m.id)+qty>maxQty(m)){btn.disabled=false;toast(m.stock===1?'This piece is already in your bag':`Only ${m.stock} available`);return}const note=($('#note')?.value||'').trim();addLine(m.id,sel,qty,note);vib(12);
   btn.classList.add('press');await wait(110);btn.classList.remove('press');btn.classList.add('added');btn.innerHTML=`${IC.check.replace('<svg','<svg width="17" height="17"')} Added`;
   const from=$('#shImg').getBoundingClientRect(),to=$('#bagBtn').getBoundingClientRect();
   const f=fly(img(m.id),{left:from.left,top:from.top+60,width:from.width,height:from.height-60},to);
@@ -242,12 +250,13 @@ const ACT={
   back,close:closeDetail,dimClose(){if(stack[stack.length-1]==='bag')back()},
   opt(el){DR.sel[el.dataset.g]=el.dataset.o;vib(6);updateDetail(false)},
   chk(el){const a=DR.sel[el.dataset.g],o=el.dataset.o;DR.sel[el.dataset.g]=a.includes(o)?a.filter(x=>x!==o):[...a,o];vib(6);updateDetail(false)},
-  qInc(){if(DR.qty<20){DR.qty++;updateDetail()}},qDec(){if(DR.qty>1){DR.qty--;updateDetail()}},
+  qInc(){const cap=maxQty(DR.m)-inBag(DR.m.id);if(DR.qty<cap){DR.qty++;updateDetail()}else toast(DR.m.stock===1?'This piece is one of a kind':`Only ${DR.m.stock} available`)},qDec(){if(DR.qty>1){DR.qty--;updateDetail()}},
   add:addToBag,
-  lInc(el){const{l}=lineOf(el);if(l.qty<20){l.qty++;save();renderBag();updateBagUI(true)}},
+  lInc(el){const{l}=lineOf(el);if(inBag(l.id)<maxQty(BY[l.id])){l.qty++;save();renderBag();updateBagUI(true)}else toast(BY[l.id].stock===1?'This piece is one of a kind':`Only ${BY[l.id].stock} available`)},
   lDec(el){const{li,l}=lineOf(el);if(l.qty>1){l.qty--;save();renderBag();updateBagUI()}else removeLine(li,l)},
   lRemove(el){const{li,l}=lineOf(el);removeLine(li,l)},
   toCheckout(){if(!S.cart.length)return;renderCheckout();go('checkout')},
+  showAll(el){const sec=$('#sec-'+el.dataset.sec);sec.querySelectorAll('[data-more]').forEach(x=>x.hidden=false);el.remove()},
   ship(el){setShip(el.dataset.k)},
   place:startCheckout,
   closeDone(){const d=$('#done');const end=()=>{d.hidden=true;d.innerHTML=''};if(d.animate)d.animate([{opacity:1},{opacity:0}],{duration:300}).finished.then(end,end);else end();toHome();$('#home').scrollTop=0},

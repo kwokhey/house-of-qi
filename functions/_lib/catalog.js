@@ -1,0 +1,73 @@
+/**
+ * Builds the shop catalogue: settings (shipping, homepage text, add-ons) from
+ * data/catalog.json, products from the inventory database.
+ * If the database is not connected yet, the sample products in catalog.json are used.
+ */
+import { db, hasDB, itemName, itemDetails } from "./db.js";
+
+export async function loadSettings(env, origin) {
+  const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
+  if (!res.ok) throw new Error("catalog unavailable");
+  return res.json();
+}
+
+/** Turn an inventory row into a shop product. */
+export function rowToProduct(r, settings) {
+  const pendant = /pendant|necklace/i.test(r.type);
+  const name = itemName(r);
+  const details = itemDetails(r);
+  let intentions = [];
+  try { intentions = JSON.parse(r.intentions || "[]"); } catch {}
+  return {
+    id: r.id,
+    code: r.id,
+    name,
+    zh: r.zh || "",
+    details,
+    collection: r.collection || (pendant ? "pendants" : "bracelets"),
+    price: r.price,
+    stock: r.stock,
+    soldOut: r.stock <= 0,
+    image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : "",
+    bestseller: r.featured ? r.featured : 0,
+    stone: r.stone,
+    quality: r.size_mm ? `${+r.size_mm} mm beads` : (r.variant || ""),
+    specLabel: r.size_mm ? "Size" : "Details",
+    intentions,
+    description: r.description || defaultDescription(r, details),
+    meaning: r.meaning || "",
+    art: { stone: r.stone, variant: r.variant, type: r.type, size: r.size_mm || 8 },
+    groups: settings.addons ? [settings.addons] : [],
+  };
+}
+
+function defaultDescription(r, details) {
+  const one = r.stock === 1 ? " One piece only." : "";
+  return `Natural ${r.stone.toLowerCase()} ${r.type.toLowerCase()}${details ? `, ${details.toLowerCase()}` : ""}.${one}`;
+}
+
+export async function buildCatalog(env, origin, { includeHidden = false } = {}) {
+  const settings = await loadSettings(env, origin);
+  if (!hasDB(env)) return { ...settings, source: "sample" };
+  const D = await db(env);
+  const { results } = await D.prepare(
+    includeHidden
+      ? "SELECT * FROM items ORDER BY sort, id"
+      : "SELECT * FROM items WHERE published = 1 AND stock > 0 ORDER BY featured = 0, featured, sort, id"
+  ).all();
+  if (!results.length && !includeHidden) {
+    const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();
+    if (!count.n) return { ...settings, source: "sample" }; // nothing imported yet
+  }
+  const products = results.map((r) => rowToProduct(r, settings));
+  const hero = products.find((p) => p.bestseller) || [...products].sort((a, b) => b.price - a.price)[0];
+  const heroCfg = hero
+    ? {
+        product: hero.id,
+        eyebrow: hero.stock === 1 ? "One of a kind" : "Featured",
+        title: `${hero.stone}|${hero.name.slice(hero.stone.length).trim() || "Collection"}`,
+        text: hero.details ? `${hero.details}. Hand-picked natural stone.` : "Hand-picked natural stone.",
+      }
+    : settings.hero;
+  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory" };
+}

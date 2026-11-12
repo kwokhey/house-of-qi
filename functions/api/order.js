@@ -4,6 +4,8 @@
  * Returns only what that screen needs (no address or card details).
  */
 import { stripe, toOrder, json } from "../_lib/stripe.js";
+import { db, hasDB } from "../_lib/db.js";
+import { recordSession } from "../_lib/inventory.js";
 
 export async function onRequestGet({ request, env }) {
   const id = new URL(request.url).searchParams.get("session_id") || "";
@@ -15,6 +17,8 @@ export async function onRequestGet({ request, env }) {
     p.append("expand[]", "line_items");
     p.append("expand[]", "payment_intent");
     const s = await stripe(env, `checkout/sessions/${id}`, { params: p });
+    // deduct stock right away for this order (safe to repeat)
+    if (hasDB(env)) { try { await recordSession(await db(env), s); } catch (e) { console.error("stock", e.message); } }
     const o = toOrder(s);
     const key = s.metadata?.track_key || "";
     return json({

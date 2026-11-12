@@ -9,7 +9,17 @@ const LABEL = { confirmed: "To pack", packed: "Packed", shipped: "Shipped", read
 let ORDERS = [], NEXT = null, FILTER = "todo";
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
-function show(id) { ["loginView", "setupView", "ordersView"].forEach((v) => ($("#" + v).hidden = v !== id)); $("#logout").hidden = id !== "ordersView"; }
+function show(id) {
+  ["loginView", "setupView", "ordersView", "stockView"].forEach((v) => ($("#" + v).hidden = v !== id));
+  const inside = id === "ordersView" || id === "stockView";
+  $("#logout").hidden = !inside; $("#tabs").hidden = !inside;
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", (b.dataset.tab + "View") === id));
+}
+function openTab(tab) {
+  try { localStorage.setItem("hq-admin-tab", tab); } catch {}
+  if (tab === "stock" && window.Stock) { show("stockView"); window.Stock.load(); } else load();
+}
+const savedTab = () => { try { return localStorage.getItem("hq-admin-tab") || "orders"; } catch { return "orders"; } };
 async function api(path, opt = {}) {
   const r = await fetch(path, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...opt });
   const d = await r.json().catch(() => ({}));
@@ -79,6 +89,7 @@ async function load(more = false) {
     ORDERS = more ? ORDERS.concat(d.orders) : d.orders;
     NEXT = d.more ? d.next : null;
     $("#mode").hidden = d.mode !== "test";
+    if (!$("#stockView").hidden) return render();
     show("ordersView"); render();
   } catch (e) { toast(e.message); }
 }
@@ -106,6 +117,8 @@ async function setStatus(art, status, undo) {
 }
 
 document.addEventListener("click", async (e) => {
+  const tb = e.target.closest("#tabs button");
+  if (tb) { openTab(tb.dataset.tab); return; }
   const f = e.target.closest("#filters button");
   if (f) { FILTER = f.dataset.f; render(); return; }
   const c = e.target.closest("[data-copy]");
@@ -120,7 +133,7 @@ $("#loginForm").onsubmit = async (e) => {
   e.preventDefault();
   const err = $("#loginErr"), btn = e.target.querySelector("button");
   err.hidden = true; btn.disabled = true;
-  try { await api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: $("#pw").value }) }); $("#pw").value = ""; await load(); }
+  try { await api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: $("#pw").value }) }); $("#pw").value = ""; openTab(savedTab()); }
   catch (x) { err.textContent = x.message; err.hidden = false; }
   btn.disabled = false;
 };
@@ -129,7 +142,7 @@ $("#loginForm").onsubmit = async (e) => {
   try {
     const s = await (await fetch("/api/admin/login", { credentials: "same-origin" })).json();
     if (!s.configured) return show("setupView");
-    if (s.loggedIn) return load();
+    if (s.loggedIn) return openTab(savedTab());
     show("loginView");
   } catch { show("loginView"); }
 })();

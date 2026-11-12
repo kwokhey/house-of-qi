@@ -67,6 +67,29 @@ Buy the domain in Cloudflare (**Domain Registration → Register Domains**), the
 
 ---
 
+---
+
+## Orders and stock (house-of-qi.pages.dev/admin)
+
+Log in with the `ADMIN_PASSWORD` secret.
+
+**Orders tab:** paid orders from Stripe. Mark as packed → choose courier, add tracking number → mark as shipped. Customers follow progress at `/track`.
+
+**Stock tab:** the inventory.
+- **Import** your Excel/CSV file or a Google Sheets link. Rows are matched by Item ID, so re-importing updates instead of duplicating. Rows without an ID get one in the `STONE-1-SIZE` format.
+- Tap an item to: add/change its **photo** (straight from the phone camera), **Sold offline** (Instagram, WhatsApp, bazaar…), **Add stock**, **Adjust count**, edit price/description/meaning, hide it from the website, or feature it on the home page. Every change is in its History with Undo.
+- **Website orders deduct stock automatically** once paid. Sold-out pieces disappear from the shop and can't be bought.
+- **Export Excel** downloads the full list with photos, stock in/sold/left, cost, price and profit.
+
+Stock lives in a Cloudflare **D1** database (free tier). Setup, once:
+1. Cloudflare → **Storage & databases → D1 SQL database → Create** → name `house-of-qi`.
+2. Pages project **house-of-qi → Settings → Bindings → Add → D1 database** → variable name `DB` → database `house-of-qi` → Save.
+3. Redeploy. Tables are created automatically on first use.
+
+Until the database is connected, the shop shows the sample products from `data/catalog.json`. Cost prices and suppliers are only visible on the order page, never in the shop.
+
+---
+
 ## Everyday edits (`data/catalog.json`)
 
 **Product**

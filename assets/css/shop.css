@@ -630,3 +630,5 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .d-actions{display:flex;flex-direction:column;gap:10px}
 .track-note{margin:0 0 2px;font-size:13px;color:var(--ink-2);text-align:center}
 .track-cta{text-decoration:none;flex:none;width:100%}
+.show-all{display:flex;margin:22px auto 0;align-items:center}
+.sec-feature .show-all{grid-column:1/-1}

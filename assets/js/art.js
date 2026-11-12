@@ -35,9 +35,10 @@ const ART = (() => {
   function stoneFill(c,P,k){return G(c,[[0,P.c[0]],[.5,P.c[1]],[1,P.c[2]]],P.trans?{cx:.6,cy:.64,r:.66}:{cx:.38,cy:.34,r:.75},k)}
   function fx(c,x,y,R,P,cp){let s='';const r=c.r;
     if(P.cloud)for(let i=0;i<2;i++){const[a,b]=inC(r,R*.5);s+=`<ellipse cx="${f(x+a)}" cy="${f(y+b)}" rx="${f(R*(.25+r()*.25))}" ry="${f(R*(.12+r()*.12))}" transform="rotate(${f(r()*180)} ${f(x+a)} ${f(y+b)})" fill="#fff" opacity="${f(.25+r()*.25)}" ${B(c,'b1')}/>`}
-    if(P.rutile)for(let i=0;i<4;i++){const a=r()*Math.PI,d=(r()-.5)*R*1.2,cx=x+Math.cos(a+1.57)*d,cy=y+Math.sin(a+1.57)*d,L=R*(.8+r()*.9);s+=`<path d="M${f(cx-Math.cos(a)*L)} ${f(cy-Math.sin(a)*L)}L${f(cx+Math.cos(a)*L)} ${f(cy+Math.sin(a)*L)}" stroke="${r()<.5?'#D6A040':'#F0C565'}" stroke-width="${f(.7+r()*.9)}" opacity=".95"/>`}
+    if(P.rutile)for(let i=0;i<4;i++){const a=r()*Math.PI,d=(r()-.5)*R*1.2,cx=x+Math.cos(a+1.57)*d,cy=y+Math.sin(a+1.57)*d,L=R*(.8+r()*.9);s+=`<path d="M${f(cx-Math.cos(a)*L)} ${f(cy-Math.sin(a)*L)}L${f(cx+Math.cos(a)*L)} ${f(cy+Math.sin(a)*L)}" stroke="${P.needle||(r()<.5?'#D6A040':'#F0C565')}" stroke-width="${f(.7+r()*.9)}" opacity=".95"/>`}
     if(P.tiger){const a=(r()-.5)*1.2;let g=`<g transform="rotate(${f(a*57)} ${f(x)} ${f(y)})">`;for(let k=-3;k<=3;k++){const yy=y+k*R*.3+(r()-.5)*R*.1;g+=`<path d="M${f(x-R*1.2)} ${f(yy)}Q${f(x)} ${f(yy+(r()-.5)*R*.5)} ${f(x+R*1.2)} ${f(yy)}" stroke="${['#2A1606','#B07624','#E8AE4C','#5C3410'][(k+7)%4]}" stroke-width="${f(R*.22)}" fill="none" opacity=".7" ${B(c,'b1')}/>`}
       g+=`<path d="M${f(x-R*1.2)} ${f(y-R*.15)}L${f(x+R*1.2)} ${f(y-R*.05)}" stroke="#FFE2A0" stroke-width="${f(R*.2)}" opacity=".55" ${B(c,'b2')}/></g>`;s+=g}
+    if(P.spark&&!P.metal)for(let i=0;i<Math.max(4,R*.9);i++){const[a,b]=inC(r,R*.85);s+=`<circle cx="${f(x+a)}" cy="${f(y+b)}" r="${f(.3+r()*.7)}" fill="#fff" opacity="${f(.35+r()*.5)}"/>`}
     if(P.moon)s+=`<ellipse cx="${f(x-R*.05)}" cy="${f(y-R*.1)}" rx="${f(R*.62)}" ry="${f(R*.42)}" fill="#8EC3F2" opacity=".55" ${B(c,'b4')}/><ellipse cx="${f(x-R*.12)}" cy="${f(y-R*.2)}" rx="${f(R*.35)}" ry="${f(R*.18)}" fill="#D9EEFF" opacity=".7" ${B(c,'b2')}/>`;
     return s?`<g ${cp}>${s}</g>`:''}
   function spec(c,x,y,R,P,cp){const hx=x-R*.36,hy=y-R*.4;let s='';
@@ -161,13 +162,89 @@ const ART = (() => {
     'self-love-set':['blushSilk',c=>box(c,200,206,300,236,heart(c,150,200,62,S('rose'),-12)+tumbled(c,260,160,27,S('rose',{star:0}),{rot:10})+tumbled(c,262,236,25,S('amethyst'),{rot:-20})+card(c,136,282,5))],
   };
 
+
+  /* ---------- any stone from the inventory: colour by name ---------- */
+  const SP=(c,o={})=>({c,trans:1,...o});
+  const STONEMAP=[
+    [/tourmalinated/,SP(['#FFFFFF','#EDEBE6','#A9A399'],{rutile:1,needle:'#1c1c1c'})],
+    [/multi.*rutil/,SP(['#FFFFFF','#EDE6DF','#A89E92'],{rutile:1})],
+    [/rutil/,SP(['#FFFFFF','#EDE9E2','#A9A399'],{rutile:1})],
+    [/larimar/,SP(['#F4FBFF','#9FD3EA','#4C8FB5'],{trans:0,cloud:1})],
+    [/mica.*purple|purple.*mica|lepidolite/,SP(['#EFDDF5','#A685BE','#5B3C74'],{trans:0,spark:1})],
+    [/mica/,SP(['#FFF0C8','#C9A04E','#6E5320'],{trans:0,spark:1})],
+    [/amber/,SP(['#FFE6A6','#E09A2D','#8A4A0C'])],
+    [/libyan/,SP(['#FFFBE6','#F1E3A2','#BFA75C'],{cloud:1})],
+    [/rhodochrosite/,SP(['#FFE1E4','#E57B8C','#9C3348'],{trans:0,cloud:1})],
+    [/variscite/,SP(['#EAF7E6','#8FC9A0','#3E7D55'],{trans:0})],
+    [/boulder opal/,SP(['#C8F0FF','#4F86B8','#3A2A1E'],{trans:0,moon:1})],
+    [/opal/,SP(['#EAF7FF','#A8D6EE','#5E99BD'],{cloud:1})],
+    [/green garnet|tsavorite/,SP(['#E8F8DA','#6FB24A','#2D5E1C'])],
+    [/chrysocolla/,SP(['#D8F6F2','#38A6A0','#14545A'],{trans:0,cloud:1})],
+    [/sunstone/,SP(['#FFE2C6','#E5814A','#8A3A16'],{spark:1})],
+    [/diopside/,SP(['#CFE8C8','#2F6B36','#0E2A12'])],
+    [/tektite/,SP(['#5A5A52','#26261F','#0B0B08'],{trans:0})],
+    [/petersite/,SP(['#C9D6E6','#34507A','#121C2E'],{trans:0,tiger:1})],
+    [/seraphinite/,SP(['#CFE4D2','#3E6B4E','#16301F'],{trans:0,cloud:1})],
+    [/eudialyte/,SP(['#F6C8D0','#B8354F','#3A1A20'],{trans:0})],
+    [/emerald/,SP(['#D9F7E3','#2FA067','#0D4D2C'],{cloud:1})],
+    [/moonstone/,SP(['#FFFFFF','#EEF0F2','#B9C0C8'],{moon:1})],
+    [/strawberry/,SP(['#FFE9EC','#F1A0B0','#B4566C'],{cloud:1,spark:1})],
+    [/selenite/,SP(['#FFFFFF','#EEEDEA','#BDBAB4'],{trans:0,cloud:1})],
+    [/golden healer/,SP(['#FFFBEA','#F1E3B5','#B79F62'],{cloud:1})],
+    [/clear quartz|crystal quartz/,SP(['#FFFFFF','#EEEBE6','#B2ACA4'],{cloud:1})],
+    [/onyx/,SP(['#DCEBFA','#6E93C4','#2D4A75'],{trans:0})],
+    [/tiger/,SP(['#E9B357','#8E5A1C','#3A220A'],{trans:0,tiger:1})],
+    [/lavender amethyst/,SP(['#F7EEFC','#CDB3E6','#8466A6'],{cloud:1})],
+    [/amethyst/,SP(['#F1DDFA','#A974CF','#4E2273'],{cloud:1})],
+    [/blue lace/,SP(['#F3FAFF','#BBD9EE','#7EA6C7'],{trans:0,cloud:1})],
+    [/unakite/,SP(['#F2D6CB','#7FA26B','#3E5A35'],{trans:0,cloud:1})],
+    [/apatite/,SP(['#D8FAF7','#3CC2C6','#0E6D78'])],
+    [/fluorite/,SP(['#EDE5FA','#9B86D4','#2F7F6E'],{cloud:1})],
+    [/black tourmaline|schorl|obsidian/,SP(['#4A4A4A','#1D1D1D','#050505'],{trans:0})],
+    [/jade/,SP(['#E3F5DD','#6FA86A','#2E5A2F'],{trans:0,cloud:1})],
+    [/moss agate/,SP(['#F2F6EE','#9DB89A','#3F6B3E'],{cloud:1})],
+    [/calcite|citrine/,SP(['#FFF8D2','#F4D36A','#B88F1E'])],
+    [/mookaite/,SP(['#F9D9B8','#C5643E','#6E2A1A'],{trans:0,cloud:1})],
+    [/rhodonite/,SP(['#FADBDE','#D9748A','#4A2A2E'],{trans:0,cloud:1})],
+    [/aventurine/,SP(['#D8F0C8','#5E9E5A','#1F4D25'],{trans:0,spark:1})],
+    [/angelite|celestite/,SP(['#F0F6FF','#B9CBEA','#7E94BF'],{trans:0,cloud:1})],
+    [/rose quartz/,SP(['#FFF2F4','#F3C3CF','#C98798'],{cloud:1})],
+    [/serpentine/,SP(['#EEF4D4','#9DB25D','#4F5E25'],{trans:0})],
+    [/morganite/,SP(['#FFF0EB','#F3C0B0','#C08672'],{cloud:1})],
+    [/malachite/,SP(['#7FD3A0','#1E8A52','#0B3D23'],{trans:0,tiger:1})],
+    [/phosphosiderite/,SP(['#F8E4F6','#C690C7','#7C4A82'],{trans:0,cloud:1})],
+    [/lapis/,SP(['#9FB7F2','#2E4FB5','#132260'],{trans:0,spark:1})],
+    [/hessonite|orange garnet/,SP(['#FFE0B8','#E68A2E','#8C3E0C'])],
+    [/almandine|red garnet|garnet/,SP(['#F5B8BE','#9C1F33','#4A0814'])],
+    [/golden labradorite/,SP(['#FFF6D6','#EED78A','#B39A4C'])],
+    [/labradorite/,SP(['#C9D0D6','#5E6B74','#262D33'],{trans:0,moon:1})],
+    [/peridot/,SP(['#F2FAD2','#A9C94A','#5C7A12'])],
+    [/ocean jasper/,SP(['#EFF2DE','#9DB77E','#4F6B3E'],{trans:0,cloud:1})],
+    [/thulite/,SP(['#FFE2EA','#E58BA6','#9E4664'],{trans:0,cloud:1})],
+    [/auralite/,SP(['#F1E4F6','#9F6FAE','#4F2A57'],{rutile:1})],
+    [/aquamarine/,SP(['#F2FBFD','#AFDCE8','#5E9AAF'],{cloud:1})],
+  ];
+  const SURFS=['blushSilk','linen','travertine','champSilk','blushSilk','travertine'];
+  function specDef(spec){
+    const key=`${spec.stone||''} ${spec.variant||''}`.toLowerCase();
+    const hit=STONEMAP.find(([re])=>re.test(key));
+    const isTour=/tourmaline/.test(key)&&!/black|tourmalinated/.test(key);
+    const P=hit?{...hit[1]}:SP(['#FFFFFF','#EEEBE6','#B2ACA4'],{cloud:1});
+    const lum=h=>(h.match(/[0-9A-F]{2}/gi)||[]).reduce((t,x)=>t+parseInt(x,16),0);
+    const surf=lum(P.c[0])>740&&lum(P.c[1])>660&&!P.moon?'velvet':lum(P.c[1])<200?'linen':SURFS[hash(key)%SURFS.length];
+    if(/pendant|necklace/i.test(spec.type||'')) return[surf,c=>pendant(c,200,246,'oval',{...P,k:'sp'},{W:46,H:64})];
+    const mm=Math.max(4,Math.min(16,+spec.size||8)),R=Math.max(7.5,Math.min(25,mm*1.6)),n=Math.max(12,Math.round(PI2*116/(2.02*R)));
+    return[surf,c=>{const r=c.r;const pal=isTour?Array.from({length:n},()=>TOURM[Math.floor(r()*TOURM.length)]):null;
+      return bracelet(c,200,206,n,R,i=>pal?{c:pal[i],trans:1,cloud:1,k:'t'+TOURM.indexOf(pal[i])}:{...P,k:'sp'},{gold:mm>=8?Math.floor(n/2):-1})}];
+  }
+
   const cache={};
-  function build(id,W,H){const def=D[id]||D.__generic;const p='q'+(hash(id+W+'x'+H)%1e7).toString(36)+'_';const c={r:rng(hash(id)),p,defs:[],n:0,gm:{}};
+  function build(id,W,H,spec){const def=spec?specDef(spec):(D[id]||D.__generic);const p='q'+(hash(id+W+'x'+H)%1e7).toString(36)+'_';const c={r:rng(hash(id)),p,defs:[],n:0,gm:{}};
     const ox=(W-400)/2,oy=(H-400)/2;const body=def[1](c);const bg=SURF[def[0]](c,rng(hash(id+'bg')),W,H,oy);
     const base=['b18:18','b9:9','b4:4','b2:1.8','b1:.8'].map(s=>{const[k,v]=s.split(':');return`<filter id="${p}${k}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${v}"/></filter>`}).join('')+`<filter id="${p}gr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .25  0 0 0 0 .17  0 0 0 0 .12  .5 0 0 0 -.2"/></filter>`;
     const light=`<rect width="${W}" height="${H}" fill="${G(c,[[0,'#FFF6EA',.3],[.55,'#fff',0]],{cx:.15,cy:.08,r:.95})}"/><rect width="${W}" height="${H}" fill="${G(c,[[.55,'#000',0],[1,'#2a140a',.2]],{cx:.5,cy:.48,r:.78})}"/>`;
     const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice"><defs>${base}${c.defs.join('')}</defs>${bg}<g transform="translate(${ox} ${oy})">${body}</g>${light}<rect width="${W}" height="${H}" fill="#000" filter="url(#${p}gr)"/></svg>`;
     return'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}
   const V={sq:[400,400],wide:[446,410],hero:[440,406],lead:[520,330],tall:[400,460],portrait:[400,560],banner:[640,520]};
-  return{get(id,v='sq'){const k=id+v;return cache[k]||(cache[k]=build(id,...V[v]))}};
+  return{get(id,v='sq',spec){if(D[id])spec=null;const k=id+v+(spec?JSON.stringify(spec):'');return cache[k]||(cache[k]=build(id,...V[v],spec))}};
 })();

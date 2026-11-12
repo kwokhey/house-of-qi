@@ -33,6 +33,23 @@
       "pickup": true
     }
   },
+  "addons": {
+    "id": "add",
+    "label": "Finishing touches",
+    "type": "many",
+    "opts": [
+      {
+        "id": "moon",
+        "label": "Full-moon cleanse & charge",
+        "price": 0
+      },
+      {
+        "id": "box",
+        "label": "Gift box & handwritten card",
+        "price": 15
+      }
+    ]
+  },
   "hero": {
     "product": "star-rose-bracelet",
     "eyebrow": "Signature · The love stone",

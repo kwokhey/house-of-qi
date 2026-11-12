@@ -14,6 +14,9 @@ export function priceLine(catalog, raw) {
 
   const qty = Math.floor(Number(raw.qty));
   if (!(qty >= 1 && qty <= 20)) return { error: `Please check the quantity for ${product.name}.` };
+  if (typeof product.stock === "number" && qty > product.stock) {
+    return { error: product.stock === 1 ? `${product.name} is one of a kind, so only 1 can be ordered.` : `Only ${product.stock} of ${product.name} left. Please lower the quantity.` };
+  }
 
   const sel = raw.sel && typeof raw.sel === "object" ? raw.sel : {};
   let unit = product.price;
@@ -41,13 +44,21 @@ export function priceLine(catalog, raw) {
 /** Price the whole bag plus delivery. */
 export function priceOrder(catalog, items, shipKey) {
   if (!Array.isArray(items) || !items.length) return { error: "Your bag is empty." };
-  if (items.length > 40) return { error: "Your bag has too many lines. Please contact us for large orders." };
+  if (items.length > 20) return { error: "Your bag has more than 20 different pieces. Please contact us for large orders." };
 
   const lines = [];
   for (const raw of items) {
     const line = priceLine(catalog, raw);
     if (line.error) return { error: line.error };
     lines.push(line);
+  }
+  // the same piece can appear on several lines (e.g. with and without a gift box)
+  const perItem = {};
+  for (const l of lines) perItem[l.product.id] = (perItem[l.product.id] || 0) + l.qty;
+  for (const l of lines) {
+    if (typeof l.product.stock === "number" && perItem[l.product.id] > l.product.stock) {
+      return { error: `Only ${l.product.stock} of ${l.product.name} left. Please lower the quantity.` };
+    }
   }
 
   const ship = catalog.shipping[shipKey];
@@ -74,8 +85,4 @@ export function json(data, status = 200) {
   });
 }
 
-export async function loadCatalog(env, origin) {
-  const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
-  if (!res.ok) throw new Error("catalog unavailable");
-  return res.json();
-}
+export { buildCatalog as loadCatalog } from "./catalog.js";

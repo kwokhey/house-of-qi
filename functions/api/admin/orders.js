@@ -4,6 +4,7 @@
  */
 import { isAdmin } from "../../_lib/auth.js";
 import { stripe, toOrder, json } from "../../_lib/stripe.js";
+import { syncSales } from "../../_lib/inventory.js";
 
 export async function onRequestGet({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -15,6 +16,7 @@ export async function onRequestGet({ request, env }) {
   p.append("expand[]", "data.payment_intent");
   if (/^cs_(test|live)_[A-Za-z0-9]+$/.test(after)) p.set("starting_after", after);
 
+  try { await syncSales(env); } catch (e) { console.error("sync", e.message); }
   try {
     const list = await stripe(env, "checkout/sessions", { params: p });
     const orders = list.data

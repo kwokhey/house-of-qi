@@ -47,7 +47,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
 
   order.lines.forEach((l, i) => {
     const k = `line_items[${i}]`;
-    const desc = [...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    const desc = [l.product.details || "", ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     p.append(`${k}[quantity]`, String(l.qty));
     p.append(`${k}[price_data][currency]`, cur);
     p.append(`${k}[price_data][unit_amount]`, String(Math.round(l.unit * 100)));
@@ -78,8 +78,9 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", track_key: trackKey(), fulfil_status: "confirmed", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };
   // Each item's options, so the order page shows bead size, wrist size, add-ons
   order.lines.forEach((l, i) => {
-    const desc = [`${l.qty}× ${l.product.name}`, ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    const desc = [`${l.qty}× ${l.product.name}`, l.product.details || "", ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     meta[`i${i + 1}`] = desc.slice(0, 500);
+    meta[`s${i + 1}`] = `${l.product.id}:${l.qty}`; // used to deduct stock once paid
   });
   for (const [key, val] of Object.entries(meta)) {
     p.append(`metadata[${key}]`, val);
@@ -89,6 +90,8 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   p.append("client_reference_id", orderNo);
 
   p.append("mode", "payment");
+  // hold one-of-a-kind pieces for a short time only
+  p.append("expires_at", String(Math.floor(Date.now() / 1000) + 30 * 60));
   p.append("phone_number_collection[enabled]", "true");
   p.append("billing_address_collection", "auto");
   p.append("success_url", `${origin}/?session_id={CHECKOUT_SESSION_ID}`);
