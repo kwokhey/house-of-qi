@@ -740,3 +740,16 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .mg-sizes button{padding:6px 10px;border:1px solid var(--line-2);border-radius:14px;font-size:12px}
   .mg-sizes button:hover{border-color:var(--gold)}
 }
+
+/* floating WhatsApp button (House of Qi logo) */
+.wafab{position:absolute;z-index:7;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;background:#F0E0D3 url("/assets/img/logo.png") center/108% no-repeat;box-shadow:0 0 0 1.5px rgba(180,138,82,.7),0 10px 26px rgba(46,34,28,.28);display:grid;place-items:center;transition:bottom .55s var(--spring),opacity .25s,transform .2s;-webkit-tap-highlight-color:transparent}
+.wafab[hidden]{display:none}
+.wafab:active{transform:scale(.94)}
+.wa-logo{display:none}
+.wa-badge{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;box-shadow:0 0 0 2.5px var(--paper,#F0E0D3)}
+.wa-badge svg{width:15px;height:15px}
+.wa-tip{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%) translateX(6px);white-space:nowrap;background:var(--espresso,#2E221C);color:#FBF3EC;font-size:12px;letter-spacing:.04em;padding:7px 12px;border-radius:16px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.cartbar.show~.wafab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+#app:has(#sheet.open) .wafab,#app:has(.screen.in:not(#home)) .wafab{opacity:0;pointer-events:none;transform:scale(.8)}
+@media (min-width:1000px){.wafab{right:max(32px,env(safe-area-inset-right,0px));bottom:28px;width:64px;height:64px}.cartbar.show~.wafab{bottom:104px}
+  .wafab:hover .wa-tip{opacity:1;transform:translateY(-50%)}.wafab:hover{transform:translateY(-2px)}}

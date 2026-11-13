@@ -1,7 +1,7 @@
 {
   "_readme": "House of Qi catalogue. Edit products here; prices are in RM. The website and the Stripe checkout both read this file, so a price changed here is what customers pay.",
   "currency": "myr",
-  "whatsapp": "",
+  "whatsapp": "60129089914",
   "shipToCountries": [
     "MY"
   ],

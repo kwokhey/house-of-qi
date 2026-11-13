@@ -398,6 +398,8 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
   $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
   $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
+  if(CFG.whatsapp){const w=$('#wafab');w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about your crystals.')}`;w.hidden=false;
+    w.addEventListener('click',()=>{if(DR&&$('#sheet').classList.contains('open'))w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+DR.m.name+' ('+DR.m.id+')')}`})}
   const q=new URLSearchParams(location.search),clean=()=>{try{history.replaceState(null,'',location.pathname)}catch(e){}};
   if(q.get('session_id')){const id=q.get('session_id');clean();showConfirmation(id)}
   else if(q.get('checkout')==='cancelled'){clean();if(S.cart.length){renderBag();go('bag')}toast('Payment cancelled. Your bag is saved.')}
