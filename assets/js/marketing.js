@@ -70,7 +70,7 @@
     const a = D.announce || { text: "", link: "", active: false };
     const st = a.active && a.text ? status({ active: 1, starts_at: a.starts_at, ends_at: a.ends_at }) : ["off", "Off"];
     $("#mAnn").innerHTML = `
-      <label class="f full"><span>Text</span><input id="aText" maxlength="140" value="${esc(a.text)}" placeholder="e.g. Free delivery this weekend with code SHIPFREE"></label>
+      <label class="f full"><span>Text</span><input id="aText" maxlength="140" value="${esc(a.text)}" placeholder="e.g. 11.11 Sale · 10% off everything with code QI1111"></label>
       <div class="grid-f g3"><label class="f"><span>Show from (optional)</span><input id="aFrom" type="date" value="${ymd(a.starts_at)}"></label><label class="f"><span>Until (optional)</span><input id="aTo" type="date" value="${ymd(a.ends_at)}"></label>
       <label class="tgl"><input type="checkbox" id="aOn"${a.active ? " checked" : ""}> Show in shop <em class="st ${st[0]}">${st[1]}</em></label></div>
       <div class="ann-prev"${a.text ? "" : " hidden"} id="aPrev"><span>${esc(a.text)}</span></div>
@@ -222,7 +222,7 @@
     d.innerHTML = `<form class="ed" id="cForm">
       <div class="ed-h"><b>${isNew ? "New code" : esc(c.code)}</b><button type="button" class="link" data-x>Close</button></div>
       <label class="f"><span>Code customers type</span><input id="cCode" value="${esc(c.code)}" placeholder="e.g. QI10" autocapitalize="characters" maxlength="24" required${c.uses ? " readonly" : ""}></label>
-      <div class="seg" role="radiogroup" aria-label="Discount type">${[["percent", "% off"], ["amount", "RM off"], ["freeship", "Free delivery"]].map(([k, l]) => `<label><input type="radio" name="cKind" value="${k}"${c.kind === k ? " checked" : ""}><span>${l}</span></label>`).join("")}</div>
+      <div class="seg" role="radiogroup" aria-label="Discount type">${[["percent", "% off"], ["amount", "RM off"]].map(([k, l]) => `<label><input type="radio" name="cKind" value="${k}"${c.kind === k ? " checked" : ""}><span>${l}</span></label>`).join("")}</div>
       <div class="grid-f">
         <label class="f" id="cValF"><span id="cValL">Percent off</span><input id="cVal" inputmode="decimal" value="${c.kind === "freeship" ? "" : +c.value || ""}"></label>
         <label class="f"><span>Minimum spend (RM, optional)</span><input id="cMin" inputmode="decimal" value="${+c.min_spend || ""}" placeholder="No minimum"></label>

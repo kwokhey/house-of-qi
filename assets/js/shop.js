@@ -3,12 +3,12 @@
    Products, prices, shipping and homepage settings live in /data/catalog.json.
    Payment happens on Stripe Checkout via /api/checkout (Cloudflare Function).
    ===================================================================== */
-let CFG={},CAT=[],BY={},TABS=[],INTENTS={},SHIP={},FREE_AT=300;
+let CFG={},CAT=[],BY={},TABS=[],INTENTS={},SHIP={};
 async function loadCatalog(){
   let r=await fetch('/api/catalog',{cache:'no-cache'}).catch(()=>null);
   if(!r||!r.ok)r=await fetch('/data/catalog.json',{cache:'no-cache'});
   if(!r.ok)throw new Error('catalog');const d=await r.json();
-  CFG=d;FREE_AT=d.freeShippingFrom;
+  CFG=d;
   SHIP=Object.fromEntries(Object.entries(d.shipping).map(([k,s])=>[k,{...s,sub:s.note,eta:s.days?`${s.days[0]}–${s.days[1]} working days`:'By appointment'}]));
   TABS=d.collections.map(c=>[c.id,c.name,c.zh,c.layout]);
   INTENTS=Object.fromEntries(Object.entries(d.intentions).map(([k,v])=>[k,[v.name,v.colour]]));
@@ -44,8 +44,8 @@ const subLine=m=>{const t=[m.details,m.zh?`<span class="zh">${m.zh}</span>`:''].
    STATE  (the bag is kept in this browser only)
    ===================================================================== */
 const KEY='house-of-qi-bag-v1';
-let S={cart:[],ship:'std'};
-try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.cart))S={cart:v.cart,ship:v.ship||'std',code:typeof v.code==='string'?v.code:''}}catch(e){}
+let S={cart:[],ship:'west'};
+try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.cart))S={cart:v.cart,ship:v.ship||'west',code:typeof v.code==='string'?v.code:''}}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({cart:S.cart,ship:S.ship,code:S.code||''}))}catch(e){}};
 /* discount code: checked by the server for this exact bag + delivery; any change means it is checked again */
 const bagSig=()=>JSON.stringify([S.ship,S.cart.map(l=>[l.id,l.qty,l.sel])]);
@@ -61,7 +61,7 @@ const unit=(m,sel)=>R2(m.price+m.groups.reduce((t,g)=>{const v=sel[g.id];if(g.ty
 const hasFrom=m=>m.groups.some(g=>g.type==='one'&&g.opts.some(o=>o[2]>0));
 function optText(m,sel){const out=[];for(const g of m.groups){const v=sel[g.id];if(g.type==='many'){g.opts.filter(o=>v.includes(o[0])).forEach(o=>out.push(o[1]));continue}const o=g.opts.find(o=>o[0]===v);if(o)out.push(o[4]||o[1])}return out}
 const lineTotal=l=>R2(unit(BY[l.id],l.sel)*l.qty);
-function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||SHIP.std;let fee=s.freeOver&&sub>=FREE_AT?0:s.fee;
+function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||Object.values(SHIP)[0];let fee=s.contact?0:s.fee;
   const p=lines===S.cart&&ship===S.ship&&promoOK()?S.promo:null;if(p&&p.freeShip)fee=0;const disc=p?p.discount:0;
   return{sub,fee,disc,code:p?p.code:'',freeCode:!!(p&&p.freeShip),total:R2(sub-disc+fee),count:lines.reduce((t,l)=>t+l.qty,0)}}
 function pruneCart(){S.cart=S.cart.filter(l=>{const m=BY[l.id];if(!m||m.soldOut||!l.sel)return false;for(const g of m.groups){const v=l.sel[g.id];if(g.type==='many'){if(!Array.isArray(v))return false}else if(!g.opts.some(o=>o[0]===v))return false}return true});if(!SHIP[S.ship])S.ship=Object.keys(SHIP)[0];save()}
@@ -117,7 +117,7 @@ function renderHome(){
   secs.splice(1,0,intents+spot);
   $('#homeBody').innerHTML=`
   ${CFG.announce?`<div class="ann-bar">${CFG.announce.link?`<a href="${esc(CFG.announce.link)}">${esc(CFG.announce.text)}</a>`:`<span>${esc(CFG.announce.text)}</span>`}</div>`:''}
-  <div class="strip gx"><span class="dia"></span><span>Jewellery with frequencies</span><span class="dia"></span><span>Free shipping over RM${FREE_AT}</span></div>
+  <div class="strip gx"><span class="dia"></span><span>Jewellery with frequencies</span><span class="dia"></span><span>Delivery across Malaysia · Worldwide on request</span></div>
   <button class="feature" data-open="${feat.id}" aria-label="${esc(feat.name)}">
     <span class="feature-img"><img src="${img(feat.id,W?'banner':'wide')}" alt="" decoding="async"></span>
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
@@ -260,12 +260,12 @@ function toHome(){while(stack.length>1){const s=$('#'+stack.pop());s.classList.r
 /* ---------- bag ---------- */
 function renderBag(){const t=totals(),box=$('#bagBody');
   if(!S.cart.length){box.innerHTML=`<h1 class="disp page-h">Your bag</h1><div class="empty"><span>Your bag is empty. Find a stone that speaks to you.</span><button class="ghost" data-act="back">Continue shopping</button></div>`;$('#toCheckout').disabled=true;return}
-  $('#toCheckout').disabled=false;const left=R2(FREE_AT-t.sub);
+  $('#toCheckout').disabled=false;
   box.innerHTML=`<h1 class="disp page-h">Your bag</h1><p class="page-sub">${t.count} piece${t.count===1?'':'s'}</p>
-  <div class="ship-meter">${left>0?`Add <b>${RM(left)}</b> more for free standard shipping.`:`<b>Free standard shipping</b> unlocked.`}<div class="meter"><i style="width:${Math.min(100,t.sub/FREE_AT*100)}%"></i></div></div>
+  <div class="ship-meter">Delivery: West Malaysia RM${SHIP.west?SHIP.west.fee:10} · East Malaysia RM${SHIP.east?SHIP.east.fee:20} · self pick-up · outside Malaysia on request. Choose at checkout.</div>
   <ul class="lines">${S.cart.map(l=>{const m=BY[l.id],o=optText(m,l.sel);return`<li class="line" data-key="${esc(l.key)}"><img src="${img(l.id,'tall')}" alt="${m.name}"><div class="li-main"><div class="li-top"><span class="li-name">${m.name}</span><span class="price">${RM(lineTotal(l))}</span></div>${o.length?`<div class="li-opts">${o.join(' · ')}</div>`:''}${l.note?`<div class="li-note">“${esc(l.note)}”</div>`:''}<div class="li-ctrl"><div class="stepper sm"><button data-act="lDec" aria-label="Fewer">${IC.minus}</button><output>${l.qty}</output><button data-act="lInc" aria-label="More">${IC.plus}</button></div><button class="li-remove" data-act="lRemove">${IC.trash}Remove</button></div></div></li>`}).join('')}</ul>
   <button class="more" data-act="back">${IC.plus} Continue shopping</button>
-  <div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>Standard shipping</span><span class="num">${t.fee?RM(t.fee):'Free'}</span></div><div class="tr total"><span>Estimated total</span><span class="num">${RM(t.total)}</span></div></div>`}
+  <div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>Delivery</span><span class="num">At checkout</span></div><div class="tr total"><span>Before delivery</span><span class="num">${RM(t.sub-(t.disc||0))}</span></div></div>`}
 function lineOf(el){const li=el.closest('.line');return{li,l:S.cart.find(x=>x.key===li.dataset.key)}}
 function removeLine(li,l){vib(8);const h=li.offsetHeight;const done=()=>{S.cart=S.cart.filter(x=>x!==l);save();renderBag();updateBagUI()};
   if(li.animate){li.animate([{height:h+'px',opacity:1,transform:'none'},{height:h+'px',opacity:0,transform:'translateX(-30px)',offset:.45},{height:'0px',opacity:0,paddingTop:'0px',paddingBottom:'0px',transform:'translateX(-30px)'}],{duration:380,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished.then(done,done)}else done()}
@@ -273,12 +273,13 @@ function removeLine(li,l){vib(8);const h=li.offsetHeight;const done=()=>{S.cart=
 
 /* ---------- checkout ---------- */
 function coSum(){const t=totals();return`<span class="eyebrow">Your order · ${t.count} piece${t.count===1?'':'s'}</span><ul>${S.cart.map(l=>{const m=BY[l.id];return`<li><img src="${img(l.id)}" alt=""><span class="n">${l.qty>1?l.qty+'× ':''}${esc(m.name)}<small>${optText(m,l.sel).slice(0,2).join(' · ')}</small></span><span class="num">${RM(lineTotal(l))}</span></li>`}).join('')}</ul>${totHTML()}`}
-function totHTML(){const t=totals();return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${t.fee?RM(t.fee):'Free'}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
+function totHTML(){const t=totals();if(isIntl())return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>International delivery</span><span class="num">Quoted by us</span></div></div>`;return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${SHIP[S.ship].pickup?'No charge':RM(t.fee)}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
 function codeHTML(){if(!CFG.codes&&!S.code)return'';const on=promoOK();
   return`<div class="fs" id="codeFs"><div class="fs-h"><b>Discount code</b></div>${on?`<div class="code-on"><span class="code-tag">${esc(S.promo.code)}</span><span class="code-txt">${esc(S.promo.label)}${S.promo.discount?` · you save ${RM(S.promo.discount)}`:''}</span><button class="link-btn" data-act="removeCode">Remove</button></div>`:
   `<div class="code-row"><input id="codeIn" placeholder="Enter code" value="${esc(S.code||'')}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Discount code" maxlength="24"><button class="ghost code-btn" data-act="applyCode" id="codeBtn">Apply</button></div>`}<p class="code-msg" id="codeMsg" role="status" hidden></p></div>`}
 function refreshCo(){if(!$('#coBody')||!$('#coSum'))return;$('#coSum').innerHTML=coSum();$('#coTot').innerHTML=totHTML();$('#placeAmt').textContent=RM(totals().total);
-  document.querySelectorAll('[data-fee]').forEach(x=>{const k=x.dataset.fee,f=k===S.ship?totals().fee:totals(S.cart,k).fee;x.textContent=f?RM(f):'Free';x.classList.toggle('free',!f)});
+  document.querySelectorAll('[data-fee]').forEach(x=>{const k=x.dataset.fee,f=k===S.ship?totals().fee:totals(S.cart,k).fee;x.textContent=feeTxt(k,f)});
+  const ck=$('#checkout');if(ck)ck.classList.toggle('co-intl',isIntl());
   const fs=$('#codeFs');if(fs){const msg=$('#codeMsg');const keep=msg&&!msg.hidden?[msg.textContent,msg.className]:null;fs.outerHTML=codeHTML();bindCode();if(keep){const m=$('#codeMsg');m.textContent=keep[0];m.className=keep[1];m.hidden=false}}}
 function bindCode(){const i=$('#codeIn');if(i)i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();applyCode()}}}
 let codeBusy=0;
@@ -292,12 +293,15 @@ async function applyCode(code){const inp=$('#codeIn');code=((code??(inp?inp.valu
   }catch(e){if(my===codeBusy){const bb=$('#codeBtn');if(bb){bb.disabled=false;bb.textContent='Apply'}const m=msg();if(m){m.textContent='Couldn’t check the code. Please try again.';m.className='code-msg bad';m.hidden=false}}}}
 /* bag or delivery changed: check the saved code again */
 function recheckCode(){if(S.code&&!promoOK())applyCode(S.code)}
+const feeTxt=(k,f)=>SHIP[k].contact?'Quote':SHIP[k].pickup?'No charge':RM(f);
+const isIntl=()=>!!(SHIP[S.ship]&&SHIP[S.ship].contact);
 const payText=()=>`Next, you’ll enter your ${SHIP[S.ship].pickup?'contact details':'delivery address'} and pay on Stripe’s secure page with a card, FPX online banking or the other methods shown there.`;
 function renderCheckout(){
   $('#coBody').innerHTML=`<div class="cols"><div class="col-main"><h1 class="disp page-h">Checkout</h1>
-  <div class="fs"><div class="fs-h"><b>Delivery</b></div>${Object.entries(SHIP).map(([k,s])=>{const fee=totals(S.cart,k).fee;return`<button class="radio${S.ship===k?' on':''}" data-act="ship" data-k="${k}" role="radio" aria-checked="${S.ship===k}"><span class="dot"></span><span><b>${esc(s.label)}</b><small>${esc(s.note||'')}</small></span><span class="rp${fee?'':' free'}" data-fee="${k}">${fee?RM(fee):'Free'}</span></button>`}).join('')}</div>
+  <div class="fs"><div class="fs-h"><b>Delivery</b></div>${Object.entries(SHIP).map(([k,s])=>{const fee=totals(S.cart,k).fee;return`<button class="radio${S.ship===k?' on':''}" data-act="ship" data-k="${k}" role="radio" aria-checked="${S.ship===k}"><span class="dot"></span><span><b>${esc(s.label)}</b><small>${esc(s.note||'')}</small></span><span class="rp" data-fee="${k}">${feeTxt(k,fee)}</span></button>`}).join('')}
+  <div class="intl-note"><b>International customers</b><p>Online payment is for delivery within Malaysia only. If you are outside Malaysia, choose <em>Outside Malaysia</em> and contact our customer service on WhatsApp before ordering. We will confirm availability, shipping cost, delivery time and how to pay. Import duties, taxes and customs charges in your country are paid by the customer, and delivery times depend on customs clearance.</p></div></div>
   ${codeHTML()}
-  <div class="fs"><div class="fs-h"><b>Payment</b></div><div class="pay-box">${IC.lock}<div><b>Secure payment by Stripe</b><p id="payText">${payText()}</p><div class="pay-marks"><span class="pay-ic">VISA</span><span class="pay-ic">MASTERCARD</span><span class="pay-ic">FPX</span></div></div></div></div>
+  <div class="fs" id="payFs"><div class="fs-h"><b>Payment</b></div><div class="pay-box">${IC.lock}<div><b>Secure payment by Stripe</b><p id="payText">${payText()}</p><div class="pay-marks"><span class="pay-ic">VISA</span><span class="pay-ic">MASTERCARD</span><span class="pay-ic">FPX</span></div></div></div></div>
   <div class="co-mob" id="coTot">${totHTML()}</div>
   <p class="co-err" id="coErr" hidden></p></div>
   <aside class="col-side co-sum" id="coSum">${coSum()}</aside></div>`;
@@ -310,7 +314,10 @@ function setShip(k){if(!SHIP[k])return;S.ship=k;save();vib(6);document.querySele
    ===================================================================== */
 let placing=false;
 function resetPlaceBtn(){placing=false;const pb=$('#placeBtn');pb.classList.remove('sending','press')}
-async function startCheckout(){if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
+function intlEnquiry(){const t=totals();const lines=S.cart.map(l=>{const m=BY[l.id];return m?`• ${l.qty}× ${m.name}${m.details?` (${m.details})`:''} [${m.id}] ${RM(lineTotal(l))}`:''}).filter(Boolean).join('\n');
+  const msg=`Hi House of Qi, I'm outside Malaysia and would like to order:\n${lines}\nSubtotal: ${RM(t.sub)}\n\nCountry: \nCould you quote international delivery and how to pay? Thank you!`;
+  if(CFG.whatsapp)window.open(`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent(msg)}`,'_blank','noopener');else toast('Please contact us through Instagram or Facebook.')}
+async function startCheckout(){if(isIntl()){vib(10);intlEnquiry();return}if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
   pb.classList.add('press');await wait(120);pb.classList.remove('press');pb.classList.add('sending');
   try{
     const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,coupon:promoOK()?S.promo.code:undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
@@ -334,7 +341,7 @@ function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const idx={co
   <p class="d-msg rise" style="--d:1.05s">${o.paid?`A receipt is on its way to ${o.email?esc(o.email):'your email'}. We are cleansing and packing your crystals by hand, and will let you know when ${o.pickup?'they are ready':'they ship'}.`:'Your bank is still confirming the payment. We will email you as soon as it clears.'}</p>
   <ol class="trk rise" style="--d:1.2s"><span class="trk-rail"><span class="trk-fill" style="height:${o.paid?idx*50:0}%"></span></span>${st.map((s,i)=>{const done=o.paid&&(i<idx||(idx===2&&i===2)),now=o.paid&&i===idx&&idx<2;return`<li class="st${done?' done':''}${now?' now':''}"><span class="st-dot"></span><span><b>${s[0]}</b><small>${s[1]}</small></span><time>${done||now?fmtT(tm[i]):''}</time></li>`}).join('')}</ol>
   <div class="sum rise" style="--d:1.4s"><div class="sum-h"><span class="eyebrow">Order summary</span><span class="eyebrow">${esc(o.delivery||'')}</span></div><ul>${o.items.map(i=>`<li><span><span class="q">${i.qty}×</span>${esc(i.name)}</span><span class="num">${RM(i.amount)}</span></li>`).join('')}</ul>
-    ${o.discount?`<div class="tr"><span>Discount${o.coupon?` (${esc(o.coupon)})`:''}</span><span class="num">−${RM(o.discount)}</span></div>`:''}<div class="tr"><span>Delivery</span><span class="num">${o.shipping?RM(o.shipping):'Free'}</span></div><div class="tot"><span>Total paid</span><span class="num">${RM(o.total)}</span></div></div>
+    ${o.discount?`<div class="tr"><span>Discount${o.coupon?` (${esc(o.coupon)})`:''}</span><span class="num">−${RM(o.discount)}</span></div>`:''}<div class="tr"><span>Delivery</span><span class="num">${o.shipping?RM(o.shipping):'No charge'}</span></div><div class="tot"><span>Total paid</span><span class="num">${RM(o.total)}</span></div></div>
   ${COMPANY.replace('done-co','done-co2')}
   <div class="d-actions rise" style="--d:1.55s">${o.paid&&o.trackUrl?`<p class="track-note">Save this link to follow your order any time.</p><a class="cta track-cta" href="${esc(o.trackUrl)}">Track this order</a>`:''}<button class="ghost" data-act="closeDone">Continue shopping</button></div></div>`}
 async function showConfirmation(id){const d=$('#done');d.hidden=false;d.classList.remove('play');

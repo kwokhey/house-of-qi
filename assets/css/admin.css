@@ -226,3 +226,5 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .kcov-b small{font-size:12.5px;font-weight:400}
 .kcov-b .btn{text-transform:uppercase;letter-spacing:.12em}
 .kcov-b .link{text-transform:uppercase;letter-spacing:.1em;font-size:12px}
+
+.note.warn{background:#FBE7E1;color:#8E3423}

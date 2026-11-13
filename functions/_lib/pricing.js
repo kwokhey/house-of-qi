@@ -63,9 +63,11 @@ export function priceOrder(catalog, items, shipKey) {
 
   const ship = catalog.shipping[shipKey];
   if (!ship) return { error: "Please choose a delivery option." };
+  // international orders are arranged with customer service, not paid online
+  if (ship.contact) return { error: "For delivery outside Malaysia, please contact our customer service on WhatsApp before ordering." };
 
   const subtotal = round2(lines.reduce((t, l) => t + l.unit * l.qty, 0));
-  const fee = ship.freeOver && subtotal >= catalog.freeShippingFrom ? 0 : ship.fee;
+  const fee = ship.fee;
   return { lines, ship, shipKey, subtotal, fee, total: round2(subtotal + fee) };
 }
 

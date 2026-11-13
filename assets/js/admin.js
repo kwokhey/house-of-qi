@@ -1,6 +1,15 @@
 /* House of Qi · order page. Orders come from Stripe; progress is saved back to Stripe. */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// customer chose West/East Malaysia: warn if the address says otherwise (Stripe can't limit by state)
+const EAST = /sabah|sarawak|labuan/i;
+const regionWarn = (o) => {
+  const addr = (o.address || []).join(" ");
+  if (!addr || !/malaysia/i.test(o.delivery || "")) return "";
+  const east = EAST.test(addr), saidEast = /east/i.test(o.delivery);
+  if (east === saidEast) return "";
+  return `<div class="note warn">Check delivery: customer chose <b>${esc(o.delivery)}</b> but the address is in ${east ? "East" : "West"} Malaysia. The delivery fee may need adjusting.</div>`;
+};
 const RM = (n) => "RM" + Number(n).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const when = (ts) => (ts ? new Date(ts).toLocaleString("en-MY", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).replace(",", "") : "");
 const COURIERS = ["Pos Laju", "J&T Express", "DHL eCommerce", "Ninja Van", "City-Link Express", "GDex", "Lalamove", "Other"];
@@ -67,7 +76,7 @@ function card(o) {
     <ul>${items}</ul>
     ${o.notes ? `<div class="note">Gift message: ${esc(o.notes)}</div>` : ""}
     ${o.coupon ? `<div class="note promo">Code <b>${esc(o.coupon)}</b>${o.discount ? ` · −${RM(o.discount)}` : " · free delivery"}</div>` : ""}
-    <div class="deliv"><span><b>${esc(o.delivery || (o.pickup ? "Self pick-up" : "Delivery"))}</b></span><span class="tot">${RM(o.total)}</span>
+    ${regionWarn(o)}<div class="deliv"><span><b>${esc(o.delivery || (o.pickup ? "Self pick-up" : "Delivery"))}</b></span><span class="tot">${RM(o.total)}</span>
       ${o.address.length ? `<span class="addr">${o.address.map(esc).join("<br>")}</span><button class="link" data-copy="${esc([o.name, ...o.address, o.phone].join("\n"))}">Copy address</button>` : ""}</div>
     <div class="act">${act}
       ${wa ? `<a class="btn ghost sm" href="${wa}" target="_blank" rel="noopener">WhatsApp customer</a>` : ""}

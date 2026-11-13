@@ -89,7 +89,7 @@ Stock lives in a Cloudflare **D1** database (free tier). Setup, once:
 Until the database is connected, the shop shows the sample products from `data/catalog.json`. Cost prices and suppliers are only visible on the order page, never in the shop.
 
 **Marketing tab:**
-- **Coupon codes**: % off, RM off or free delivery. Optional minimum spend, start/end dates, a limit on how many orders can use it, and "don't discount pieces already on sale". Customers type the code at checkout (the box only appears while a code is live). Each code shows how many paid orders used it and the discount given. A code that has been used can be switched off but not deleted.
+- **Coupon codes**: % off or RM off. Optional minimum spend, start/end dates, a limit on how many orders can use it, and "don't discount pieces already on sale". Customers type the code at checkout (the box only appears while a code is live). Each code shows how many paid orders used it and the discount given. A code that has been used can be switched off but not deleted.
 - **Sales**: automatic % off for the whole shop, a shop section, chosen stones or chosen pieces, between two dates. The shop shows the old price crossed out, the % off and the sale name. If two sales cover a piece, the bigger one wins. Prices round to the nearest ringgit.
 - **Announcement bar**: one line across the top of the shop, with optional dates.
 - Everything is checked again on the server at payment, and Stripe shows the discount on its payment page and receipt. Profit on the Stock page uses what the customer actually paid.
@@ -132,7 +132,7 @@ Until the database is connected, the shop shows the sample products from `data/c
 
 **Photos:** square or 4:5 JPG/WebP, about 1200 px and under 300 KB, in `assets/img/products/`. Set the product's `"image"`. Real photos also appear on the Stripe payment page.
 
-**Shipping:** `"shipping"` (labels, fees, delivery days) and `"freeShippingFrom"`. Standard delivery has `"freeOver": true`. Keep `policies.html` in step with any change.
+**Delivery:** `"shipping"` in `data/catalog.json`: West Malaysia (RM10), East Malaysia (RM20), self pick-up, and Outside Malaysia (`"contact": true`, which can't be paid online: the checkout button opens WhatsApp with the bag contents instead). There is no free delivery. Keep `policies.html` (Delivery and International customers) in step with any change. The order page warns when the address doesn't match the West/East region the customer picked.
 
 **Homepage:** `"hero"` (featured product and text; `|` splits the title onto two lines), `"spotlight"` (monthly stones title and note), `"collections"` (order of sections; `layout` is `bestsellers`, `feature`, `grid` or `list`).
 

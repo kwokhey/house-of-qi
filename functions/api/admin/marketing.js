@@ -53,7 +53,7 @@ export async function onRequestPost({ request, env }) {
   if (b.type === "coupon") {
     const code = cleanCode(b.code);
     if (code.length < 3) return json({ error: "The code needs at least 3 letters or numbers (e.g. QI10)." }, 400);
-    const kind = ["percent", "amount", "freeship"].includes(b.kind) ? b.kind : "percent";
+    const kind = ["percent", "amount"].includes(b.kind) ? b.kind : "percent"; // no free-delivery codes
     const value = kind === "freeship" ? 0 : num(b.value);
     if (kind === "percent" && !(value >= 1 && value <= 90)) return json({ error: "Percent off must be between 1 and 90." }, 400);
     if (kind === "amount" && !(value >= 1)) return json({ error: "Enter how many ringgit off." }, 400);

@@ -5,25 +5,23 @@
   "shipToCountries": [
     "MY"
   ],
-  "freeShippingFrom": 300,
   "shipping": {
-    "std": {
-      "label": "Standard delivery",
-      "note": "West Malaysia · 3–5 working days",
+    "west": {
+      "label": "West Malaysia",
+      "note": "Peninsular Malaysia · 3–5 working days",
       "fee": 10,
-      "freeOver": true,
       "days": [
         3,
         5
       ]
     },
-    "exp": {
-      "label": "Express delivery",
-      "note": "West Malaysia · 1–2 working days",
+    "east": {
+      "label": "East Malaysia",
+      "note": "Sabah, Sarawak & Labuan · 5–7 working days",
       "fee": 20,
       "days": [
-        1,
-        2
+        5,
+        7
       ]
     },
     "pick": {
@@ -31,6 +29,12 @@
       "note": "By appointment, we will WhatsApp you",
       "fee": 0,
       "pickup": true
+    },
+    "intl": {
+      "label": "Outside Malaysia",
+      "note": "International delivery · contact our customer service for a quote",
+      "fee": 0,
+      "contact": true
     }
   },
   "addons": {

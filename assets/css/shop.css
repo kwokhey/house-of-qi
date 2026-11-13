@@ -786,3 +786,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .share-btn svg{width:16px;height:16px}
 .share-btn:active{transform:scale(.97)}
 @media (min-width:1000px){.share-btn:hover{border-color:var(--gold);color:var(--ink)}}
+
+/* delivery regions + international */
+.intl-note{margin-top:12px;padding:12px 14px;border-radius:6px;background:var(--card);border:1px solid var(--line);font-size:12.5px;line-height:1.55;color:var(--ink-2)}
+.intl-note b{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:4px;font-weight:500}
+.intl-note p{margin:0}
+.co-intl .intl-note{border-color:var(--gold);background:#FBF4EA}
+.co-intl #codeFs,.co-intl #payFs{display:none}
+#placeBtn .lbl3{display:none}
+.co-intl #placeBtn{background:#1F8A4C}
+.co-intl #placeBtn .lbl,.co-intl #placeBtn .lbl2{display:none}
+.co-intl #placeBtn .lbl3{display:inline}
