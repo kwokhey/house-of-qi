@@ -60,12 +60,31 @@
       : `<p class="empty">${ITEMS.length ? "Nothing matches." : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
   }
 
+  /* Link previews: for pieces without a photo, save the drawn picture as a JPG so
+     shared links (WhatsApp, Facebook) show the piece instead of the logo. Runs quietly. */
+  let previewBusy = false;
+  async function makePreviews() {
+    if (previewBusy || typeof ART === "undefined") return; previewBusy = true;
+    try {
+      const { prev, staticAt } = await api("/api/admin/preview");
+      const todo = ITEMS.filter((i) => !i.image_v && (prev[i.id] ? prev[i.id] < i.updated_at : i.updated_at > staticAt || !i.updated_at)).slice(0, 40);
+      for (const i of todo) {
+        const im = new Image();
+        await new Promise((ok) => { im.onload = im.onerror = ok; im.src = ART.get(i.id, "sq", { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }); });
+        const cv = document.createElement("canvas"); cv.width = cv.height = 630;
+        cv.getContext("2d").drawImage(im, 0, 0, 630, 630);
+        await api("/api/admin/preview", { method: "POST", body: JSON.stringify({ id: i.id, data: cv.toDataURL("image/jpeg", 0.78) }) }).catch(() => {});
+      }
+    } catch {} finally { previewBusy = false; }
+  }
+
   async function load() {
     try {
       const d = await api("/api/admin/items");
       ITEMS = d.items; MONTH = d.month || {}; COLS = d.colours || []; loaded = true;
       $("#sSetup").hidden = true; $("#sList").hidden = false;
       render();
+      makePreviews();
     } catch (e) {
       if (e.setup) {
         $("#sList").hidden = true; $("#sSetup").hidden = false;
