@@ -166,6 +166,7 @@ $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
 let DR=null;
 function defaults(m){const s={};for(const g of m.groups)s[g.id]=g.type==='many'?[]:(g.def||g.opts[0][0]);return s}
 /* ---------- product sheet: choose the exact piece, gift card with live preview ---------- */
+const isSample=m=>/\/samples\//.test(m.image||'');
 function cardOptOf(m){for(const g of m.groups)if(g.type==='many')for(const o of g.opts)if(/card/i.test(o[1]))return[g.id,o[0]];return null}
 const cardOn=()=>{const c=DR&&cardOptOf(DR.m);return!!(c&&DR.sel[c[0]]&&DR.sel[c[0]].includes(c[1]))};
 const fv=s=>(($(s)||{}).value||'').trim();
@@ -182,13 +183,13 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   DR={m,sel:prev?keepSel(m,prev.sel):defaults(m),qty:1};DR_READY=false;
   const im=$('#shImg');if(prev){im.classList.add('swap');setTimeout(()=>{im.src=img(m.id,WIDE.matches?'portrait':'hero');im.onload=()=>im.classList.remove('swap');setTimeout(()=>im.classList.remove('swap'),400)},140)}
   else{im.src=img(m.id,WIDE.matches?'portrait':'hero');$('#sheetScroll').scrollTop=0;im.style.transform=''}
-  im.alt=m.name;
+  im.alt=m.name;const hero=im.closest('.sheet-hero');if(hero)hero.classList.toggle('sample',isSample(m));
   const fam=FAM[m.fam]||[m];
   const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
   const sub=[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(' · ');
   const pick=fam.length<2?'':`<div class="og vp" role="radiogroup" aria-label="Choose your piece"><div class="og-h"><b>Choose your piece</b><em class="req">${fam.length} options</em></div>
     <div class="vp-row">${fam.map(x=>`<button class="vopt${x.id===m.id?' on':''}" data-act="variant" data-id="${x.id}" role="radio" aria-checked="${x.id===m.id}"><span class="vimg"><img src="${img(x.id,'sq')}" alt="" loading="lazy"></span><span class="vl">${esc(x.optLabel)}</span><span class="vpz">${x.was?`<s>${RM(x.was)}</s> `:''}${RM(x.price)}</span>${x.stock===1?'<span class="v1">One of a kind</span>':x.stock<=3?`<span class="v1">${x.stock} left</span>`:''}</button>`).join('')}</div>
-    <p class="vp-note">${fam.every(x=>x.image)?'Each photo shows the actual piece you will receive.':'Natural stones vary, so every piece is a little different.'}</p></div>`;
+    <p class="vp-note">${fam.every(x=>x.image&&!isSample(x))?'Each photo shows the actual piece you will receive.':'Natural stones vary, so every piece is a little different.'}</p></div>`;
   const co=cardOptOf(m);
   const gift=!co?'':`<div class="og gcard" id="gCard" hidden><div class="og-h"><b>Your gift card</b><em>Handwritten by us</em></div>
     <div class="gc-prev" aria-hidden="true"><div class="gc-card"><span class="gc-mark"></span><div class="gc-to" id="gcTo">Dear you</div><div class="gc-msg" id="gcMsg"></div><div class="gc-from" id="gcFrom"></div><div class="gc-foot">House of Qi</div></div></div>

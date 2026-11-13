@@ -30,7 +30,8 @@ export function rowToProduct(r, settings) {
     price: r.price,
     stock: r.stock,
     soldOut: r.stock <= 0,
-    image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : "",
+    // a real photo from the Stock tab wins; otherwise a showcase sample (data/catalog.json → samplePhotos), else drawn art
+    image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : (settings.samplePhotos && settings.samplePhotos[r.id]) || "",
     bestseller: r.featured ? r.featured : 0,
     stone: r.stone,
     quality: r.size_mm ? `${+r.size_mm} mm beads` : (r.variant || ""),
@@ -86,7 +87,8 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     const cover = ids.includes(c.cover) ? c.cover : ids.find((id) => products.find((p) => p.id === id).image) || ids[0];
     return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, ids };
   }).filter((c) => c.ids.length);
-  return { ...settings, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
+  const { samplePhotos, _samplePhotosNote, ...pub } = settings;
+  return { ...pub, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
 }
 
 function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }

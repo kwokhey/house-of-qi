@@ -1343,5 +1343,35 @@
         }
       ]
     }
-  ]
+  ],
+  "samplePhotos": {
+    "AMET-1-4": "assets/img/samples/amethyst-wrist.jpg",
+    "LA-1-9": "assets/img/samples/amethyst-wrist.jpg",
+    "LA-1-9-B": "assets/img/samples/amethyst-wrist.jpg",
+    "LA-1-8": "assets/img/samples/amethyst-wrist.jpg",
+    "RQ-1-4": "assets/img/samples/rose-quartz-shells.jpg",
+    "MORG-1-6": "assets/img/samples/pink-quartz-closeup.jpg",
+    "CQ-1-6": "assets/img/samples/clear-quartz-wood.jpg",
+    "TE-1-8": "assets/img/samples/tiger-eye-ammonite.jpg",
+    "TE-1-6": "assets/img/samples/tiger-eye-ammonite-2.jpg",
+    "TE-1-4": "assets/img/samples/tiger-eye-shell.jpg",
+    "TSS-1034": "assets/img/samples/sunstone-lotus.jpg",
+    "TSS-1035": "assets/img/samples/sunstone-ammonite.jpg",
+    "TSS-1036": "assets/img/samples/sunstone-stack.jpg",
+    "MORG-1-4": "assets/img/samples/pink-quartz-shell.jpg",
+    "MORG-1-8": "assets/img/samples/pink-quartz-shell.jpg",
+    "SQ-1-8": "assets/img/samples/pink-quartz-hand.jpg",
+    "BA-1-7": "assets/img/samples/blue-shell.jpg",
+    "SELE-1-8": "assets/img/samples/white-ammonite.jpg",
+    "SELE-1-6": "assets/img/samples/white-ammonite-2.jpg",
+    "MOON-1-7": "assets/img/samples/white-shells.jpg",
+    "TOUR-1-5": "assets/img/samples/tourmaline-shell.jpg",
+    "TOUR-1-6": "assets/img/samples/tourmaline-shell.jpg",
+    "TOUR-1-8": "assets/img/samples/tourmaline-closeup.jpg",
+    "MCRQ-1-10": "assets/img/samples/rutilated-quartz.jpg",
+    "MCRQ-1-12": "assets/img/samples/rutilated-quartz.jpg",
+    "TQ-1-10": "assets/img/samples/tourmalinated-quartz.jpg",
+    "ALMA-1-5": "assets/img/samples/red-stone-larimar.jpg"
+  },
+  "_samplePhotosNote": "Showcase only: Facebook photos of similar pieces, shown until a real photo is uploaded in the Stock tab. Delete this list when the client has photographed the stock."
 }

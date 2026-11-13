@@ -753,3 +753,6 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #app:has(#sheet.open) .wafab,#app:has(.screen.in:not(#home)) .wafab{opacity:0;pointer-events:none;transform:scale(.8)}
 @media (min-width:1000px){.wafab{right:max(32px,env(safe-area-inset-right,0px));bottom:28px;width:64px;height:64px}.cartbar.show~.wafab{bottom:104px}
   .wafab:hover .wa-tip{opacity:1;transform:translateY(-50%)}.wafab:hover{transform:translateY(-2px)}}
+
+.sheet-hero{position:relative}
+.sheet-hero.sample::after{content:"Sample photo · similar piece";position:absolute;left:16px;bottom:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:rgba(46,34,28,.62);color:#FBF3EC;padding:6px 10px;border-radius:12px;pointer-events:none}
