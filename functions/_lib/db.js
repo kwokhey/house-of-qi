@@ -108,7 +108,7 @@ const SCHEMA = [
   )`,
 ];
 // columns added after the first release (ignored if they already exist)
-const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`];
+const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
 
 let ready = null;
 export function hasDB(env) { return !!(env && env.DB && typeof env.DB.prepare === "function"); }

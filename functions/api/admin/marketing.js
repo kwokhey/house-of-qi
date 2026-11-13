@@ -106,6 +106,25 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true });
   }
 
+  if (b.type === "collCover") {
+    const id = Math.floor(num(b.id));
+    const c = await D.prepare("SELECT id FROM collections WHERE id = ?").bind(id).first();
+    if (!c) return json({ error: "Save the collection first, then add its cover photo." }, 404);
+    if (!b.data) {
+      await D.batch([D.prepare("DELETE FROM images WHERE item_id = ?").bind(`coll-${id}`), D.prepare("UPDATE collections SET cover_v = 0, updated_at = ? WHERE id = ?").bind(now, id)]);
+      return json({ ok: true, cover_v: 0 });
+    }
+    const m = String(b.data).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
+    const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    if (bin.length > 1_500_000) return json({ error: "That photo is too large. Please try another." }, 413);
+    await D.batch([
+      D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(`coll-${id}`, m[1], bin, now),
+      D.prepare("UPDATE collections SET cover_v = ?, updated_at = ? WHERE id = ?").bind(now, now, id),
+    ]);
+    return json({ ok: true, cover_v: now });
+  }
+
   if (b.type === "announce") {
     const a = { text: str(b.text, 140), link: str(b.link, 300), active: !!b.active && !!str(b.text), starts_at: dayStart(b.starts), ends_at: dayEnd(b.ends) };
     await setSetting(D, "announce", JSON.stringify(a));
@@ -126,7 +145,8 @@ export async function onRequestDelete({ request, env }) {
     return json({ ok: true });
   }
   if (q.get("type") === "collection") {
-    await D.prepare("DELETE FROM collections WHERE id = ?").bind(Math.floor(num(q.get("id")))).run();
+    const cid = Math.floor(num(q.get("id")));
+    await D.batch([D.prepare("DELETE FROM collections WHERE id = ?").bind(cid), D.prepare("DELETE FROM images WHERE item_id = ?").bind(`coll-${cid}`)]);
     return json({ ok: true });
   }
   if (q.get("type") === "sale") {

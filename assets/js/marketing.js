@@ -100,12 +100,27 @@
       <span class="m-num"><em class="st ${st[0]}">${st[1]}</em><small>${n} piece${n === 1 ? "" : "s"}</small></span></button>`;
   }
 
+  /** resize a photo in the browser (max 1400px, JPEG) before upload */
+  function shrink(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 1400 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+        cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+        cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+        let q = 0.86, data = cv.toDataURL("image/jpeg", q);
+        while (data.length > 1_700_000 && q > 0.5) { q -= 0.08; data = cv.toDataURL("image/jpeg", q); }
+        res(data);
+      };
+      im.onerror = rej; im.src = url;
+    });
+  }
   const inColl = (c) => covered(c).filter((i) => !c.max_price || i.price <= c.max_price);
   const thumbOf = (i) => (i && i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : i && typeof ART !== "undefined" ? ART.get(i.id, "sq", { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }) : "");
   function collRow(c) {
     const items = inColl(c), cover = items.find((i) => i.id === c.cover) || items.find((i) => i.image_v) || items[0];
     return `<button class="m-row m-coll" data-coll="${c.id}">
-      <span class="m-cov">${cover ? `<img src="${thumbOf(cover)}" alt="">` : ""}</span>
+      <span class="m-cov">${c.cover_v ? `<img src="/img/coll-${c.id}.jpg?v=${c.cover_v}" alt="">` : cover ? `<img src="${thumbOf(cover)}" alt="">` : ""}</span>
       <span class="m-main"><b>${esc(c.name)}${c.zh ? ` <small class="zh">${esc(c.zh)}</small>` : ""}</b><small>${esc(scopeText(c))}${c.max_price ? ` · up to ${RM(c.max_price)}` : ""}${c.blurb ? ` · ${esc(c.blurb)}` : ""}</small></span>
       <span class="m-num"><em class="st ${c.active ? "live" : "off"}">${c.active ? "Shown" : "Hidden"}</em><small>${items.length} piece${items.length === 1 ? "" : "s"}</small></span></button>`;
   }
@@ -129,12 +144,30 @@
         <label class="f"><span>Only pieces up to (RM, optional)</span><input id="kMax" inputmode="decimal" value="${+c.max_price || ""}" placeholder="Any price"></label>
         <label class="f"><span>Order on the page</span><input id="kSort" inputmode="numeric" value="${+c.sort || 0}"></label>
       </div>
-      <label class="f"><span>Cover picture</span><select id="kCover"></select></label>
+      <div class="f"><span>Cover photo</span>
+        <div class="kcov"><span class="kcov-img"><img id="kCovImg" alt="" hidden><em id="kCovNone">No photo uploaded</em></span>
+          <span class="kcov-b"><label class="btn sm">Upload photo<input type="file" id="kCovFile" accept="image/*" hidden></label><button type="button" class="link danger" id="kCovDel" hidden>Remove photo</button>
+          <small>Shown on the shop's collection tile instead of a product picture. A tall (portrait) photo works best.</small></span></div></div>
+      <label class="f" id="kCoverF"><span>Or use a product picture</span><select id="kCover"></select></label>
       <div class="toggles"><label><input type="checkbox" id="kOn"${c.active ? " checked" : ""}> Show in the shop</label></div>
       <p class="m-sum" id="kSum"></p>
       <p class="err" id="kErr" hidden></p>
       <div class="ed-f"><button class="btn" type="submit">${isNew ? "Create collection" : "Save changes"}</button>${isNew ? "" : '<button type="button" class="link danger" id="kDel">Delete collection</button>'}</div>
     </form>`;
+    let pendingCover = null, coverV = +c.cover_v || 0;
+    const paintCover = () => {
+      const src = pendingCover || (coverV ? `/img/coll-${c.id}.jpg?v=${coverV}` : "");
+      $("#kCovImg").hidden = !src; if (src) $("#kCovImg").src = src;
+      $("#kCovNone").hidden = !!src; $("#kCovDel").hidden = !src;
+      $("#kCoverF").style.opacity = src ? ".55" : "";
+    };
+    $("#kCovFile").onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try { pendingCover = await shrink(f); paintCover(); toast(isNew ? "Photo ready. It uploads when you create the collection." : "Photo ready. Tap Save changes to use it."); }
+      catch { toast("Couldn't read that photo. Please try another."); }
+    };
+    $("#kCovDel").onclick = () => { pendingCover = null; coverV = 0; c._removeCover = true; paintCover(); };
+    paintCover();
     const scope = () => $("#kScope").value;
     const rule = () => ({ scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 });
     const sum = () => {
@@ -166,8 +199,13 @@
     $("#kForm").onsubmit = async (e) => {
       e.preventDefault();
       const body = { type: "collection", id: c.id, name: $("#kName").value, zh: $("#kZh").value, blurb: $("#kBlurb").value, ...rule(), cover: $("#kCover").value, sort: $("#kSort").value, active: $("#kOn").checked };
-      try { await api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) }); toast(isNew ? "Collection created. The shop updates within a minute." : "Saved"); d.close(); load(); }
-      catch (x) { $("#kErr").textContent = x.message; $("#kErr").hidden = false; }
+      try {
+        await api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) });
+        let id = c.id;
+        if (!id && pendingCover) { const all = await api("/api/admin/marketing"); id = Math.max(...all.collections.filter((x) => x.name === body.name.trim()).map((x) => x.id)); }
+        if (id && (pendingCover || c._removeCover)) await api("/api/admin/marketing", { method: "POST", body: JSON.stringify({ type: "collCover", id, data: pendingCover || "" }) });
+        toast(isNew ? "Collection created. The shop updates within a minute." : "Saved"); d.close(); load();
+      } catch (x) { $("#kErr").textContent = x.message; $("#kErr").hidden = false; }
     };
     if ($("#kDel")) $("#kDel").onclick = async () => {
       if ($("#kDel").dataset.sure !== "1") { $("#kDel").dataset.sure = "1"; $("#kDel").textContent = "Tap again to delete"; return; }

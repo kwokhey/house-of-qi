@@ -100,7 +100,7 @@ function renderHome(){
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
   const cols=(CFG.curated||[]).filter(c=>byIds(c.ids).length);
   const collSec=!cols.length?'':`<section class="sec disc" id="sec-colls"><div class="gx"><div class="sec-head"><h3 class="disp">Our <em>collections</em></h3><span class="count">${cols.length}</span></div></div>
-    <div class="rail gx coll-rail">${cols.map(c=>{const n=byIds(c.ids).length;return`<button class="coll" data-act="coll" data-id="${c.id}"><span class="coll-img"><img src="${img(c.cover||c.ids[0],W?'tall':'tall')}" alt="" decoding="async" loading="lazy"></span><span class="coll-txt"><b>${esc(c.name)}</b>${c.zh?`<span class="zh">${esc(c.zh)}</span>`:''}${c.blurb?`<small>${esc(c.blurb)}</small>`:''}<em>${n} piece${n===1?'':'s'}</em></span></button>`}).join('')}<span class="rail-end"></span></div></section>`;
+    <div class="rail gx coll-rail">${cols.map(c=>{const n=byIds(c.ids).length;return`<button class="coll" data-act="coll" data-id="${c.id}"><span class="coll-img"><img src="${c.coverImg?'/'+c.coverImg:img(c.cover||c.ids[0],'tall')}" alt="" decoding="async" loading="lazy"></span><span class="coll-txt"><b>${esc(c.name)}</b>${c.zh?`<span class="zh">${esc(c.zh)}</span>`:''}${c.blurb?`<small>${esc(c.blurb)}</small>`:''}<em>${n} piece${n===1?'':'s'}</em></span></button>`}).join('')}<span class="rail-end"></span></div></section>`;
   const colours=(CFG.colours||[]);
   const colSec=colours.length<2?'':`<section class="sec disc gx" id="sec-colour"><div class="sec-head"><h3 class="disp">Shop by <em>colour</em></h3></div>
     <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
@@ -201,6 +201,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
     <label><span>From</span><input id="gFrom" maxlength="40" placeholder="e.g. Kyle & Jade" autocomplete="off"></label></div></div>`;
   $('#shBody').innerHTML=`${tags?`<div class="d-tags">${tags}</div>`:''}<h2 class="disp d-name">${m.name}</h2>${sub?`<div class="d-zh">${sub}</div>`:''}<p class="d-desc">${m.desc}</p>
   <div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}</div>${m.sale?`<p class="sale-note">${esc(m.sale.name)}${m.sale.ends?` · ends ${new Date(m.sale.ends).toLocaleDateString('en-MY',{day:'numeric',month:'short'})}`:''}</p>`:''}
+  <button class="share-btn" data-act="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5v-6"/></svg>Share this piece</button>
   ${pick}
   ${m.meaning?`<div class="meaning"><span class="eyebrow">Meaning</span><p>${m.meaning}</p><div class="ints">${m.ints.filter(i=>INTENTS[i]).map(i=>`<span>${INTENTS[i][0]}</span>`).join('')}</div></div>`:''}
   <div class="specs"><div><span class="eyebrow">Stone</span><b>${m.stone}</b></div><div><span class="eyebrow">${m.specLabel||'Quality'}</span><b>${m.grade||'Natural'}</b></div><div><span class="eyebrow">Ships</span><b>1–2 days</b></div></div>${CFG.whatsapp?`<a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+m.name+' ('+m.id+')')}" target="_blank" rel="noopener">${IC.wa}Ask about this piece on WhatsApp</a>`:''}`+
@@ -368,6 +369,10 @@ const ACT={
   opt(el){DR.sel[el.dataset.g]=el.dataset.o;vib(6);updateDetail(false)},
   chk(el){const a=DR.sel[el.dataset.g],o=el.dataset.o;DR.sel[el.dataset.g]=a.includes(o)?a.filter(x=>x!==o):[...a,o];vib(6);updateDetail(false)},
   qInc(){const cap=maxQty(DR.m)-inBag(DR.m.id);if(DR.qty<cap){DR.qty++;updateDetail()}else toast(DR.m.stock===1?'This piece is one of a kind':`Only ${DR.m.stock} available`)},qDec(){if(DR.qty>1){DR.qty--;updateDetail()}},
+  async share(){if(!DR)return;const m=DR.m;const url=`${location.origin}/p/${encodeURIComponent(m.id)}`;
+    const text=`${m.name}${m.details?` · ${m.details}`:''} · ${RM(m.price)} | House of Qi`;
+    try{if(navigator.share){await navigator.share({title:m.name,text,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+    try{await navigator.clipboard.writeText(`${text}\n${url}`);toast('Link copied. Paste it anywhere to share.')}catch(e){prompt('Copy this link',url)}},
   add:addToBag,
   variant(el){if(DR&&el.dataset.id!==DR.m.id){vib(6);openDetail(el.dataset.id,true)}},
   lInc(el){const{l}=lineOf(el);if(inBag(l.id)<maxQty(BY[l.id])){l.qty++;save();renderBag();updateBagUI(true)}else toast(BY[l.id].stock===1?'This piece is one of a kind':`Only ${BY[l.id].stock} available`)},
@@ -406,6 +411,8 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
   $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
   $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
+  { const q=new URLSearchParams(location.search).get('p');const want=window.OPEN_P||q;
+    if(want&&BY[want]){setTimeout(()=>openDetail(want),250);try{history.replaceState(null,'','/')}catch(e){}} }
   if(CFG.whatsapp){const w=$('#wafab');w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about your crystals.')}`;w.hidden=false;
     w.addEventListener('click',()=>{if(DR&&$('#sheet').classList.contains('open'))w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+DR.m.name+' ('+DR.m.id+')')}`})}
   const q=new URLSearchParams(location.search),clean=()=>{try{history.replaceState(null,'',location.pathname)}catch(e){}};

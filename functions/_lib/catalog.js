@@ -85,7 +85,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     const rule = { scope: c.scope, targets: safeArr(c.targets) };
     const ids = products.filter((p) => saleCovers(rule, p) && (!c.max_price || p.price <= c.max_price)).map((p) => p.id);
     const cover = ids.includes(c.cover) ? c.cover : ids.find((id) => products.find((p) => p.id === id).image) || ids[0];
-    return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, ids };
+    return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, coverImg: c.cover_v ? `img/coll-${c.id}.jpg?v=${c.cover_v}` : "", ids };
   }).filter((c) => c.ids.length);
   const { samplePhotos, _samplePhotosNote, ...pub } = settings;
   return { ...pub, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };

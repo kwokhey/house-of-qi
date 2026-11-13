@@ -781,3 +781,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #homeBody,#results{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 #app:has(.cartbar.show) #homeBody,#app:has(.cartbar.show) #results{padding-bottom:calc(176px + env(safe-area-inset-bottom,0px))}
 @media (min-width:1000px){#homeBody,#results{padding-bottom:110px}#app:has(.cartbar.show) #homeBody,#app:has(.cartbar.show) #results{padding-bottom:190px}}
+
+.share-btn{display:inline-flex;align-items:center;gap:8px;margin:14px 0 2px;height:38px;padding:0 16px;border-radius:19px;border:1px solid var(--line-2);background:var(--card);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.share-btn svg{width:16px;height:16px}
+.share-btn:active{transform:scale(.97)}
+@media (min-width:1000px){.share-btn:hover{border-color:var(--gold);color:var(--ink)}}
