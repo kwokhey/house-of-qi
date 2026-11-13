@@ -107,6 +107,10 @@ function renderHome(){
   const births=(CFG.birthstones||[]);
   const birthSec=!births.length?'':`<section class="sec disc gx" id="sec-birth"><div class="sec-head bs-head"><h3 class="disp">Shop by <em>birthstone</em></h3></div>
     <div class="bstones">${births.map((b,i)=>`<button class="bs" data-act="birth" data-i="${i}"><img src="/assets/img/birth/${b.img}.webp" alt="${esc(b.gem)}" width="80" height="80" loading="lazy" decoding="async"><b>${esc(b.m)}</b><small>${esc(b.gem)}</small></button>`).join('')}</div></section>`;
+  const chak=(CFG.chakras||[]);
+  const chakSec=!chak.length?'':`<section class="sec disc gx" id="sec-chakra"><div class="sec-head bs-head"><h3 class="disp">Shop by <em>chakra</em></h3></div>
+    <p class="ck-lede">Seven energy centres run from the base of the spine to the crown of the head. Choose the one you want to balance.</p>
+    <div class="chakras">${chak.map((c,i)=>`<button class="ck" data-act="chakra" data-i="${i}" style="--ck:${c.colour}"><img src="/assets/img/chakra/${c.k}.svg" alt="" width="76" height="76" loading="lazy"><span class="ck-t"><b>${esc(c.name)}</b><small>${esc(c.sk)}</small><em>${esc(c.theme)}</em></span></button>`).join('')}</div></section>`;
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const raw=layout==='bestsellers'?best:of(id);if(!raw.length)return'';SPY.push(id);const items=layout==='bestsellers'?raw:famList(raw);const few=items.length<=2;
@@ -123,7 +127,7 @@ function renderHome(){
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>
-  ${collSec}${colSec}${birthSec}
+  ${collSec}${colSec}${birthSec}${chakSec}
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
@@ -169,6 +173,7 @@ $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
 let DR=null;
 function defaults(m){const s={};for(const g of m.groups)s[g.id]=g.type==='many'?[]:(g.def||g.opts[0][0]);return s}
 /* ---------- product sheet: choose the exact piece, gift card with live preview ---------- */
+const chakraOf=m=>(CFG.chakras||[]).map((c,i)=>({...c,i})).filter(c=>c.stones.some(x=>x.toLowerCase()===String(m.stone).toLowerCase()));
 const isSample=m=>/\/samples\//.test(m.image||'');
 function cardOptOf(m){for(const g of m.groups)if(g.type==='many')for(const o of g.opts)if(/card/i.test(o[1]))return[g.id,o[0]];return null}
 const cardOn=()=>{const c=DR&&cardOptOf(DR.m);return!!(c&&DR.sel[c[0]]&&DR.sel[c[0]].includes(c[1]))};
@@ -203,7 +208,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   <div class="d-price">${hasFrom(m)?'<small style="letter-spacing:.14em;text-transform:uppercase">From</small>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}</div>${m.sale?`<p class="sale-note">${esc(m.sale.name)}${m.sale.ends?` · ends ${new Date(m.sale.ends).toLocaleDateString('en-MY',{day:'numeric',month:'short'})}`:''}</p>`:''}
   <button class="share-btn" data-act="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5v-6"/></svg>Share this piece</button>
   ${pick}
-  ${m.meaning?`<div class="meaning"><span class="eyebrow">Meaning</span><p>${m.meaning}</p><div class="ints">${m.ints.filter(i=>INTENTS[i]).map(i=>`<span>${INTENTS[i][0]}</span>`).join('')}</div></div>`:''}
+  ${m.meaning?`<div class="meaning"><span class="eyebrow">Meaning</span><p>${m.meaning}</p><div class="ints">${m.ints.filter(i=>INTENTS[i]).map(i=>`<span>${INTENTS[i][0]}</span>`).join('')}</div></div>`:''}${chakraOf(m).length?`<div class="ck-line">${chakraOf(m).map(c=>`<button data-act="chakra" data-i="${c.i}" style="--ck:${c.colour}"><img src="/assets/img/chakra/${c.k}.svg" alt="">${esc(c.name)} chakra</button>`).join('')}</div>`:''}
   <div class="specs"><div><span class="eyebrow">Stone</span><b>${m.stone}</b></div><div><span class="eyebrow">${m.specLabel||'Quality'}</span><b>${m.grade||'Natural'}</b></div><div><span class="eyebrow">Ships</span><b>1–2 days</b></div></div>${CFG.whatsapp?`<a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+m.name+' ('+m.id+')')}" target="_blank" rel="noopener">${IC.wa}Ask about this piece on WhatsApp</a>`:''}`+
   m.groups.map(g=>{if(g.type==='many')return`<div class="og" role="group" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em>Optional</em></div>${g.opts.map(o=>`<button class="chk" data-act="chk" data-g="${g.id}" data-o="${o[0]}" role="checkbox" aria-checked="false"><span class="chk-l">${o[1]}</span><span class="chk-p">${o[2]?'+'+RM(o[2]):'Complimentary'}</span><span class="box">${IC.check}</span></button>`).join('')}</div>`;
     return`<div class="og" role="radiogroup" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em class="req">Choose 1</em></div><div class="seg" style="--n:${g.opts.length}">${g.opts.map(o=>`<button class="opt" data-act="opt" data-g="${g.id}" data-o="${o[0]}" role="radio"><span>${o[1]}</span><small>${o[2]?'+'+RM(o[2]):(o[3]||'Included')}</small></button>`).join('')}</div></div>`}).join('')+
@@ -367,6 +372,11 @@ const ACT={
     const items=CAT.filter(m=>want.has(String(m.stone).toLowerCase()));
     showFiltered(`<i class="bs-res"><img src="/assets/img/birth/${b.img}.webp" alt="">${esc(b.m)} <em>${esc(b.gem)}</em></i>`,esc(b.note),items);
     if(!items.length&&CFG.whatsapp)$('#results').insertAdjacentHTML('beforeend',`<p class="empty-q"><a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, do you have any '+b.m+' birthstone ('+b.gem+') pieces?')}" target="_blank" rel="noopener">${IC.wa}Ask us about ${esc(b.gem)} on WhatsApp</a></p>`)},
+  chakra(el){closeMega();if($("#sheet").classList.contains("open"))closeDetail();const c=(CFG.chakras||[])[+el.dataset.i];if(!c)return;const want=new Set(c.stones.map(x=>x.toLowerCase()));$('#q').value=`${c.name} chakra`;
+    const items=CAT.filter(m=>want.has(String(m.stone).toLowerCase()));
+    showFiltered(`<i class="bs-res"><img src="/assets/img/chakra/${c.k}.svg" alt="">${esc(c.name)} <em>chakra</em></i>`,`${esc(c.sk)} · ${esc(c.where)}`,items);
+    const r=$('#results');const head=r.querySelector('.res-head');const box=`<div class="ck-about" style="--ck:${c.colour}"><b>${esc(c.theme)}</b><p>${esc(c.about)}</p><small>Stones: ${c.stones.map(esc).join(' · ')}</small></div>`;
+    if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
     const items=CAT.filter(m=>m.ints.includes(k));showResults(`For <em>${esc(INTENTS[k][0].toLowerCase())}</em>`,`${items.length} piece${items.length===1?'':'s'}`,items)},

@@ -797,3 +797,27 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .co-intl #placeBtn{background:#1F8A4C}
 .co-intl #placeBtn .lbl,.co-intl #placeBtn .lbl2{display:none}
 .co-intl #placeBtn .lbl3{display:inline}
+
+/* shop by chakra */
+.ck-lede{text-align:center;max-width:520px;margin:-4px auto 18px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.chakras{display:flex;flex-direction:column;gap:8px}
+.ck{display:flex;align-items:center;gap:14px;padding:10px 14px 10px 10px;border-radius:44px;background:var(--card);border:1px solid var(--line);text-align:left;position:relative;overflow:hidden}
+.ck::after{content:"";position:absolute;right:0;top:0;bottom:0;width:4px;background:var(--ck)}
+.ck img{width:56px;height:56px;flex:none;border-radius:50%;box-shadow:0 4px 12px rgba(46,34,28,.18)}
+.ck-t{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:baseline;min-width:0}
+.ck-t b{font-family:var(--f-display,'Cormorant Garamond',serif);font-weight:600;font-size:20px;color:var(--ink)}
+.ck-t small{font-size:11.5px;letter-spacing:.06em;color:var(--ink-3);font-style:italic}
+.ck-t em{grid-column:1/-1;font-style:normal;font-size:12.5px;color:var(--ink-2)}
+.ck:active{transform:scale(.985)}
+.ck-about{margin:4px 0 14px;padding:14px 16px;border-radius:8px;background:var(--card);border-left:4px solid var(--ck)}
+.ck-about b{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;margin-bottom:6px}
+.ck-about p{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--ink-2)}
+.ck-about small{font-size:12px;color:var(--ink-3);line-height:1.5}
+.ck-line{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.ck-line button{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 4px;border-radius:17px;background:var(--card);border:1px solid var(--line-2);font-size:12.5px;color:var(--ink)}
+.ck-line img{width:26px;height:26px;border-radius:50%}
+@media (min-width:1000px){.chakras{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
+  .ck{flex-direction:column;text-align:center;border-radius:12px;padding:20px 10px 18px;gap:12px}
+  .ck::after{left:0;right:0;top:auto;bottom:0;width:auto;height:4px}
+  .ck img{width:76px;height:76px}.ck-t{display:flex;flex-direction:column;align-items:center;gap:3px}.ck-t b{font-size:21px}
+  .ck:hover img{transform:translateY(-3px)}.ck img{transition:transform .3s var(--spring)}}

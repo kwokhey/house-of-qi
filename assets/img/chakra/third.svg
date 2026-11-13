@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Third Eye chakra"><defs>
+<radialGradient id="g" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#6d70c8"/><stop offset=".6" stop-color="#3B3F9E"/><stop offset="1" stop-color="#252763"/></radialGradient>
+<radialGradient id="h" cx="35%" cy="28%" r="45%"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<circle cx="100" cy="100" r="98" fill="url(#g)"/>
+<g fill="none" stroke="#F6E6C4" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity=".95"><path d="M72 100 C40 70 18 82 14 100 C18 118 40 130 72 100Z"/><path d="M128 100 C160 70 182 82 186 100 C182 118 160 130 128 100Z"/><circle cx="100" cy="100" r="36"/><circle cx="100" cy="100" r="28"/><path d="M84 92 Q100 84 116 92 M100 82 V118"/><circle cx="100" cy="102" r="7"/></g>
+<circle cx="100" cy="100" r="98" fill="url(#h)"/></svg>

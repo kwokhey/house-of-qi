@@ -1529,5 +1529,148 @@
         "Angelite"
       ]
     }
+  ],
+  "chakras": [
+    {
+      "k": "root",
+      "name": "Root",
+      "sk": "Muladhara",
+      "colour": "#B3261E",
+      "where": "Base of the spine",
+      "theme": "Grounding, safety & stability",
+      "petals": 4,
+      "about": "The Root chakra keeps you grounded and secure. When it is balanced you feel safe, steady and present; red and black stones are traditionally used to support it.",
+      "stones": [
+        "Black Tourmaline",
+        "Almandine (Red Garnet)",
+        "Mookaite Jasper",
+        "Tektite",
+        "Eudialyte",
+        "Tourmalinated Quartz",
+        "Blue Onyx"
+      ]
+    },
+    {
+      "k": "sacral",
+      "name": "Sacral",
+      "sk": "Svadhisthana",
+      "colour": "#E2761B",
+      "where": "Lower abdomen",
+      "theme": "Creativity, pleasure & emotion",
+      "petals": 6,
+      "about": "The Sacral chakra is the centre of creativity, joy and emotional flow. Warm orange stones are traditionally used to awaken passion and creative energy.",
+      "stones": [
+        "Hessonite (Orange Garnet)",
+        "Tanzania Sunstone",
+        "Amber",
+        "Baltic Amber",
+        "Moonstone",
+        "Ocean Jasper"
+      ]
+    },
+    {
+      "k": "solar",
+      "name": "Solar Plexus",
+      "sk": "Manipura",
+      "colour": "#E7B417",
+      "where": "Upper abdomen",
+      "theme": "Confidence, willpower & success",
+      "petals": 10,
+      "about": "The Solar Plexus chakra is your personal power. Golden stones are traditionally used to build confidence, motivation and abundance.",
+      "stones": [
+        "Tiger Eye",
+        "Golden Rutile",
+        "Yellow Calcite",
+        "Golden Healer",
+        "Golden Labradorite",
+        "Mica",
+        "Libyan Glass",
+        "Peridot"
+      ]
+    },
+    {
+      "k": "heart",
+      "name": "Heart",
+      "sk": "Anahata",
+      "colour": "#3E9A55",
+      "where": "Centre of the chest",
+      "theme": "Love, compassion & healing",
+      "petals": 12,
+      "about": "The Heart chakra connects love for yourself and others. Green and pink stones are traditionally used for emotional healing, kindness and harmony.",
+      "stones": [
+        "Rose Quartz",
+        "Strawberry Quartz",
+        "Rhodochrosite",
+        "Rhodonite",
+        "Morganite",
+        "Thulite (Norway)",
+        "Emerald",
+        "Jade",
+        "Green Aventurine",
+        "Malachite",
+        "Green Garnet",
+        "Diopside",
+        "Variscite",
+        "Seraphinite",
+        "Moss Agate",
+        "Unakite",
+        "Serpentine"
+      ]
+    },
+    {
+      "k": "throat",
+      "name": "Throat",
+      "sk": "Vishuddha",
+      "colour": "#2F8FCB",
+      "where": "Throat",
+      "theme": "Communication, truth & expression",
+      "petals": 16,
+      "about": "The Throat chakra governs how you speak and express your truth. Blue stones are traditionally used for calm, clear communication.",
+      "stones": [
+        "Larimar",
+        "Blue Lace Agate",
+        "Blue Apatite",
+        "Angelite",
+        "Chrysocolla",
+        "Blue Opal",
+        "Boulder Opal"
+      ]
+    },
+    {
+      "k": "third",
+      "name": "Third Eye",
+      "sk": "Ajna",
+      "colour": "#3B3F9E",
+      "where": "Between the eyebrows",
+      "theme": "Intuition, insight & clarity",
+      "petals": 2,
+      "about": "The Third Eye chakra is the seat of intuition and inner wisdom. Deep indigo stones are traditionally used for insight, focus and clear thinking.",
+      "stones": [
+        "Lapis Lazuli",
+        "Labradorite",
+        "Fluorite",
+        "Petersite",
+        "Auralite"
+      ]
+    },
+    {
+      "k": "crown",
+      "name": "Crown",
+      "sk": "Sahasrara",
+      "colour": "#8C4FB8",
+      "where": "Top of the head",
+      "theme": "Spiritual connection & peace",
+      "petals": 20,
+      "about": "The Crown chakra is your connection to spirit and higher awareness. Violet and clear stones are traditionally used for peace, meditation and purpose.",
+      "stones": [
+        "Amethyst",
+        "Lavender Amethyst",
+        "Clear Quartz",
+        "Selenite",
+        "Phosphosiderite",
+        "Multi-colour Rutilated Quartz",
+        "Tourmaline"
+      ]
+    }
   ]
 }
