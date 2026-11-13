@@ -769,3 +769,9 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .bs-res img{width:46px;height:46px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px rgba(180,138,82,.45)}
 @media (min-width:1000px){.bstones{grid-template-columns:repeat(6,minmax(0,1fr));gap:34px 20px;max-width:980px;margin:0 auto}
   .bs img{width:92px;height:92px}.bs b{font-size:14px}.bs small{font-size:13.5px}.bs:hover img{transform:translateY(-4px) scale(1.04);box-shadow:0 0 0 1px rgba(180,138,82,.8),0 0 0 4px rgba(255,255,255,.7),0 14px 26px rgba(46,34,28,.24)}}
+
+@media (min-width:1000px){
+  .mg-col>button img.mg-bs{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 1px rgba(180,138,82,.45)}
+  .mg-col>button .mg-gem{margin-left:auto;font-style:normal;font-size:11.5px;color:var(--ink-3)}
+  .mg-col>button{padding:6px 0}
+}

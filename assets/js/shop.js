@@ -140,9 +140,9 @@ function renderMega(){const m=$('#mega');if(!m)return;const cols=(CFG.curated||[
   const usedInts=Object.entries(INTENTS).filter(([k])=>CAT.some(x=>x.ints.includes(k)));
   const col=(h,body)=>body?`<div class="mg-col"><h4>${h}</h4>${body}</div>`:'';
   m.innerHTML=`<div class="mg-in">${col('By colour',(CFG.colours||[]).map(c=>`<button data-act="colour" data-k="${c.id}"><i style="${colSw(c)}"></i>${esc(c.name)}<small>${c.n}</small></button>`).join(''))}
-    ${col('By category',TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button data-act="tab" data-cat="${id}">${esc(n)}<small>${CAT.filter(x=>x.cat===id).length}</small></button>`).join(''))}
-    ${col('By collection',cols.map(c=>`<button data-act="coll" data-id="${c.id}">${esc(c.name)}<small>${byIds(c.ids).length}</small></button>`).join(''))}
+    ${col('By birthstone',(CFG.birthstones||[]).map((b,i)=>`<button data-act="birth" data-i="${i}"><img class="mg-bs" src="/assets/img/birth/${b.img}.webp" alt="" loading="lazy">${esc(b.m)}<em class="mg-gem">${esc(b.gem)}</em></button>`).join(''))}
     ${col('By intention',usedInts.map(([k,[n,c]])=>`<button data-act="intent" data-k="${k}"><i class="dot" style="background:${c}"></i>${esc(n)}</button>`).join(''))}
+    ${col('By category',TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button data-act="tab" data-cat="${id}">${esc(n)}<small>${CAT.filter(x=>x.cat===id).length}</small></button>`).join(''))}
     ${col('Bracelets by bead size',sizes.length?`<div class="mg-sizes">${sizes.map(z=>`<button data-act="sizeGo" data-mm="${z}">${z} mm</button>`).join('')}</div>`:'')}</div>`}
 let spyLock=0;
 let SPY=[];
