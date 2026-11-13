@@ -756,3 +756,16 @@ input,textarea{-webkit-user-select:text;user-select:text}
 
 .sheet-hero{position:relative}
 .sheet-hero.sample::after{content:"Sample photo · similar piece";position:absolute;left:16px;bottom:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:rgba(46,34,28,.62);color:#FBF3EC;padding:6px 10px;border-radius:12px;pointer-events:none}
+
+/* shop by birthstone */
+.bs-head{justify-content:center;text-align:center}
+.bstones{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 6px;padding-top:6px}
+.bs{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;text-align:center}
+.bs img{width:62px;height:auto;margin-bottom:8px;transition:transform .35s var(--spring)}
+.bs b{font-size:12.5px;font-weight:400;letter-spacing:.08em;color:var(--ink)}
+.bs small{font-size:12px;letter-spacing:.06em;color:var(--ink-3)}
+.bs:active img{transform:scale(.92)}
+.bs-res{display:inline-flex;align-items:center;gap:10px;font-style:normal}
+.bs-res img{width:44px;height:auto}
+@media (min-width:1000px){.bstones{grid-template-columns:repeat(6,minmax(0,1fr));gap:34px 20px;max-width:980px;margin:0 auto}
+  .bs img{width:84px}.bs b{font-size:14px}.bs small{font-size:13.5px}.bs:hover img{transform:translateY(-4px) scale(1.04)}}

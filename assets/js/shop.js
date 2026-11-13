@@ -104,6 +104,9 @@ function renderHome(){
   const colours=(CFG.colours||[]);
   const colSec=colours.length<2?'':`<section class="sec disc gx" id="sec-colour"><div class="sec-head"><h3 class="disp">Shop by <em>colour</em></h3></div>
     <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
+  const births=(CFG.birthstones||[]);
+  const birthSec=!births.length?'':`<section class="sec disc gx" id="sec-birth"><div class="sec-head bs-head"><h3 class="disp">Shop by <em>birthstone</em></h3></div>
+    <div class="bstones">${births.map((b,i)=>`<button class="bs" data-act="birth" data-i="${i}"><img src="/assets/img/birth/${b.img}.svg" alt="" width="80" height="85" loading="lazy" decoding="async"><b>${esc(b.m)}</b><small>${esc(b.gem)}</small></button>`).join('')}</div></section>`;
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const raw=layout==='bestsellers'?best:of(id);if(!raw.length)return'';SPY.push(id);const items=layout==='bestsellers'?raw:famList(raw);const few=items.length<=2;
@@ -120,7 +123,7 @@ function renderHome(){
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>
-  ${collSec}${colSec}
+  ${collSec}${colSec}${birthSec}
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
@@ -352,6 +355,10 @@ const ACT={
   mega(el){const m=$('#mega'),open=m.hidden;m.hidden=!open;el.setAttribute('aria-expanded',open);el.classList.toggle('open',open)},
   colour(el){closeMega();const c=(CFG.colours||[]).find(x=>x.id===el.dataset.k);if(!c)return;$('#q').value=c.name;showFiltered(`<em>${esc(c.name)}</em> beads`,'',CAT.filter(m=>m.colour===c.id))},
   coll(el){closeMega();const c=(CFG.curated||[]).find(x=>String(x.id)===el.dataset.id);if(!c)return;$('#q').value=c.name;showFiltered(esc(c.name)+(c.zh?` <span class="zh">${esc(c.zh)}</span>`:''),c.blurb?esc(c.blurb):'',byIds(c.ids))},
+  birth(el){closeMega();const b=(CFG.birthstones||[])[+el.dataset.i];if(!b)return;const want=new Set(b.stones.map(x=>x.toLowerCase()));$('#q').value=`${b.m} · ${b.gem}`;
+    const items=CAT.filter(m=>want.has(String(m.stone).toLowerCase()));
+    showFiltered(`<i class="bs-res"><img src="/assets/img/birth/${b.img}.svg" alt="">${esc(b.m)} <em>${esc(b.gem)}</em></i>`,esc(b.note),items);
+    if(!items.length&&CFG.whatsapp)$('#results').insertAdjacentHTML('beforeend',`<p class="empty-q"><a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, do you have any '+b.m+' birthstone ('+b.gem+') pieces?')}" target="_blank" rel="noopener">${IC.wa}Ask us about ${esc(b.gem)} on WhatsApp</a></p>`)},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
     const items=CAT.filter(m=>m.ints.includes(k));showResults(`For <em>${esc(INTENTS[k][0].toLowerCase())}</em>`,`${items.length} piece${items.length===1?'':'s'}`,items)},

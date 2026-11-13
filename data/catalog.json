@@ -1373,5 +1373,157 @@
     "TQ-1-10": "assets/img/samples/tourmalinated-quartz.jpg",
     "ALMA-1-5": "assets/img/samples/red-stone-larimar.jpg"
   },
-  "_samplePhotosNote": "Showcase only: Facebook photos of similar pieces, shown until a real photo is uploaded in the Stock tab. Delete this list when the client has photographed the stock."
+  "_samplePhotosNote": "Showcase only: Facebook photos of similar pieces, shown until a real photo is uploaded in the Stock tab. Delete this list when the client has photographed the stock.",
+  "birthstones": [
+    {
+      "m": "January",
+      "gem": "Garnet",
+      "img": "jan",
+      "note": "Garnet and crystals for new beginnings",
+      "stones": [
+        "Almandine (Red Garnet)",
+        "Hessonite (Orange Garnet)",
+        "Green Garnet",
+        "Clear Quartz"
+      ]
+    },
+    {
+      "m": "February",
+      "gem": "Amethyst",
+      "img": "feb",
+      "note": "Amethyst and crystals for love and inner healing",
+      "stones": [
+        "Amethyst",
+        "Lavender Amethyst",
+        "Rose Quartz",
+        "Auralite"
+      ]
+    },
+    {
+      "m": "March",
+      "gem": "Aquamarine",
+      "img": "mar",
+      "note": "Aquamarine tones and crystals for growth and fresh energy",
+      "stones": [
+        "Blue Apatite",
+        "Blue Lace Agate",
+        "Angelite",
+        "Green Aventurine",
+        "Moss Agate"
+      ]
+    },
+    {
+      "m": "April",
+      "gem": "Diamond",
+      "img": "apr",
+      "note": "Clear, bright crystals for confidence and manifestation",
+      "stones": [
+        "Clear Quartz",
+        "Tanzania Sunstone",
+        "Tiger Eye",
+        "Golden Healer"
+      ]
+    },
+    {
+      "m": "May",
+      "gem": "Emerald",
+      "img": "may",
+      "note": "Emerald and green crystals for abundance and the heart",
+      "stones": [
+        "Emerald",
+        "Jade",
+        "Malachite",
+        "Variscite",
+        "Seraphinite",
+        "Green Aventurine"
+      ]
+    },
+    {
+      "m": "June",
+      "gem": "Moonstone",
+      "img": "jun",
+      "note": "Moonstone and crystals for intuition and emotional balance",
+      "stones": [
+        "Moonstone",
+        "Labradorite",
+        "Golden Labradorite",
+        "Selenite"
+      ]
+    },
+    {
+      "m": "July",
+      "gem": "Ruby",
+      "img": "jul",
+      "note": "Red crystals for passion and vitality",
+      "stones": [
+        "Almandine (Red Garnet)",
+        "Rhodochrosite",
+        "Eudialyte",
+        "Thulite (Norway)"
+      ]
+    },
+    {
+      "m": "August",
+      "gem": "Peridot",
+      "img": "aug",
+      "note": "Peridot and golden crystals for personal power and success",
+      "stones": [
+        "Peridot",
+        "Golden Rutile",
+        "Tiger Eye",
+        "Diopside"
+      ]
+    },
+    {
+      "m": "September",
+      "gem": "Sapphire",
+      "img": "sep",
+      "note": "Deep blue crystals for wisdom and clarity",
+      "stones": [
+        "Lapis Lazuli",
+        "Blue Opal",
+        "Blue Onyx",
+        "Blue Apatite"
+      ]
+    },
+    {
+      "m": "October",
+      "gem": "Tourmaline",
+      "img": "oct",
+      "note": "Tourmaline and opal for joy and protection",
+      "stones": [
+        "Tourmaline",
+        "Black Tourmaline",
+        "Tourmalinated Quartz",
+        "Blue Opal",
+        "Boulder Opal"
+      ]
+    },
+    {
+      "m": "November",
+      "gem": "Citrine",
+      "img": "nov",
+      "note": "Golden crystals for gratitude and prosperity",
+      "stones": [
+        "Yellow Calcite",
+        "Golden Healer",
+        "Golden Rutile",
+        "Amber",
+        "Baltic Amber",
+        "Green Aventurine"
+      ]
+    },
+    {
+      "m": "December",
+      "gem": "Tanzanite",
+      "img": "dec",
+      "note": "Violet-blue crystals for calm and transformation",
+      "stones": [
+        "Auralite",
+        "Lapis Lazuli",
+        "Larimar",
+        "Angelite"
+      ]
+    }
+  ]
 }
