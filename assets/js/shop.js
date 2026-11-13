@@ -106,7 +106,7 @@ function renderHome(){
     <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
   const births=(CFG.birthstones||[]);
   const birthSec=!births.length?'':`<section class="sec disc gx" id="sec-birth"><div class="sec-head bs-head"><h3 class="disp">Shop by <em>birthstone</em></h3></div>
-    <div class="bstones">${births.map((b,i)=>`<button class="bs" data-act="birth" data-i="${i}"><img src="/assets/img/birth/${b.img}.svg" alt="" width="80" height="85" loading="lazy" decoding="async"><b>${esc(b.m)}</b><small>${esc(b.gem)}</small></button>`).join('')}</div></section>`;
+    <div class="bstones">${births.map((b,i)=>`<button class="bs" data-act="birth" data-i="${i}"><img src="/assets/img/birth/${b.img}.webp" alt="${esc(b.gem)}" width="80" height="80" loading="lazy" decoding="async"><b>${esc(b.m)}</b><small>${esc(b.gem)}</small></button>`).join('')}</div></section>`;
   SPY=[];
   const secs=TABS.map(([id,name,zh,layout])=>{
     const raw=layout==='bestsellers'?best:of(id);if(!raw.length)return'';SPY.push(id);const items=layout==='bestsellers'?raw:famList(raw);const few=items.length<=2;
@@ -357,7 +357,7 @@ const ACT={
   coll(el){closeMega();const c=(CFG.curated||[]).find(x=>String(x.id)===el.dataset.id);if(!c)return;$('#q').value=c.name;showFiltered(esc(c.name)+(c.zh?` <span class="zh">${esc(c.zh)}</span>`:''),c.blurb?esc(c.blurb):'',byIds(c.ids))},
   birth(el){closeMega();const b=(CFG.birthstones||[])[+el.dataset.i];if(!b)return;const want=new Set(b.stones.map(x=>x.toLowerCase()));$('#q').value=`${b.m} · ${b.gem}`;
     const items=CAT.filter(m=>want.has(String(m.stone).toLowerCase()));
-    showFiltered(`<i class="bs-res"><img src="/assets/img/birth/${b.img}.svg" alt="">${esc(b.m)} <em>${esc(b.gem)}</em></i>`,esc(b.note),items);
+    showFiltered(`<i class="bs-res"><img src="/assets/img/birth/${b.img}.webp" alt="">${esc(b.m)} <em>${esc(b.gem)}</em></i>`,esc(b.note),items);
     if(!items.length&&CFG.whatsapp)$('#results').insertAdjacentHTML('beforeend',`<p class="empty-q"><a class="wa" href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, do you have any '+b.m+' birthstone ('+b.gem+') pieces?')}" target="_blank" rel="noopener">${IC.wa}Ask us about ${esc(b.gem)} on WhatsApp</a></p>`)},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
