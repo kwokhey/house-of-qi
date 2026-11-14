@@ -60,7 +60,7 @@
       <div><span>Live sales</span><b>${liveSales}</b><small>${D.sales.length} in total</small></div>
       <div><span>Orders with a code</span><b>${uses}</b><small>${RM(rev)} in sales</small></div>
       <div><span>Discount given</span><b>${RM(given)}</b><small>through codes</small></div>`;
-    renderAnn();
+    renderAnn(); renderBan();
     $("#mCodes").innerHTML = D.coupons.length ? D.coupons.map(codeRow).join("") : `<p class="m-empty">No codes yet. Try one like <b>WELCOME10</b> for 10% off a first order.</p>`;
     $("#mColls").innerHTML = (D.collections || []).length ? D.collections.map(collRow).join("") : `<p class="m-empty">No collections yet. They appear as picture tiles on the shop's home page.</p>`;
     $("#mSales").innerHTML = D.sales.length ? D.sales.map(saleRow).join("") : `<p class="m-empty">No sales yet. A sale lowers prices automatically between the dates you choose.</p>`;
@@ -86,6 +86,38 @@
     } catch (x) { toast(x.message); }
   };
 
+  function renderBan() {
+    const b = D.banner || {}, v = +b.v || 0;
+    let pending = null, remove = false;
+    $("#mBan").innerHTML = `
+      <div class="ban-ed"><span class="ban-img"><img id="bImg" alt=""><em id="bNone">Using the shop's standard photo</em></span>
+        <span class="kcov-b"><label class="btn sm">Upload photo<input type="file" id="bFile" accept="image/*" hidden></label><button type="button" class="link danger" id="bDel" hidden>Use standard photo</button>
+        <small>Landscape photo, at least 1600px wide. Darker or softer backgrounds keep the headline easy to read.</small></span></div>
+      <label class="f full"><span>Headline (optional)</span><input id="bTitle" maxlength="80" value="${esc(b.title || "")}" placeholder="Healing crystals | for wellness &amp; balance"><small class="hint">Words after a | appear on a second line in italics.</small></label>
+      <label class="f full"><span>Short line (optional)</span><input id="bText" maxlength="200" value="${esc(b.text || "")}" placeholder="Hand-picked natural crystals, each chosen for its energy and intention."></label>
+      <label class="f"><span>Button text (optional)</span><input id="bCta" maxlength="30" value="${esc(b.cta || "")}" placeholder="Shop our collection"></label>
+      <div class="ed-f"><button class="btn sm" type="submit">Save banner</button></div>`;
+    const paint = () => {
+      const src = pending || (v && !remove ? `/img/banner.jpg?v=${v}` : "");
+      $("#bImg").hidden = !src; if (src) $("#bImg").src = src;
+      $("#bNone").hidden = !!src; $("#bDel").hidden = !src;
+    };
+    $("#bFile").onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try { pending = await shrink(f, 2000); remove = false; paint(); toast("Photo ready. Tap Save banner to use it."); }
+      catch { toast("Couldn't read that photo. Please try another."); }
+    };
+    $("#bDel").onclick = () => { pending = null; remove = true; paint(); };
+    paint();
+    $("#mBan").onsubmit = async (e) => {
+      e.preventDefault();
+      const body = { type: "banner", title: $("#bTitle").value, text: $("#bText").value, cta: $("#bCta").value };
+      if (pending) body.data = pending; else if (remove) body.data = "";
+      try { await api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) }); toast("Banner saved. It shows in the shop within a minute."); load(); }
+      catch (x) { toast(x.message); }
+    };
+  }
+
   function codeRow(c) {
     const usedUp = c.max_uses && c.uses >= c.max_uses, st = status(c, usedUp);
     const rules = [c.min_spend ? `min spend ${RM(c.min_spend)}` : "", c.exclude_sale ? "not on sale items" : "", c.max_uses ? `limit ${c.max_uses}` : ""].filter(Boolean).join(" · ");
@@ -101,11 +133,11 @@
   }
 
   /** resize a photo in the browser (max 1400px, JPEG) before upload */
-  function shrink(file) {
+  function shrink(file, max = 1400) {
     return new Promise((res, rej) => {
       const url = URL.createObjectURL(file), im = new Image();
       im.onload = () => {
-        const k = Math.min(1, 1400 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+        const k = Math.min(1, max / Math.max(im.width, im.height)), cv = document.createElement("canvas");
         cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
         cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
         let q = 0.86, data = cv.toDataURL("image/jpeg", q);

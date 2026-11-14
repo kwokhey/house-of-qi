@@ -64,7 +64,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   ).all();
   if (!results.length && !includeHidden) {
     const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();
-    if (!count.n) return { ...settings, source: "sample" }; // nothing imported yet
+    if (!count.n) return { ...settings, banner: bannerOf(settings, (await shopPromo(env)).banner), source: "sample" }; // nothing imported yet
   }
   const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
   const hero = products.find((p) => p.bestseller) || [...products].sort((a, b) => b.price - a.price)[0];
@@ -88,7 +88,13 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, coverImg: c.cover_v ? `img/coll-${c.id}.jpg?v=${c.cover_v}` : "", ids };
   }).filter((c) => c.ids.length);
   const { samplePhotos, _samplePhotosNote, ...pub } = settings;
-  return { ...pub, products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
+  return { ...pub, banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
 }
 
 function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }
+
+/** home page banner: words and photo saved in the Marketing tab win over data/catalog.json */
+function bannerOf(settings, saved) {
+  const bo = saved || {}, bd = settings.banner || {};
+  return { title: bo.title || bd.title || "", text: bo.text || bd.text || "", cta: bo.cta || bd.cta || "Shop our collection", img: bo.v ? `img/banner.jpg?v=${bo.v}` : bd.img || "" };
+}

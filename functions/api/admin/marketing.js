@@ -4,6 +4,7 @@
  *   POST   /api/admin/marketing  { type: "coupon", code, kind, value, min_spend, starts, ends, max_uses, exclude_sale, active, note }
  *                                { type: "sale", id?, name, percent, scope, targets, starts, ends, active }
  *                                { type: "announce", text, link, active, starts, ends }
+ *                                { type: "banner", title, text, cta, data? }  (home page banner; data "" removes the photo)
  *                                { type: "collection", id?, name, zh, blurb, scope, targets, max_price, cover, sort, active }
  *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3 | ?type=collection&id=2
  * Dates are "YYYY-MM-DD" in Malaysia time; a sale/code runs from the start of the first day to the end of the last.
@@ -37,10 +38,11 @@ export async function onRequestGet({ request, env }) {
   const { results: stones } = await D.prepare("SELECT stone, COUNT(*) AS n FROM items WHERE published = 1 GROUP BY stone ORDER BY stone").all();
   const { results: items } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, stock, collection, image_v FROM items WHERE published = 1 AND stock > 0 ORDER BY sort, id").all();
   const { results: collections } = await D.prepare("SELECT * FROM collections ORDER BY sort, id").all();
-  let announce = null;
+  let announce = null, banner = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
+  try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]") });
-  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, now: Date.now() });
+  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, now: Date.now() });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -123,6 +125,23 @@ export async function onRequestPost({ request, env }) {
       D.prepare("UPDATE collections SET cover_v = ?, updated_at = ? WHERE id = ?").bind(now, now, id),
     ]);
     return json({ ok: true, cover_v: now });
+  }
+
+  if (b.type === "banner") {
+    let old = {};
+    try { old = JSON.parse((await getSetting(D, "banner")) || "{}") || {}; } catch {}
+    const a = { title: str(b.title, 80), text: str(b.text, 200), cta: str(b.cta, 30), v: +old.v || 0 };
+    if (b.data === "") { await D.prepare("DELETE FROM images WHERE item_id = 'banner'").run(); a.v = 0; }
+    else if (b.data) {
+      const m = String(b.data).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
+      if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
+      const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+      if (bin.length > 1_800_000) return json({ error: "That photo is too large. Please try another." }, 413);
+      await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES ('banner', ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(m[1], bin, now).run();
+      a.v = now;
+    }
+    await setSetting(D, "banner", JSON.stringify(a));
+    return json({ ok: true, banner: a });
   }
 
   if (b.type === "announce") {

@@ -54,8 +54,10 @@ export async function shopPromo(env) {
   const D = await db(env), now = Date.now();
   let announce = null;
   try { const a = JSON.parse((await getSetting(D, "announce")) || "null"); if (a && a.active && a.text && live({ active: 1, starts_at: a.starts_at || 0, ends_at: a.ends_at || 0 }, now)) announce = { text: a.text, link: a.link || "" }; } catch {}
+  let banner = null;
+  try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   const { results } = await D.prepare("SELECT active, starts_at, ends_at FROM coupons WHERE active = 1").all();
-  return { announce, codes: results.some((r) => live(r, now)) };
+  return { announce, banner, codes: results.some((r) => live(r, now)) };
 }
 
 const MYR = (n) => "RM" + (Math.round(n * 100) / 100).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
