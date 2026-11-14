@@ -122,11 +122,11 @@ function renderHome(){
   $('#homeBody').innerHTML=`
   ${CFG.announce?`<div class="ann-bar">${CFG.announce.link?`<a href="${esc(CFG.announce.link)}">${esc(CFG.announce.text)}</a>`:`<span>${esc(CFG.announce.text)}</span>`}</div>`:''}
   <div class="strip gx"><span class="dia"></span><span>Jewellery with frequencies</span><span class="dia"></span><span>Delivery across Malaysia · Worldwide on request</span></div>
-  <button class="feature" data-open="${feat.id}" aria-label="${esc(feat.name)}">
+  ${showHTML()||`  <button class="feature" data-open="${feat.id}" aria-label="${esc(feat.name)}">
     <span class="feature-img"><img src="${img(feat.id,W?'banner':'wide')}" alt="" decoding="async"></span>
     <span class="feature-meta gx"><span class="eyebrow"><i></i>${esc(h.eyebrow||'Featured')}</span><h2 class="disp">${esc(t1)}${t2?`<br><em>${esc(t2)}</em>`:''}</h2>${h.text?`<p>${esc(h.text)}</p>`:''}
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
-  </button>
+  </button>`}
   ${collSec}${colSec}${birthSec}${chakSec}
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
@@ -134,7 +134,7 @@ function renderHome(){
     <nav class="foot-links"><a href="/policies.html">Shipping &amp; returns</a><a href="/policies.html#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
     <p>Prices in Malaysian Ringgit. Natural stones vary slightly in colour and pattern.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
   document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
-  renderMega();
+  renderMega();initShow();
   setTab(SPY[0],false);
 }
 
@@ -148,6 +148,45 @@ function renderMega(){const m=$('#mega');if(!m)return;const cols=(CFG.curated||[
     ${col('By intention',usedInts.map(([k,[n,c]])=>`<button data-act="intent" data-k="${k}"><i class="dot" style="background:${c}"></i>${esc(n)}</button>`).join(''))}
     ${col('By category',TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button data-act="tab" data-cat="${id}">${esc(n)}<small>${CAT.filter(x=>x.cat===id).length}</small></button>`).join(''))}
     ${col('Bracelets by bead size',sizes.length?`<div class="mg-sizes">${sizes.map(z=>`<button data-act="sizeGo" data-mm="${z}">${z} mm</button>`).join('')}</div>`:'')}</div>`}
+
+/* ---------- crystal showcase slideshow ---------- */
+let SHOW={i:0,n:0,t:null,paused:false,seen:true};
+function showSlides(){return (CFG.showcase||[]).map(s=>{let m=BY[s.item];if(!m){const f=CAT.filter(x=>String(x.stone).toLowerCase()===s.stone.toLowerCase());m=f.find(x=>x.image)||f[0]}return m?{...s,m}:null}).filter(Boolean)}
+const showImg=m=>m.image?'/'+m.image.replace(/^\//,''):img(m.id,'tall');
+function showHTML(){const S=showSlides();if(S.length<2)return'';const pad=n=>String(n).padStart(2,'0');
+  return`<section class="show" id="show" aria-roledescription="carousel" aria-label="Featured crystals" style="--tone:${S[0].tone}">
+  <div class="show-card">
+    <div class="show-img" id="showImg">${S.map((s,i)=>`<img class="sl-img${i?'':' on'}" data-i="${i}" src="${showImg(s.m)}" alt="${esc(s.stone)}" decoding="async"${i?' loading="lazy"':''}>`).join('')}<span class="show-glow"></span>
+      <div class="show-dots" role="tablist" aria-label="Choose a crystal">${S.map((s,i)=>`<button class="sd${i?'':' on'}" data-act="showGo" data-i="${i}" role="tab" aria-selected="${!i}" aria-label="${esc(s.stone)}"><img src="${showImg(s.m)}" alt=""></button>`).join('')}</div></div>
+    <div class="show-panel">
+      <div class="show-count" aria-hidden="true"><span class="sc-cur"><b id="scCur">${pad(1)}</b></span><i></i><span>${pad(S.length)}</span></div>
+      <div class="show-txt">${S.map((s,i)=>`<div class="sl-t${i?'':' on'}" data-i="${i}" aria-hidden="${!!i}"><span class="ln eyebrow"><i></i>${esc(s.tag)}</span><h2 class="ln disp">${esc(s.stone)}</h2><p class="ln">${esc(s.text)}</p><span class="ln sl-row"><button class="sl-btn" data-open="${s.m.id}" tabindex="${i?-1:0}">Shop ${esc(s.stone)}</button><span class="sl-from">${(FAM[s.m.fam]||[s.m]).length>1?'From ':''}${RM(Math.min(...(FAM[s.m.fam]||[s.m]).map(x=>x.price)))}</span></span></div>`).join('')}</div>
+      <div class="show-nav"><button class="sn" data-act="showStep" data-d="-1" aria-label="Previous crystal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg></button><button class="sn" data-act="showStep" data-d="1" aria-label="Next crystal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M12 4v16M6 14l6 6 6-6"/></svg></button></div>
+      <div class="show-bar"><i id="showBar"></i></div>
+    </div></div></section>`}
+function showSet(n){const root=$('#show');if(!root)return;const S=root.querySelectorAll('.sl-img'),k=S.length;n=(n%k+k)%k;if(n===SHOW.i&&root.dataset.ready)return;const prev=SHOW.i;SHOW.i=n;root.dataset.ready=1;
+  const dir=n>prev||(prev===k-1&&n===0)?1:-1;root.style.setProperty('--dir',dir);
+  root.querySelectorAll('.sl-img').forEach(x=>{const i=+x.dataset.i;x.classList.toggle('on',i===n);x.classList.toggle('out',i===prev&&i!==n)});
+  root.querySelectorAll('.sl-t').forEach(x=>{const i=+x.dataset.i,on=i===n;x.classList.toggle('on',on);x.classList.toggle('out',i===prev&&!on);x.setAttribute('aria-hidden',!on);x.querySelector('.sl-btn').tabIndex=on?0:-1});
+  root.querySelectorAll('.sd').forEach(x=>{const on=+x.dataset.i===n;x.classList.toggle('on',on);x.setAttribute('aria-selected',on)});
+  const sl=showSlides()[n];if(sl)root.style.setProperty('--tone',sl.tone||'');
+  const c=$('#scCur');if(c){c.classList.remove('roll');void c.offsetWidth;c.textContent=String(n+1).padStart(2,'0');c.classList.add('roll')}
+  showTimer()}
+const SHOW_MS=6500;
+function showTimer(){clearTimeout(SHOW.t);const b=$('#showBar');if(b){b.style.transition='none';b.style.transform='scaleX(0)';void b.offsetWidth}
+  if(SHOW.paused||!SHOW.seen||document.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(b){b.style.transition=`transform ${SHOW_MS}ms linear`;b.style.transform='scaleX(1)'}
+  SHOW.t=setTimeout(()=>showSet(SHOW.i+1),SHOW_MS)}
+function initShow(){const root=$('#show');clearTimeout(SHOW.t);if(!root)return;SHOW.i=0;
+  root.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){SHOW.paused=true;showTimer()}});
+  root.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){SHOW.paused=false;showTimer()}});
+  let x0=null,y0=0;const im=$('#showImg');
+  im.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
+  im.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy))showSet(SHOW.i+(dx<0?1:-1))},{passive:true});
+  root.addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown'].includes(e.key)){e.preventDefault();showSet(SHOW.i+1)}if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();showSet(SHOW.i-1)}});
+  if('IntersectionObserver' in window){new IntersectionObserver(es=>{SHOW.seen=es[0].isIntersecting;showTimer()},{threshold:.35}).observe(root)}
+  if(!SHOW.vis){SHOW.vis=1;document.addEventListener("visibilitychange",showTimer)}
+  showTimer()}
 let spyLock=0;
 let SPY=[];
 function hdrH(){return $('#topbar').offsetHeight+($('.tabs')?.offsetHeight||0)}
@@ -377,6 +416,8 @@ const ACT={
     showFiltered(`<i class="bs-res"><img src="/assets/img/chakra/${c.k}.svg" alt="">${esc(c.name)} <em>chakra</em></i>`,`${esc(c.sk)} · ${esc(c.where)}`,items);
     const r=$('#results');const head=r.querySelector('.res-head');const box=`<div class="ck-about" style="--ck:${c.colour}"><b>${esc(c.theme)}</b><p>${esc(c.about)}</p><small>Stones: ${c.stones.map(esc).join(' · ')}</small></div>`;
     if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
+  showGo(el){showSet(+el.dataset.i)},
+  showStep(el){showSet(SHOW.i+(+el.dataset.d))},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
     const items=CAT.filter(m=>m.ints.includes(k));showResults(`For <em>${esc(INTENTS[k][0].toLowerCase())}</em>`,`${items.length} piece${items.length===1?'':'s'}`,items)},

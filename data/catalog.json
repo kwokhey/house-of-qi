@@ -1672,5 +1672,42 @@
         "Tourmaline"
       ]
     }
+  ],
+  "showcase": [
+    {
+      "stone": "Amethyst",
+      "item": "AMET-1-10",
+      "tag": "Calm · Clarity · Protection",
+      "text": "A crystal of calmness and spiritual protection. Its soothing purple hues are believed to quiet a busy mind, ease stress and deepen intuition.",
+      "tone": "#E6DDEA"
+    },
+    {
+      "stone": "Tanzania Sunstone",
+      "item": "TSS-1034",
+      "tag": "Joy · Confidence · Abundance",
+      "text": "Warm and sparkling, sunstone is believed to inspire optimism and self-worth, and to draw in opportunities that match your highest potential.",
+      "tone": "#F1DFD3"
+    },
+    {
+      "stone": "Tiger Eye",
+      "item": "TE-1-8",
+      "tag": "Courage · Focus · Grounding",
+      "text": "Tiger's Eye doesn't shout. It steadies you, anchoring your mind and reminding you of the strength you already carry.",
+      "tone": "#EADFCD"
+    },
+    {
+      "stone": "Rose Quartz",
+      "item": "RQ-1-4",
+      "tag": "Love · Compassion · Healing",
+      "text": "The stone of unconditional love. Rose Quartz gently encourages self-love, inner harmony and meaningful connection with those around you.",
+      "tone": "#F2E0DF"
+    },
+    {
+      "stone": "Tourmaline",
+      "item": "TOUR-1-5",
+      "tag": "Joy · Balance · Protection",
+      "text": "A whole spectrum in one bracelet. Tourmaline is believed to bring balance and joy, and to shield your energy as you move through the day.",
+      "tone": "#E5E4DA"
+    }
   ]
 }
