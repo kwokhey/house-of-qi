@@ -150,19 +150,38 @@ function renderMega(){const m=$('#mega');if(!m)return;const cols=(CFG.curated||[
     ${col('Bracelets by bead size',sizes.length?`<div class="mg-sizes">${sizes.map(z=>`<button data-act="sizeGo" data-mm="${z}">${z} mm</button>`).join('')}</div>`:'')}</div>`}
 
 /* ---------- home page banner (photo + headline) ---------- */
-function banHTML(){const b=CFG.banner;if(!b||!b.img)return'';const [t1,t2]=String(b.title||'Healing crystals|for wellness & balance').split('|');
-  return`<section class="ban" id="ban" aria-label="${esc((t1+' '+(t2||'')).trim())}">
-  <img class="ban-img" id="banImg" src="/${b.img.replace(/^\//,'')}" alt="" decoding="async" fetchpriority="high">
+function banHTML(){const b=CFG.banner,I=(b&&(b.imgs||(b.img?[b.img]:[])))||[];if(!I.length)return'';const [t1,t2]=String(b.title||'Healing crystals|for wellness & balance').split('|');
+  return`<section class="ban" id="ban" aria-label="${esc((t1+' '+(t2||'')).trim())}" aria-roledescription="carousel">
+  ${I.map((u,i)=>`<img class="ban-img${i?'':' on'}" src="/${u.replace(/^\//,'')}" alt="" decoding="async"${i?' loading="lazy"':' fetchpriority="high"'}>`).join('')}
   <span class="ban-shade"></span>
   <div class="ban-in"><div class="ban-txt">
     <span class="ban-ln ban-eye"><i></i>Natural crystal jewellery</span>
     <h2 class="ban-ln ban-h">${esc(t1.trim())}${t2?`<em>${esc(t2.trim())}</em>`:''}</h2>
     ${b.text?`<p class="ban-ln">${esc(b.text)}</p>`:''}
     <span class="ban-ln"><button class="ban-btn" data-act="banGo">${esc(b.cta||'Shop our collection')}</button></span>
-  </div></div></section>`}
-function initBan(){const r=$('#ban'),im=$('#banImg');if(!r||!im)return;
-  const go=()=>{r.classList.toggle('wide',im.naturalWidth/im.naturalHeight>1.35);requestAnimationFrame(()=>r.classList.add('in'))};
-  if(im.complete&&im.naturalWidth)go();else{im.onload=go;im.onerror=()=>r.classList.add('in')}}
+  </div></div>
+  ${I.length>1?`<div class="ban-dots" role="tablist" aria-label="Banner photos">${I.map((u,i)=>`<button class="bd${i?'':' on'}" data-act="banSet" data-i="${i}" role="tab" aria-selected="${!i}" aria-label="Photo ${i+1} of ${I.length}"><i></i></button>`).join('')}</div>`:''}</section>`}
+const BAN={i:0,t:null,seen:true,hover:false},BAN_MS=6000;
+function banWide(im){const f=()=>im.classList.toggle('wide',im.naturalWidth/im.naturalHeight>1.35);if(im.complete&&im.naturalWidth)f();else im.addEventListener('load',f,{once:true})}
+function banSet(n){const r=$('#ban');if(!r)return;const S=r.querySelectorAll('.ban-img'),k=S.length;if(k<2)return;n=(n%k+k)%k;
+  if(n!==BAN.i){S[BAN.i].classList.remove('on');S[BAN.i].classList.add('off');const old=S[BAN.i];setTimeout(()=>old.classList.remove('off'),1800);
+    S[n].classList.remove('off');S[n].classList.add('on');BAN.i=n;
+    const nx=S[(n+1)%k];if(nx.loading==='lazy')nx.loading='eager'}
+  r.querySelectorAll('.bd').forEach((d,i)=>{d.classList.toggle('on',i===n);d.setAttribute('aria-selected',i===n)});banTimer()}
+function banTimer(){clearTimeout(BAN.t);const r=$('#ban');if(!r)return;const k=r.querySelectorAll('.ban-img').length;
+  r.querySelectorAll('.bd').forEach(x=>x.classList.remove('run'));const d=r.querySelector('.bd.on');
+  if(k<2||!BAN.seen||BAN.hover||document.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(d){void d.offsetWidth;d.classList.add('run')}
+  BAN.t=setTimeout(()=>banSet(BAN.i+1),BAN_MS)}
+function initBan(){const r=$('#ban');clearTimeout(BAN.t);if(!r)return;BAN.i=0;const S=r.querySelectorAll('.ban-img');S.forEach(banWide);
+  const first=S[0],go=()=>requestAnimationFrame(()=>r.classList.add('in'));if(first.complete&&first.naturalWidth)go();else{first.addEventListener('load',go,{once:true});first.addEventListener('error',go,{once:true})}
+  if(S[1])S[1].loading='eager';
+  const tx=r.querySelector('.ban-txt');tx.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){BAN.hover=true;banTimer()}});tx.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){BAN.hover=false;banTimer()}});
+  let x0=null,y0=0;r.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
+  r.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3)banSet(BAN.i+(dx<0?1:-1))},{passive:true});
+  if('IntersectionObserver' in window)new IntersectionObserver(es=>{BAN.seen=es[0].isIntersecting;banTimer()},{threshold:.3}).observe(r);
+  if(!BAN.vis){BAN.vis=1;document.addEventListener('visibilitychange',banTimer)}
+  banTimer()}
 let spyLock=0;
 let SPY=[];
 function hdrH(){return $('#topbar').offsetHeight+($('.tabs')?.offsetHeight||0)}
@@ -392,6 +411,7 @@ const ACT={
     showFiltered(`<i class="bs-res"><img src="/assets/img/chakra/${c.k}.svg" alt="">${esc(c.name)} <em>chakra</em></i>`,`${esc(c.sk)} · ${esc(c.where)}`,items);
     const r=$('#results');const head=r.querySelector('.res-head');const box=`<div class="ck-about" style="--ck:${c.colour}"><b>${esc(c.theme)}</b><p>${esc(c.about)}</p><small>Stones: ${c.stones.map(esc).join(' · ')}</small></div>`;
     if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
+  banSet(el){banSet(+el.dataset.i)},
   banGo(){const t=$('#sec-colls')||$('#sec-colour')||$('#homeBody .sec');if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];

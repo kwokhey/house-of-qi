@@ -824,8 +824,15 @@ input,textarea{-webkit-user-select:text;user-select:text}
 
 /* ---------- home page banner ---------- */
 .ban{--e:cubic-bezier(.22,.8,.16,1);position:relative;overflow:hidden;background:radial-gradient(70% 90% at 18% 55%,#3A2A20 0%,#241913 60%,#1C130E 100%);color:#F7EEE4;height:min(132vw,620px);isolation:isolate}
-.ban-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.1);opacity:0;transition:opacity 1.2s var(--e),transform 9s var(--e)}
-.ban.in .ban-img{opacity:1;transform:scale(1)}
+.ban-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;opacity:0;transform:scale(1.12);transition:opacity 1.6s var(--e),transform 1.6s var(--e)}
+.ban.in .ban-img.on{opacity:1;transform:scale(1);transition:opacity 1.6s var(--e),transform 9s cubic-bezier(.25,.6,.3,1);z-index:0}
+.ban-img.off{opacity:0;transform:scale(1.03);transition:opacity 1.6s var(--e),transform 1.6s var(--e)}
+.ban-dots{position:absolute;z-index:3;right:18px;top:16px;display:flex;gap:6px}
+.bd{width:26px;height:20px;padding:0;display:flex;align-items:center}
+.bd i{display:block;width:100%;height:2px;background:rgba(247,238,228,.35);position:relative;overflow:hidden}
+.bd i::after{content:"";position:absolute;inset:0;background:#F7EEE4;transform:scaleX(0);transform-origin:left}
+.bd.on i{background:rgba(247,238,228,.55)}.bd.run i::after{animation:bdFill 6s linear forwards}
+@keyframes bdFill{to{transform:scaleX(1)}}
 .ban-shade{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(28,19,14,.15) 0%,rgba(28,19,14,0) 22%,rgba(28,19,14,.62) 46%,rgba(28,19,14,.92) 100%)}
 .ban-in{position:relative;z-index:2;height:100%;display:flex;align-items:flex-end;padding:0 22px 34px}
 .ban-txt{max-width:560px}
@@ -841,7 +848,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .ban-btn:active{transform:scale(.97)}
 @media (min-width:1000px){
   .ban{height:clamp(500px,74vh,680px)}
-  .ban:not(.wide) .ban-img{left:auto;width:64%;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 40%);mask-image:linear-gradient(90deg,transparent 0,#000 40%);object-position:center}
+  .ban-img:not(.wide){left:auto;width:64%;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 40%);mask-image:linear-gradient(90deg,transparent 0,#000 40%);object-position:center}
   .ban-shade{background:radial-gradient(90% 120% at 0% 50%,rgba(28,19,14,.92) 0%,rgba(28,19,14,.6) 45%,rgba(28,19,14,0) 75%),linear-gradient(0deg,rgba(28,19,14,.35),rgba(28,19,14,0) 35%)}
   .ban-in{align-items:center;max-width:1240px;margin:0 auto;padding:0 40px}
   .ban-txt{max-width:600px}
@@ -849,6 +856,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .ban p{font-size:16px;max-width:460px;margin-bottom:30px}
   .ban-btn{height:50px;padding:0 32px}
   .ban-btn:hover{background:#E3C49B;color:#241913}
+  .ban-dots{right:40px;top:auto;bottom:30px}.bd{width:36px}
 }
-@media (prefers-reduced-motion:reduce){.ban-img,.ban-ln{transition:opacity .4s!important;transform:none!important}}
+@media (prefers-reduced-motion:reduce){.ban-img,.ban.in .ban-img.on,.ban-ln{transition:opacity .4s!important;transform:none!important}}
 .sl-from{white-space:nowrap}

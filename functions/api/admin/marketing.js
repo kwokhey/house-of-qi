@@ -4,7 +4,7 @@
  *   POST   /api/admin/marketing  { type: "coupon", code, kind, value, min_spend, starts, ends, max_uses, exclude_sale, active, note }
  *                                { type: "sale", id?, name, percent, scope, targets, starts, ends, active }
  *                                { type: "announce", text, link, active, starts, ends }
- *                                { type: "banner", title, text, cta, data? }  (home page banner; data "" removes the photo)
+ *                                { type: "banner", title, text, cta } · { type: "bannerAdd", data } · { type: "bannerDel", k } · { type: "bannerMove", k, d }  (home page banner)
  *                                { type: "collection", id?, name, zh, blurb, scope, targets, max_price, cover, sort, active }
  *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3 | ?type=collection&id=2
  * Dates are "YYYY-MM-DD" in Malaysia time; a sale/code runs from the start of the first day to the end of the last.
@@ -13,6 +13,7 @@ import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, getSetting, setSetting } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { cleanCode } from "../../_lib/promo.js";
+import { bannerPhotos } from "../../_lib/catalog.js";
 import { json } from "../../_lib/stripe.js";
 
 const MYT = 8 * 3600 * 1000;
@@ -41,6 +42,7 @@ export async function onRequestGet({ request, env }) {
   let announce = null, banner = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
+  banner = { ...(banner || {}), photos: bannerPhotos(banner) };
   const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]") });
   return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, now: Date.now() });
 }
@@ -127,18 +129,31 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true, cover_v: now });
   }
 
-  if (b.type === "banner") {
+  if (b.type === "banner" || b.type === "bannerAdd" || b.type === "bannerDel" || b.type === "bannerMove") {
     let old = {};
     try { old = JSON.parse((await getSetting(D, "banner")) || "{}") || {}; } catch {}
-    const a = { title: str(b.title, 80), text: str(b.text, 200), cta: str(b.cta, 30), v: +old.v || 0 };
-    if (b.data === "") { await D.prepare("DELETE FROM images WHERE item_id = 'banner'").run(); a.v = 0; }
-    else if (b.data) {
-      const m = String(b.data).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
+    const photos = bannerPhotos(old);
+    const a = { title: old.title || "", text: old.text || "", cta: old.cta || "", photos };
+    if (b.type === "banner") { a.title = str(b.title, 80); a.text = str(b.text, 200); a.cta = str(b.cta, 30); }
+    if (b.type === "bannerAdd") {
+      if (photos.length >= 8) return json({ error: "The banner can hold up to 8 photos. Remove one first." }, 400);
+      const m = String(b.data || "").match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
       if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
       const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
       if (bin.length > 1_800_000) return json({ error: "That photo is too large. Please try another." }, 413);
-      await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES ('banner', ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(m[1], bin, now).run();
-      a.v = now;
+      const k = `banner-${now}`;
+      await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(k, m[1], bin, now).run();
+      photos.push({ k, v: now });
+    }
+    if (b.type === "bannerDel") {
+      const i = photos.findIndex((p) => p.k === b.k);
+      if (i < 0) return json({ error: "That photo is already gone." }, 404);
+      await D.prepare("DELETE FROM images WHERE item_id = ?").bind(photos[i].k).run();
+      photos.splice(i, 1);
+    }
+    if (b.type === "bannerMove") {
+      const i = photos.findIndex((p) => p.k === b.k), j = i + (+b.d < 0 ? -1 : 1);
+      if (i >= 0 && j >= 0 && j < photos.length) [photos[i], photos[j]] = [photos[j], photos[i]];
     }
     await setSetting(D, "banner", JSON.stringify(a));
     return json({ ok: true, banner: a });

@@ -87,33 +87,35 @@
   };
 
   function renderBan() {
-    const b = D.banner || {}, v = +b.v || 0;
-    let pending = null, remove = false;
+    const b = D.banner || {}, photos = b.photos || [];
     $("#mBan").innerHTML = `
-      <div class="ban-ed"><span class="ban-img"><img id="bImg" alt=""><em id="bNone">Using the shop's standard photo</em></span>
-        <span class="kcov-b"><label class="btn sm">Upload photo<input type="file" id="bFile" accept="image/*" hidden></label><button type="button" class="link danger" id="bDel" hidden>Use standard photo</button>
-        <small>Landscape photo, at least 1600px wide. Darker or softer backgrounds keep the headline easy to read.</small></span></div>
+      <div class="f full"><span>Slideshow photos <small class="hint" style="display:inline">· ${photos.length ? `${photos.length} of 8` : "using the shop's standard photos"}</small></span>
+        <div class="ban-grid">${photos.map((p, i) => `<span class="ban-img"><img src="/img/${esc(p.k)}.jpg?v=${p.v}" alt=""><span class="ban-tools">
+          <button type="button" data-bmove="${esc(p.k)}" data-d="-1" ${i ? "" : "disabled"} aria-label="Move earlier">‹</button><button type="button" data-bmove="${esc(p.k)}" data-d="1" ${i < photos.length - 1 ? "" : "disabled"} aria-label="Move later">›</button><button type="button" data-bdel="${esc(p.k)}" aria-label="Remove photo">✕</button></span></span>`).join("")}
+          ${photos.length < 8 ? `<label class="ban-img ban-add"><input type="file" id="bFile" accept="image/*" multiple hidden><em>+ Add photos</em></label>` : ""}</div>
+        <small class="hint">Photos fade from one to the next every few seconds. Landscape photos, at least 1600px wide, look best. Darker or softer backgrounds keep the headline easy to read. Remove all your photos to go back to the standard ones.</small></div>
       <label class="f full"><span>Headline (optional)</span><input id="bTitle" maxlength="80" value="${esc(b.title || "")}" placeholder="Healing crystals | for wellness &amp; balance"><small class="hint">Words after a | appear on a second line in italics.</small></label>
       <label class="f full"><span>Short line (optional)</span><input id="bText" maxlength="200" value="${esc(b.text || "")}" placeholder="Hand-picked natural crystals, each chosen for its energy and intention."></label>
       <label class="f"><span>Button text (optional)</span><input id="bCta" maxlength="30" value="${esc(b.cta || "")}" placeholder="Shop our collection"></label>
-      <div class="ed-f"><button class="btn sm" type="submit">Save banner</button></div>`;
-    const paint = () => {
-      const src = pending || (v && !remove ? `/img/banner.jpg?v=${v}` : "");
-      $("#bImg").hidden = !src; if (src) $("#bImg").src = src;
-      $("#bNone").hidden = !!src; $("#bDel").hidden = !src;
+      <div class="ed-f"><button class="btn sm" type="submit">Save words</button></div>`;
+    const post = (body) => api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) });
+    const f = $("#bFile");
+    if (f) f.onchange = async (e) => {
+      const files = [...e.target.files].slice(0, 8 - photos.length); if (!files.length) return;
+      toast(`Uploading ${files.length} photo${files.length > 1 ? "s" : ""}…`);
+      try { for (const file of files) await post({ type: "bannerAdd", data: await shrink(file, 2000) }); toast("Added. The shop shows it within a minute."); }
+      catch (x) { toast(x.message || "Couldn't read that photo. Please try another."); }
+      load();
     };
-    $("#bFile").onchange = async (e) => {
-      const f = e.target.files[0]; if (!f) return;
-      try { pending = await shrink(f, 2000); remove = false; paint(); toast("Photo ready. Tap Save banner to use it."); }
-      catch { toast("Couldn't read that photo. Please try another."); }
+    $("#mBan").onclick = async (e) => {
+      const d = e.target.closest("[data-bdel]"), m = e.target.closest("[data-bmove]");
+      if (!d && !m) return;
+      try { await post(d ? { type: "bannerDel", k: d.dataset.bdel } : { type: "bannerMove", k: m.dataset.bmove, d: +m.dataset.d }); if (d) toast("Photo removed"); load(); }
+      catch (x) { toast(x.message); }
     };
-    $("#bDel").onclick = () => { pending = null; remove = true; paint(); };
-    paint();
     $("#mBan").onsubmit = async (e) => {
       e.preventDefault();
-      const body = { type: "banner", title: $("#bTitle").value, text: $("#bText").value, cta: $("#bCta").value };
-      if (pending) body.data = pending; else if (remove) body.data = "";
-      try { await api("/api/admin/marketing", { method: "POST", body: JSON.stringify(body) }); toast("Banner saved. It shows in the shop within a minute."); load(); }
+      try { await post({ type: "banner", title: $("#bTitle").value, text: $("#bText").value, cta: $("#bCta").value }); toast("Banner saved. It shows in the shop within a minute."); load(); }
       catch (x) { toast(x.message); }
     };
   }

@@ -93,8 +93,15 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
 
 function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }
 
-/** home page banner: words and photo saved in the Marketing tab win over data/catalog.json */
+/** home page banner: words and photos saved in the Marketing tab win over data/catalog.json */
 function bannerOf(settings, saved) {
   const bo = saved || {}, bd = settings.banner || {};
-  return { title: bo.title || bd.title || "", text: bo.text || bd.text || "", cta: bo.cta || bd.cta || "Shop our collection", img: bo.v ? `img/banner.jpg?v=${bo.v}` : bd.img || "" };
+  const mine = bannerPhotos(bo).map((p) => `img/${p.k}.jpg?v=${p.v}`);
+  return { title: bo.title || bd.title || "", text: bo.text || bd.text || "", cta: bo.cta || bd.cta || "Shop our collection", imgs: mine.length ? mine : bd.imgs || (bd.img ? [bd.img] : []) };
+}
+/** uploaded banner photos, oldest first (an early single photo was saved as "banner") */
+export function bannerPhotos(b) {
+  if (!b) return [];
+  if (Array.isArray(b.photos)) return b.photos.filter((p) => p && p.k && p.v);
+  return b.v ? [{ k: "banner", v: b.v }] : [];
 }

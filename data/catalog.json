@@ -1677,6 +1677,13 @@
     "title": "Healing crystals|for wellness & balance",
     "text": "Hand-picked natural crystal jewellery, each piece chosen for its energy, beauty and intention.",
     "cta": "Shop our collection",
-    "img": "assets/img/hero.jpg"
+    "imgs": [
+      "assets/img/samples/clear-quartz-wood.jpg",
+      "assets/img/samples/sunstone-stack.jpg",
+      "assets/img/samples/tiger-eye-ammonite.jpg",
+      "assets/img/samples/blue-shell.jpg",
+      "assets/img/samples/tourmalinated-quartz.jpg",
+      "assets/img/samples/rose-quartz-shells.jpg"
+    ]
   }
 }
