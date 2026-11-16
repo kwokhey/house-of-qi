@@ -74,7 +74,7 @@ function card(o) {
     <div class="oc-h"><span class="oc-no">${esc(o.orderNo)}</span><span class="pill">${LABEL[o.status]}</span><time>${when(o.created)}</time></div>
     <div class="oc-c"><b>${esc(o.name)}</b>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : ""}${o.email ? `<span>${esc(o.email)}</span>` : ""}</div>
     <ul>${items}</ul>
-    ${o.notes ? `<div class="note">Gift message: ${esc(o.notes)}</div>` : ""}
+    ${o.notes ? `<div class="note">Additional request: ${esc(o.notes)}</div>` : ""}
     ${o.coupon ? `<div class="note promo">Code <b>${esc(o.coupon)}</b>${o.discount ? ` · −${RM(o.discount)}` : " · free delivery"}</div>` : ""}
     ${regionWarn(o)}<div class="deliv"><span><b>${esc(o.delivery || (o.pickup ? "Self pick-up" : "Delivery"))}</b></span><span class="tot">${RM(o.total)}</span>
       ${o.address.length ? `<span class="addr">${o.address.map(esc).join("<br>")}</span><button class="link" data-copy="${esc([o.name, ...o.address, o.phone].join("\n"))}">Copy address</button>` : ""}</div>
