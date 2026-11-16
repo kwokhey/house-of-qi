@@ -55,6 +55,7 @@ export async function syncSales(env, { force = false } = {}) {
   await setSetting(D, "sync_run", now);
 
   const since = Number(await getSetting(D, "sync_since")) || Math.floor(now / 1000) - 30 * 86400;
+  const hiddenBefore = Number(await getSetting(D, "orders_hidden_before")) || 0; // cleared test orders
   let after = null, newest = since, recorded = 0;
   for (let page = 0; page < 5; page++) {
     const p = new URLSearchParams({ limit: "100", status: "complete" });
@@ -62,7 +63,7 @@ export async function syncSales(env, { force = false } = {}) {
     if (after) p.set("starting_after", after);
     const list = await stripe(env, "checkout/sessions", { params: p });
     for (const s of list.data) {
-      if (!s.metadata?.order_no) continue;
+      if (!s.metadata?.order_no || s.created <= hiddenBefore) continue;
       recorded += await recordSession(D, s);
       if (s.created > newest) newest = s.created;
     }

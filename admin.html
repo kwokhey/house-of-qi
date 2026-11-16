@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#F0E0D3">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/css/page.css?v=2">
-<link rel="stylesheet" href="/assets/css/admin.css?v=8">
+<link rel="stylesheet" href="/assets/css/admin.css?v=9">
 </head>
 <body>
 <div class="wrap admin">
@@ -37,7 +37,7 @@
   </section>
 
   <section id="ordersView" hidden>
-    <div class="titlebar"><h1>Orders</h1><button class="link" id="refresh">Refresh</button></div>
+    <div class="titlebar"><h1>Orders</h1><span class="tb-acts"><button class="link" id="clearTest" hidden>Clear test orders</button><button class="link" id="refresh">Refresh</button></span></div>
     <nav class="filters" id="filters" aria-label="Filter orders">
       <button data-f="todo" class="on">To pack <i id="c-todo">0</i></button>
       <button data-f="packed">Packed <i id="c-packed">0</i></button>
@@ -99,7 +99,7 @@
 </div>
 <script src="/assets/js/stock-import.js?v=1"></script>
 <script src="/assets/js/art.js?v=3"></script>
-<script src="/assets/js/admin.js?v=5"></script>
+<script src="/assets/js/admin.js?v=6"></script>
 <script src="/assets/js/stock.js?v=5"></script>
 <script src="/assets/js/marketing.js?v=6"></script>
 </body>

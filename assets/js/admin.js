@@ -101,6 +101,7 @@ async function load(more = false) {
     ORDERS = more ? ORDERS.concat(d.orders) : d.orders;
     NEXT = d.more ? d.next : null;
     $("#mode").hidden = d.mode !== "test";
+    $("#clearTest").hidden = d.mode !== "test";
     if (!$("#stockView").hidden || !$("#marketingView").hidden) return render();
     show("ordersView"); render();
   } catch (e) { toast(e.message); }
@@ -139,6 +140,16 @@ document.addEventListener("click", async (e) => {
   if (a) { setStatus(a.closest(".oc"), a.dataset.a, !!a.dataset.undo); return; }
 });
 $("#refresh").onclick = () => load();
+$("#clearTest").onclick = async () => {
+  if (!confirm("Clear all test orders?\n\nThey disappear from Orders and their sales come off the Sold counts and monthly totals. Pieces go back into stock, unless you've imported fresh stock counts since that order. This can't be undone.")) return;
+  const btn = $("#clearTest"); btn.disabled = true;
+  try {
+    const d = await api("/api/admin/orders", { method: "POST", body: JSON.stringify({ action: "clearTest" }) });
+    toast(d.cleared ? `Test orders cleared${d.restocked ? ` · ${d.restocked} back in stock` : ""}` : "Test orders cleared");
+    ORDERS = []; await load();
+  } catch (e) { toast(e.message); }
+  btn.disabled = false;
+};
 $("#more").onclick = () => load(true);
 $("#logout").onclick = async () => { await fetch("/api/admin/login", { method: "DELETE" }); ORDERS = []; show("loginView"); };
 $("#loginForm").onsubmit = async (e) => {
