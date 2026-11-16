@@ -21,6 +21,9 @@
     s = s.replace(/^(.+?),\s*(.+)$/, "$1 ($2)");           // HESSONITE, ORANGE GARNET → HESSONITE (ORANGE GARNET)
     s = s.replace(/\bTOURMALINATED ON QUARTZ\b/i, "TOURMALINATED QUARTZ");
     s = titleCase(s).replace(/Multi-Colour/g, "Multi-colour");
+    // close a bracket left open in the sheet: "Rose Quartz (Pendant" → "Rose Quartz (Pendant)"
+    const open = (s.match(/\(/g) || []).length - (s.match(/\)/g) || []).length;
+    if (open > 0) s += ")".repeat(open);
     return s;
   }
 
@@ -98,7 +101,7 @@
       // "Opal" + "Blue opal, premium" → stone "Blue Opal", variant "Premium"
       let shown = stone;
       const parts = d.variant ? d.variant.split(/\s*,\s*/) : [];
-      const hit = parts.findIndex((x) => new RegExp(`\\b${stone}\\b`, "i").test(x) && x.toLowerCase() !== stone.toLowerCase());
+      const hit = parts.findIndex((x) => new RegExp(`\\b${stone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(x) && x.toLowerCase() !== stone.toLowerCase());
       if (hit >= 0) {
         shown = titleCase(parts[hit]);
         parts.splice(hit, 1);
