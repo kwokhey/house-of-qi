@@ -26,7 +26,7 @@
   const thumb = (i, v = "sq") => (i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : ART.get(i.id, v, { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }));
   const isLow = (i) => i.stock > 0 && i.stock <= 2 && i.stock_in > 2;
   const GROUPS = {
-    all: () => true, in: (i) => i.stock > 0, low: isLow, out: (i) => i.stock <= 0,
+    all: () => true, in: (i) => i.stock > 0, low: isLow, sold: (i) => (i.sold || 0) > 0, out: (i) => i.stock <= 0,
     nophoto: (i) => !i.image_v, hidden: (i) => !i.published,
   };
 
@@ -50,6 +50,7 @@
     });
     const q = Q.trim().toLowerCase();
     const list = ITEMS.filter(GROUPS[FILTER]).filter((i) => !q || `${i.id} ${name(i)} ${details(i)} ${i.supplier}`.toLowerCase().includes(q));
+    if (FILTER === "sold") list.sort((a, b) => (b.sold || 0) - (a.sold || 0)); // best sellers first
     $("#sList").innerHTML = list.length
       ? list.map((i) => `<button class="s-row${i.stock <= 0 ? " out" : ""}" data-sid="${esc(i.id)}">
           <img src="${thumb(i)}" alt="" loading="lazy">
@@ -57,7 +58,7 @@
             <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}</span></span>
           <span class="s-num"><b class="${i.stock <= 0 ? "zero" : isLow(i) ? "low" : ""}">${i.stock}</b><small>${RM0(i.price)}</small></span>
         </button>`).join("")
-      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
+      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
   }
 
   /* Link previews: for pieces without a photo, save the drawn picture as a JPG so
