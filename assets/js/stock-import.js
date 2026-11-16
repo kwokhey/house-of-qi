@@ -92,7 +92,7 @@
     const c = findCols(rows[hi]);
     if (c.product == null || c.price == null) throw new Error("Couldn't find the Product Name and Selling Price columns.");
     const items = [], ids = new Set(), used = new Map();
-    let supplier = "", stone = "", stoneRaw = "", details = "", generated = 0, fixed = new Set();
+    let supplier = "", stone = "", stoneRaw = "", details = "", generated = 0, fixed = new Set(), dups = [], madeIds = [];
     for (let r = hi + 1; r < rows.length; r++) {
       const row = rows[r].map((x) => (x == null ? "" : String(x).trim()));
       const get = (k) => (c[k] == null ? "" : row[c[k]] || "");
@@ -121,11 +121,12 @@
         if (d.variant) d.variant = d.variant[0].toUpperCase() + d.variant.slice(1);
       }
       let id = get("id").toUpperCase().replace(/\s+/g, "");
+      const dupOf = id && ids.has(id) ? id : "";
       if (!id || ids.has(id)) {
         const base = `${abbrFor(stone, used)}-1-${d.size != null ? String(d.size).replace(".", "") : "X"}`;
         id = base; let k = 0;
         while (ids.has(id)) id = `${base}-${String.fromCharCode(66 + k++)}`;
-        generated++;
+        if (dupOf) dups.push(`row ${r + 1}: ${dupOf} → ${id}`); else { generated++; madeIds.push(id); }
       } else used.set(id.split("-")[0], stone);
       ids.add(id);
       const out = num(get("stockOut")) || 0;
@@ -139,7 +140,8 @@
         stock_in: qtyIn || 0, stock: Math.max(0, (qtyIn || 0) - out),
       });
     }
-    if (generated) notes.push(`${generated} rows had no Item ID, so IDs were made in your format (stone-sheet-size), e.g. ${items.find((i) => /-1-/.test(i.id))?.id || ""}.`);
+    if (dups.length) notes.push(`⚠ ${dups.length} row${dups.length > 1 ? "s use" : " uses"} an Item ID that's already used higher up in the sheet, so ${dups.length > 1 ? "they were" : "it was"} given a new ID: ${dups.slice(0, 8).join("; ")}${dups.length > 8 ? "; …" : ""}. To keep your own IDs, give each row its own ID in the sheet and import again.`);
+    if (generated) notes.push(`${generated} row${generated > 1 ? "s" : ""} had no Item ID, so ${generated > 1 ? "IDs were" : "an ID was"} made in your format (stone-sheet-size), e.g. ${madeIds[0] || ""}.`);
     if (fixed.size) notes.push(`Names tidied: ${[...fixed].filter((f) => !/^[A-Z ]+ → /.test(f) || /Larimar|Selenite|Aventurine|Onyx|\(|Tourmalinated|Multi/.test(f)).slice(0, 12).join("; ")}.`);
     return { items, notes };
   }
