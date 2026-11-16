@@ -102,7 +102,7 @@ async function clearAll(D, b) {
   if (b.confirm !== "DELETE") return json({ error: 'Type DELETE to confirm.' }, 400);
   const n = (await D.prepare("SELECT COUNT(*) AS n FROM items").first()).n;
   await D.batch([
-    D.prepare("DELETE FROM images WHERE item_id IN (SELECT id FROM items) OR item_id LIKE 'prev-%'"),
+    D.prepare("DELETE FROM images WHERE item_id IN (SELECT id FROM items) OR item_id LIKE 'prev-%' OR item_id LIKE 'orig-%'"),
     D.prepare("DELETE FROM movements"),
     D.prepare("DELETE FROM consign"),
     D.prepare("DELETE FROM items"),

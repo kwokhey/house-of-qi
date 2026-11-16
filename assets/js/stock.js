@@ -108,7 +108,7 @@
       <div class="ed-h"><b>${isNew ? "Add item" : esc(i.id)}</b><button type="button" class="link" data-x>Close</button></div>
       ${isNew ? "" : `<div class="ed-photo"><img id="edImg" src="${thumb(i, "tall")}" alt="">
         <div class="ed-ph-act"><label class="btn ghost sm">${i.image_v ? "Change photo" : "Add photo"}<input type="file" id="edFile" accept="image/*" hidden></label>
-        ${i.image_v ? '<button type="button" class="link" id="edDelPh">Remove photo</button>' : '<small>Drawn picture shown until you add a photo</small>'}</div></div>
+        ${i.image_v ? '<button type="button" class="btn ghost sm" id="edAdjPh">Adjust photo</button><button type="button" class="link" id="edDelPh">Remove photo</button>' : '<small>Drawn picture shown until you add a photo</small>'}</div></div>
       <div class="ed-stock"><div><span>In stock</span><b id="edStock" class="${i.stock <= 0 ? "zero" : ""}">${i.stock}</b><small>${i.sold || 0} sold · ${i.stock_in} received</small></div>
         <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button></div>
         <div id="mvForm"></div></div>`}
@@ -154,7 +154,8 @@
       $("#edSave").disabled = false;
     };
     if (!isNew) {
-      $("#edFile").onchange = (e) => uploadPhoto(i, e.target.files[0]);
+      $("#edFile").onchange = (e) => { const f = e.target.files[0]; if (f) adjustPhoto(i, f); };
+      if ($("#edAdjPh")) $("#edAdjPh").onclick = () => adjustPhoto(i, `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}`);
       if ($("#edDelPh")) $("#edDelPh").onclick = async () => { await api(`/api/admin/image?id=${encodeURIComponent(i.id)}`, { method: "DELETE" }); toast("Photo removed"); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); };
       if ($("#edDel")) $("#edDel").onclick = async () => {
         if ($("#edDel").dataset.sure !== "1") { $("#edDel").dataset.sure = "1"; $("#edDel").textContent = "Tap again to delete for good"; return; }
@@ -215,21 +216,91 @@
     } catch { $("#edHist").innerHTML = '<li class="muted">Couldn\'t load history.</li>'; }
   }
 
-  /* ---------- photos: resized on the phone before upload ---------- */
-  async function uploadPhoto(i, file) {
-    if (!file) return;
-    toast("Uploading photo…");
+  /* ---------- adjust a photo: zoom, drag into place, rotate; saved as a square like the shop shows it ---------- */
+  async function adjustPhoto(i, src) {
+    let bmp, orig = null;
     try {
-      const bmp = await createImageBitmap(file);
-      const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
-      const cv = document.createElement("canvas");
-      cv.width = Math.round(bmp.width * scale); cv.height = Math.round(bmp.height * scale);
-      cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
-      let q = 0.86, data = cv.toDataURL("image/jpeg", q);
-      while (data.length > 1_700_000 && q > 0.5) { q -= 0.08; data = cv.toDataURL("image/jpeg", q); }
-      await api("/api/admin/image", { method: "POST", body: JSON.stringify({ id: i.id, data }) });
-      toast("Photo saved"); await load(); openEditor(ITEMS.find((x) => x.id === i.id));
-    } catch (x) { toast(x.message || "Couldn't read that photo. Try a JPG or PNG."); }
+      if (typeof src === "string") {
+        // start from the full original when one was kept, so nothing cut off earlier is lost
+        const o = await fetch(`/api/admin/image?id=${encodeURIComponent(i.id)}&orig=1`, { credentials: "same-origin", cache: "no-store" });
+        bmp = await createImageBitmap(o.ok ? await o.blob() : await (await fetch(src, { cache: "no-store" })).blob());
+      } else {
+        bmp = await createImageBitmap(src);
+        // keep the whole photo (up to 2000px) for later adjustments
+        const k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height)), oc = document.createElement("canvas");
+        oc.width = Math.round(bmp.width * k); oc.height = Math.round(bmp.height * k); oc.getContext("2d").drawImage(bmp, 0, 0, oc.width, oc.height);
+        let q = 0.85; orig = oc.toDataURL("image/jpeg", q);
+        while (orig.length > 2_400_000 && q > 0.5) { q -= 0.08; orig = oc.toDataURL("image/jpeg", q); }
+      }
+    } catch { toast("Couldn't open that photo. Try a JPG or PNG."); return; }
+    let d = $("#sCrop");
+    if (!d) { d = document.createElement("dialog"); d.id = "sCrop"; d.className = "sheet-d crop-d"; document.body.appendChild(d); }
+    d.innerHTML = `<div class="ed"><div class="ed-h"><b>Adjust photo</b><button type="button" class="link" data-x>Cancel</button></div>
+      <p class="lede">Drag the photo to move it. Use the slider (or pinch / scroll) to zoom. The square is exactly what the shop shows.</p>
+      <div class="crop-stage" id="cStage"><canvas id="cCv" width="1200" height="1200"></canvas><span class="crop-grid"></span></div>
+      <div class="crop-row"><span class="crop-z">−</span><input type="range" id="cZoom" min="0" max="1000" value="0" aria-label="Zoom"><span class="crop-z">+</span></div>
+      <div class="crop-row crop-tools">
+        <button type="button" class="btn ghost sm" id="cRot">Rotate ↻</button>
+        <button type="button" class="btn ghost sm" id="cFit">Fit whole photo</button>
+        <button type="button" class="btn ghost sm" id="cReset">Reset</button>
+        <span class="crop-bg">Background <button type="button" data-bg="#FFFFFF" title="White"></button><button type="button" data-bg="#EFE3D7" title="Cream"></button><button type="button" data-bg="#1E1714" title="Dark"></button></span>
+      </div>
+      <div class="ed-f"><button class="btn" type="button" id="cSave">Save photo</button></div></div>`;
+    const cv = $("#cCv"), cx = cv.getContext("2d"), N = cv.width, Z = $("#cZoom");
+    const st = { rot: 0, x: 0, y: 0, k: 1, bg: "#FFFFFF" };
+    const dims = () => (st.rot % 180 ? [bmp.height, bmp.width] : [bmp.width, bmp.height]);
+    const cover = () => { const [w, h] = dims(); return N / Math.min(w, h); };   // fills the square
+    const contain = () => { const [w, h] = dims(); return N / Math.max(w, h); }; // whole photo visible
+    const kMin = () => contain() * 0.9, kMax = () => cover() * 5;
+    const toSlider = () => (Z.value = Math.round(1000 * Math.log(st.k / kMin()) / Math.log(kMax() / kMin())));
+    const fromSlider = () => kMin() * Math.pow(kMax() / kMin(), Z.value / 1000);
+    function clamp() {
+      const [w, h] = dims(), W = w * st.k, H = h * st.k;
+      const lx = Math.abs(W - N) / 2, ly = Math.abs(H - N) / 2;   // a photo larger than the square can't leave a gap; a smaller one stays inside
+      st.x = Math.max(-lx, Math.min(lx, st.x)); st.y = Math.max(-ly, Math.min(ly, st.y));
+    }
+    function draw() {
+      clamp();
+      cx.fillStyle = st.bg; cx.fillRect(0, 0, N, N);
+      cx.save(); cx.translate(N / 2 + st.x, N / 2 + st.y); cx.rotate((st.rot * Math.PI) / 180); cx.scale(st.k, st.k);
+      cx.imageSmoothingQuality = "high"; cx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2); cx.restore();
+      d.querySelectorAll("[data-bg]").forEach((b) => b.classList.toggle("on", b.dataset.bg === st.bg));
+    }
+    const reset = () => { st.k = cover(); st.x = st.y = 0; toSlider(); draw(); };
+    const zoomAt = (k, px = N / 2, py = N / 2) => { k = Math.max(kMin(), Math.min(kMax(), k)); const f = k / st.k; st.x = (st.x + N / 2 - px) * f - (N / 2 - px); st.y = (st.y + N / 2 - py) * f - (N / 2 - py); st.k = k; toSlider(); draw(); };
+    Z.oninput = () => zoomAt(fromSlider());
+    $("#cRot").onclick = () => { st.rot = (st.rot + 90) % 360; reset(); };
+    $("#cFit").onclick = () => { st.k = contain(); st.x = st.y = 0; toSlider(); draw(); };
+    $("#cReset").onclick = () => { st.rot = 0; reset(); };
+    d.querySelectorAll("[data-bg]").forEach((b) => (b.onclick = () => { st.bg = b.dataset.bg; draw(); }));
+    // drag + pinch (pointer events), scroll to zoom
+    const stage = $("#cStage"), pts = new Map(); let last = null;
+    const scale = () => N / stage.getBoundingClientRect().width;
+    const local = (e) => { const r = stage.getBoundingClientRect(); return [(e.clientX - r.left) * scale(), (e.clientY - r.top) * scale()]; };
+    stage.onpointerdown = (e) => { stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, local(e)); last = null; };
+    stage.onpointermove = (e) => {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId), cur = local(e); pts.set(e.pointerId, cur);
+      if (pts.size === 1) { st.x += cur[0] - prev[0]; st.y += cur[1] - prev[1]; draw(); }
+      else if (pts.size === 2) {
+        const [a, b] = [...pts.values()], dist = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        if (last) zoomAt(st.k * (dist / last), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+        last = dist;
+      }
+    };
+    stage.onpointerup = stage.onpointercancel = (e) => { pts.delete(e.pointerId); last = null; };
+    stage.onwheel = (e) => { e.preventDefault(); const [px, py] = local(e); zoomAt(st.k * Math.exp(-e.deltaY * 0.0015), px, py); };
+    d.querySelector("[data-x]").onclick = () => d.close();
+    $("#cSave").onclick = async () => {
+      $("#cSave").disabled = true; toast("Saving photo…");
+      try {
+        let q = 0.88, data = cv.toDataURL("image/jpeg", q);
+        while (data.length > 1_700_000 && q > 0.5) { q -= 0.08; data = cv.toDataURL("image/jpeg", q); }
+        await api("/api/admin/image", { method: "POST", body: JSON.stringify({ id: i.id, data, orig: orig || undefined }) });
+        d.close(); toast("Photo saved"); await load(); openEditor(ITEMS.find((x) => x.id === i.id));
+      } catch (x) { toast(x.message || "Couldn't save the photo. Please try again."); $("#cSave").disabled = false; }
+    };
+    d.showModal(); reset();
   }
 
   /* ---------- import from Excel / Google Sheets ---------- */
