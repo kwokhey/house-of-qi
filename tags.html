@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Print tags · House of Qi</title>
+<link rel="icon" href="/assets/img/favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600&display=swap">
+<style id="pageSize"></style>
+<style>
+:root{--paper:#EFE0D4;--card:#F7EDE6;--ink:#2E221C;--ink-2:#6E5A4E;--ink-3:#9A8578;--line:rgba(59,44,35,.14)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:end}
+.bar h1{font:500 28px Cormorant Garamond,serif;margin:0 12px 0 0}
+.bar label{display:grid;gap:3px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.bar select,.bar input[type=number]{font:inherit;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.bar .chk{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);font-weight:400}
+.bar button{font:600 11px Jost;letter-spacing:.18em;text-transform:uppercase;padding:12px 20px;border-radius:999px;border:0;background:var(--ink);color:#F7EEE4;cursor:pointer}
+.bar .sum{color:var(--ink-2);font-size:13px;margin-left:auto}
+.tip{max-width:860px;margin:14px 20px 0;color:var(--ink-2);font-size:13px}
+.msg{padding:40px 20px;color:var(--ink-2)}
+#sheet{padding:20px;display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
+
+/* ---------- the tag (black only, so it prints well on thermal printers) ---------- */
+.tag{background:#fff;color:#000;overflow:hidden;position:relative;font-family:Jost,Arial,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.tag .brand{font:600 1.55mm/1 Jost,Arial,sans-serif;letter-spacing:.35em}
+.tag .nm{font:600 3.3mm/1.08 "Cormorant Garamond",Georgia,serif;margin:1mm 0 .7mm;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tag .dt{font-size:2.2mm;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag .pr{font:600 4.4mm/1 Jost,Arial,sans-serif;letter-spacing:.01em}
+.tag .id{font:500 2mm/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em}
+.tag .qr svg{display:block;width:100%;height:auto}
+.tag .scan{font-size:1.45mm;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-top:.6mm}
+
+/* label: text left, QR right */
+.f-label{width:var(--w);height:var(--h);padding:2.2mm 2.4mm;display:grid;grid-template-columns:1fr var(--qr);gap:2mm}
+.f-label .l{display:flex;flex-direction:column;min-width:0}
+.f-label .bottom{margin-top:auto;display:flex;flex-direction:column;gap:1mm}
+.f-label .r{display:flex;flex-direction:column;justify-content:center}
+.f-label.noqr{grid-template-columns:1fr}
+.f-label.small .nm{font-size:2.9mm}.f-label.small .pr{font-size:3.8mm}.f-label.small .dt{font-size:1.95mm}
+
+/* dumbbell jewellery tag: two printable halves joined by a thin tail; fold around the bracelet */
+.f-db{width:72mm;height:13mm;display:grid;grid-template-columns:24mm 1fr 24mm;background:transparent;box-shadow:none}
+.f-db .half{background:#fff;border-radius:2mm;padding:1.2mm 1.6mm;display:flex;flex-direction:column;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.18);min-width:0}
+.f-db .tail{align-self:center;height:2.2mm;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.f-db .nm{font-size:2.3mm;line-height:1.02;margin:.3mm 0 .2mm;-webkit-line-clamp:2}
+.f-db .dt{font-size:1.8mm}.f-db .pr{font-size:3.6mm}.f-db .id{font-size:1.7mm;margin-top:.8mm}
+.f-db .brand{font-size:1.3mm}
+
+/* A4: cut-out cards on a normal printer */
+body.a4 #sheet{display:grid;grid-template-columns:repeat(3,63mm);gap:0;width:max-content;background:#fff;padding:10mm 10.5mm}
+body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
+
+@media print{
+  body{background:#fff}
+  .bar,.tip,.msg{display:none!important}
+  #sheet{padding:0!important;gap:0!important;display:block}
+  .tag{box-shadow:none!important;break-inside:avoid;page-break-inside:avoid}
+  body.roll .tag{page-break-after:always;break-after:page}
+  body.roll .tag:last-child{page-break-after:auto;break-after:auto}
+  body.a4 #sheet{display:grid!important;padding:0!important}
+  body.a4 .tag{outline:.2mm dashed #999}
+  .f-db .half,.f-db .tail{box-shadow:none!important;outline:.15mm dashed #aaa}
+}
+</style>
+</head>
+<body class="roll">
+<div class="bar">
+  <h1>Print tags</h1>
+  <label>Tag size<select id="fmt">
+    <option value="5030">Label 50 × 30 mm (thermal printer)</option>
+    <option value="4030">Label 40 × 30 mm (thermal printer)</option>
+    <option value="db">Jewellery tag 72 × 13 mm (dumbbell)</option>
+    <option value="a4">A4 paper, cut out (any printer)</option>
+  </select></label>
+  <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option></select></label>
+  <label>&nbsp;<span class="chk"><input type="checkbox" id="qrOn" checked> QR code</span></label>
+  <label>&nbsp;<span class="chk"><input type="checkbox" id="prOn" checked> Price</span></label>
+  <span class="sum" id="sum"></span>
+  <button id="print">Print</button>
+</div>
+<p class="tip" id="tip"></p>
+<div id="sheet"><p class="msg">Loading…</p></div>
+<script src="/assets/js/qr.js?v=1"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const name = (i) => `${i.stone || ""} ${i.type || ""}`.trim() || i.id;
+  const RM = (n) => "RM" + (Number(n) % 1 ? Number(n).toFixed(2) : Number(n).toLocaleString("en-MY"));
+  const want = (new URLSearchParams(location.search).get("ids") || "").split(",").filter(Boolean);
+  const FMT = {
+    "5030": { w: 50, h: 30, qr: 17, tip: "In your printer settings choose paper size 50 × 30 mm, margins None, scale 100%. One tag prints on each label." },
+    "4030": { w: 40, h: 30, qr: 13, small: 1, tip: "In your printer settings choose paper size 40 × 30 mm, margins None, scale 100%. One tag prints on each label." },
+    db: { tip: "For dumbbell jewellery tag rolls (72 × 13 mm). Choose paper size 72 × 13 mm, margins None, scale 100%. The left half shows the name and size, the right half the price and ID. There's no space for a QR code on this size." },
+    a4: { tip: "Prints 27 tags (63 × 30 mm) on A4 with dashed cut lines. Use thick paper (200–300 gsm card) or A4 sticker paper, margins None, scale 100%." },
+  };
+  let ITEMS = [];
+  const settings = () => { try { return JSON.parse(localStorage.getItem("hq-tags") || "{}"); } catch { return {}; } };
+  const keep = () => { try { localStorage.setItem("hq-tags", JSON.stringify({ fmt: $("#fmt").value, qty: $("#qty").value, qr: $("#qrOn").checked, pr: $("#prOn").checked })); } catch {} };
+
+  function tagHTML(i, f, o) {
+    const size = i.size_mm ? `${+i.size_mm} mm` : "";
+    const dt = [size, i.variant].filter(Boolean).join(" · ");
+    const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
+    if (f === "db") return `<div class="tag f-db"><div class="half"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt)}</div></div><div class="tail"></div>
+      <div class="half">${price}<div class="id">${esc(i.id)}</div></div></div>`;
+    const F = FMT[f === "a4" ? "5030" : f];
+    const qr = o.qr ? `<div class="r"><div class="qr">${QR.svg(`${location.origin}/p/${encodeURIComponent(i.id)}`, "M")}</div><div class="scan">Scan to shop</div></div>` : "";
+    return `<div class="tag f-label${F.small ? " small" : ""}${o.qr ? "" : " noqr"}" style="--w:${f === "a4" ? 63 : F.w}mm;--h:${f === "a4" ? 30.5 : F.h}mm;--qr:${F.qr}mm">
+      <div class="l"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt)}</div>
+      <div class="bottom">${price}<div class="id">${esc(i.id)}</div></div></div>${qr}</div>`;
+  }
+
+  function render() {
+    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db", pr: $("#prOn").checked };
+    $("#qrOn").disabled = f === "db";
+    document.body.className = f === "a4" ? "a4" : "roll";
+    const F = FMT[f];
+    $("#pageSize").textContent = f === "a4" ? "@page{size:A4;margin:0}" : f === "db" ? "@page{size:72mm 13mm;margin:0}" : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
+    $("#tip").textContent = F.tip;
+    const list = [];
+    for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
+    $("#sum").textContent = `${list.length} tag${list.length === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}`;
+    $("#sheet").innerHTML = list.length ? list.map((i) => tagHTML(i, f, o)).join("") : `<p class="msg">No tags to print. ${$("#qty").value === "stock" ? "These items have no stock." : ""}</p>`;
+    keep();
+  }
+
+  async function load() {
+    const r = await fetch("/api/admin/items", { credentials: "same-origin" });
+    if (r.status === 401) { $("#sheet").innerHTML = `<p class="msg">Please <a href="/admin">log in to admin</a> first, then open Print tags again.</p>`; return; }
+    const d = await r.json();
+    const by = Object.fromEntries(d.items.map((i) => [i.id, i]));
+    ITEMS = want.length ? want.map((id) => by[id]).filter(Boolean) : d.items.filter((i) => i.published && i.stock > 0);
+    const s = settings();
+    if (s.fmt) $("#fmt").value = s.fmt; if (s.qty) $("#qty").value = s.qty;
+    if (s.qr === false) $("#qrOn").checked = false; if (s.pr === false) $("#prOn").checked = false;
+    render();
+  }
+  ["#fmt", "#qty", "#qrOn", "#prOn"].forEach((k) => $(k).addEventListener("change", render));
+  $("#print").onclick = () => window.print();
+  load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
+})();
+</script>
+</body>
+</html>

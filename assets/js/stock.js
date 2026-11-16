@@ -42,6 +42,7 @@
       <div><span>Sold in ${mName}</span><b>${(MONTH.pcs || 0).toLocaleString()}</b><small>${RM0(MONTH.revenue)} sales</small></div>
       <div><span>Profit in ${mName}</span><b>${RM0(MONTH.profit)}</b><small>sales minus cost</small></div>`;
   }
+  let SHOWN = [];
   function render() {
     tiles();
     document.querySelectorAll("#sFilters button").forEach((b) => {
@@ -50,6 +51,7 @@
     });
     const q = Q.trim().toLowerCase();
     const list = ITEMS.filter(GROUPS[FILTER]).filter((i) => !q || `${i.id} ${name(i)} ${details(i)} ${i.supplier}`.toLowerCase().includes(q));
+    SHOWN = list;
     if (FILTER === "sold") list.sort((a, b) => (b.sold || 0) - (a.sold || 0)); // best sellers first
     $("#sList").innerHTML = list.length
       ? list.map((i) => `<button class="s-row${i.stock <= 0 ? " out" : ""}" data-sid="${esc(i.id)}">
@@ -340,5 +342,7 @@
   $("#sAdd").onclick = () => openEditor(null);
   $("#sImport").onclick = openImport;
   $("#sExport").onclick = exportExcel;
+  // tags for the items in the list right now (search + filter), or one item from its editor
+  $("#sTags").onclick = () => window.open(`/tags.html?ids=${encodeURIComponent(SHOWN.map((i) => i.id).join(","))}`, "_blank");
   window.Stock = { load };
 })();
