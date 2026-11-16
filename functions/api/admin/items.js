@@ -60,6 +60,14 @@ export async function onRequestPost({ request, env }) {
     intentions: JSON.stringify(Array.isArray(b.intentions) ? b.intentions.map((x) => str(x, 30)).slice(0, 8) : []),
     colour: isColour(b.colour) ? b.colour : "",
   };
+  // changing the ID of an existing item: move everything linked to it, then save as usual
+  const oldId = b.isNew ? "" : str(b.oldId, 40);
+  if (oldId && oldId !== id) {
+    if (await D.prepare("SELECT 1 FROM items WHERE id = ?").bind(id).first()) return json({ error: `${id} is already used by another item. Please choose a different ID.` }, 409);
+    const was = await D.prepare("SELECT id, gallery FROM items WHERE id = ?").bind(oldId).first();
+    if (!was) return json({ error: "Item not found. Please refresh." }, 404);
+    await renameItem(D, was, id);
+  }
   const exists = await D.prepare("SELECT id FROM items WHERE id = ?").bind(id).first();
   if (b.isNew && exists) return json({ error: `${id} already exists. Use a different item ID.` }, 409);
 
@@ -109,4 +117,33 @@ async function clearAll(D, b) {
   ]);
   await setSetting(D, "stock_reset_at", Math.floor(Date.now() / 1000)); // orders paid before now won't be counted again
   return json({ ok: true, deleted: n });
+}
+
+/** Rename an item: photos (main, extra angles, originals), stock history, consignment, and sales/collections that list it. */
+async function renameItem(D, was, id) {
+  const old = was.id, now = Date.now();
+  let gal = [];
+  try { gal = JSON.parse(was.gallery || "[]").filter((p) => p && p.k); } catch {}
+  const st = [
+    D.prepare("UPDATE items SET id = ?, updated_at = ? WHERE id = ?").bind(id, now, old),
+    D.prepare("UPDATE images SET item_id = ? WHERE item_id = ?").bind(id, old),
+    D.prepare("UPDATE images SET item_id = ? WHERE item_id = ?").bind(`orig-${id}`, `orig-${old}`),
+    D.prepare("DELETE FROM images WHERE item_id = ?").bind(`prev-${old}`), // link preview is made again
+    D.prepare("UPDATE movements SET item_id = ? WHERE item_id = ?").bind(id, old),
+    D.prepare("UPDATE consign SET item_id = ? WHERE item_id = ?").bind(id, old),
+  ];
+  const newGal = gal.map((p) => {
+    const k = p.k.startsWith(`g-${old}-`) ? `g-${id}-${p.k.slice(`g-${old}-`.length)}` : p.k;
+    if (k !== p.k) st.push(D.prepare("UPDATE images SET item_id = ? WHERE item_id = ?").bind(k, p.k), D.prepare("UPDATE images SET item_id = ? WHERE item_id = ?").bind(`orig-${k}`, `orig-${p.k}`));
+    return { ...p, k };
+  });
+  st.push(D.prepare("UPDATE items SET gallery = ? WHERE id = ?").bind(JSON.stringify(newGal), id));
+  for (const t of ["sales", "collections"]) {
+    const { results } = await D.prepare(`SELECT id, targets FROM ${t} WHERE scope = 'items'`).all();
+    for (const r of results) {
+      let ids = []; try { ids = JSON.parse(r.targets || "[]"); } catch {}
+      if (ids.includes(old)) st.push(D.prepare(`UPDATE ${t} SET targets = ? WHERE id = ?`).bind(JSON.stringify(ids.map((x) => (x === old ? id : x))), r.id));
+    }
+  }
+  await D.batch(st);
 }
