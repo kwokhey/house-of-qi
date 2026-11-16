@@ -165,12 +165,14 @@
     d.scrollTop = 0;
   }
 
+  const sellers = async () => { try { return (await api("/api/admin/affiliates")).affiliates; } catch { return []; } };
   function movementForm(i, kind) {
     const box = $("#mvForm");
     const f = {
       sale: `<div class="mv"><b>Record an offline sale</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mPrice", "Price paid per piece (RM)", i.price, 'inputmode="decimal"')}
-          ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}</div>
+          ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
+          <label class="f" id="mAffF" hidden><span>Sold by (affiliate)</span><select id="mAff"></select></label></div>
           <button type="button" class="btn gold sm" id="mGo">Record sale</button></div>`,
       restock: `<div class="mv"><b>New stock arrived</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mCost", "Cost per piece (RM)", i.cost, 'inputmode="decimal"')}
@@ -181,11 +183,17 @@
           <button type="button" class="btn gold sm" id="mGo">Save count</button></div>`,
     }[kind];
     box.innerHTML = f;
+    if (kind === "sale") sellers().then((L) => {
+      const act = L.filter((a) => a.active);
+      if (!act.length || !$("#mAff")) return;
+      $("#mAff").innerHTML = `<option value="">Nobody (House of Qi)</option>` + act.map((a) => `<option value="${a.id}">${esc(a.name)} · ${esc(a.code)}</option>`).join("");
+      $("#mAffF").hidden = false;
+    });
     $("#mQty").focus(); $("#mQty").select();
     $("#mGo").onclick = async () => {
       $("#mGo").disabled = true;
       try {
-        await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value, note: $("#mNote").value }) });
+        await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined }) });
         toast({ sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
         await load(); openEditor(ITEMS.find((x) => x.id === i.id));
       } catch (x) { toast(x.message); $("#mGo").disabled = false; }

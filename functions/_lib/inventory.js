@@ -6,6 +6,7 @@
  */
 import { db, hasDB, getSetting, setSetting } from "./db.js";
 import { stripe } from "./stripe.js";
+import { creditSale } from "./affiliates.js";
 
 /** Item ids and quantities stored on the session, e.g. metadata s1 = "LRM-1001:1" */
 export function stockLines(meta = {}) {
@@ -34,6 +35,16 @@ export async function recordSession(D, s) {
     if (ins.meta.changes > 0) {
       await D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(l.qty, now, l.id).run();
       n++;
+    }
+  }
+  // a friend's (affiliate) sale: what the customer paid for the pieces, delivery not included
+  if (s.metadata?.aff) {
+    const aff = await D.prepare("SELECT * FROM affiliates WHERE id = ?").bind(Number(s.metadata.aff)).first();
+    if (aff) {
+      const amount = lines.reduce((t, l) => t + (l.price != null ? l.price : 0) * l.qty, 0);
+      const pieces = lines.reduce((t, l) => t + l.qty, 0);
+      const detail = Object.keys(s.metadata).filter((k) => /^i\d+$/.test(k)).map((k) => String(s.metadata[k]).split(" · ")[0]).join(", ");
+      await creditSale(D, aff, { ref: s.id, order_no: s.metadata.order_no || "", channel: "Website", detail, pieces, amount, created_at: (s.created || 0) * 1000 || now });
     }
   }
   // coupon usage (counts towards the code's limit and shows on the Marketing page)

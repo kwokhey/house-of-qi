@@ -310,11 +310,19 @@ function removeLine(li,l){vib(8);const h=li.offsetHeight;const done=()=>{S.cart=
   if(li.animate){li.animate([{height:h+'px',opacity:1,transform:'none'},{height:h+'px',opacity:0,transform:'translateX(-30px)',offset:.45},{height:'0px',opacity:0,paddingTop:'0px',paddingBottom:'0px',transform:'translateX(-30px)'}],{duration:380,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished.then(done,done)}else done()}
 
 
+/* affiliate link: ?ref=CODE credits the friend who shared it (kept for 30 days) */
+const REF_KEY='hq-ref',REF_DAYS=30;
+(()=>{const r=new URLSearchParams(location.search).get('ref');if(r&&/^[A-Za-z0-9-]{2,24}$/.test(r)){try{localStorage.setItem(REF_KEY,JSON.stringify({c:r.toUpperCase(),t:Date.now()}))}catch(e){}}})();
+function getRef(){try{const r=JSON.parse(localStorage.getItem(REF_KEY)||'null');if(r&&r.c&&Date.now()-r.t<REF_DAYS*864e5)return r.c}catch(e){}return''}
+/* at checkout, quietly apply the friend's code (their customer discount, if any) unless another code is in use */
+async function applyRef(){const c=getRef();if(!c||S.code)return;
+  try{const r=await fetch('/api/coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:c,ship:S.ship,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty}))})});const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok&&!S.code){S.code=d.code;S.promo={...d,sig:bagSig()};save();refreshCo()}else if(!r.ok){try{localStorage.removeItem(REF_KEY)}catch(e){}}}catch(e){}}
 /* ---------- checkout ---------- */
 function coSum(){const t=totals();return`<span class="eyebrow">Your order · ${t.count} piece${t.count===1?'':'s'}</span><ul>${S.cart.map(l=>{const m=BY[l.id];return`<li><img src="${img(l.id)}" alt=""><span class="n">${l.qty>1?l.qty+'× ':''}${esc(m.name)}<small>${optText(m,l.sel).slice(0,2).join(' · ')}</small></span><span class="num">${RM(lineTotal(l))}</span></li>`}).join('')}</ul>${totHTML()}`}
 function totHTML(){const t=totals();if(isIntl())return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>International delivery</span><span class="num">Quoted by us</span></div></div>`;return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${SHIP[S.ship].pickup?'No charge':RM(t.fee)}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
 function codeHTML(){if(!CFG.codes&&!S.code)return'';const on=promoOK();
-  return`<div class="fs" id="codeFs"><div class="fs-h"><b>Discount code</b></div>${on?`<div class="code-on"><span class="code-tag">${esc(S.promo.code)}</span><span class="code-txt">${esc(S.promo.label)}${S.promo.discount?` · you save ${RM(S.promo.discount)}`:''}</span><button class="link-btn" data-act="removeCode">Remove</button></div>`:
+  return`<div class="fs" id="codeFs"><div class="fs-h"><b>Discount or referral code</b></div>${on?`<div class="code-on"><span class="code-tag">${esc(S.promo.code)}</span><span class="code-txt">${esc(S.promo.label)}${S.promo.discount?` · you save ${RM(S.promo.discount)}`:''}</span><button class="link-btn" data-act="removeCode">Remove</button></div>`:
   `<div class="code-row"><input id="codeIn" placeholder="Enter code" value="${esc(S.code||'')}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Discount code" maxlength="24"><button class="ghost code-btn" data-act="applyCode" id="codeBtn">Apply</button></div>`}<p class="code-msg" id="codeMsg" role="status" hidden></p></div>`}
 function refreshCo(){if(!$('#coBody')||!$('#coSum'))return;$('#coSum').innerHTML=coSum();$('#coTot').innerHTML=totHTML();$('#placeAmt').textContent=RM(totals().total);
   document.querySelectorAll('[data-fee]').forEach(x=>{const k=x.dataset.fee,f=k===S.ship?totals().fee:totals(S.cart,k).fee;x.textContent=feeTxt(k,f)});
@@ -327,7 +335,7 @@ async function applyCode(code){const inp=$('#codeIn');code=((code??(inp?inp.valu
   const my=++codeBusy;const b=$('#codeBtn');if(b){b.disabled=true;b.textContent='Checking…'}
   try{const r=await fetch('/api/coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,ship:S.ship,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty}))})});const d=await r.json().catch(()=>({}));
     if(my!==codeBusy)return;
-    if(r.ok&&d.ok){S.code=d.code;S.promo={...d,sig:bagSig()};save();vib(10);refreshCo();const m=msg();if(m){m.textContent=d.freeShip?'Free delivery applied.':`Code applied. You save ${RM(d.discount)}.`;m.className='code-msg ok';m.hidden=false}}
+    if(r.ok&&d.ok){S.code=d.code;S.promo={...d,sig:bagSig()};save();vib(10);refreshCo();const m=msg();if(m){m.textContent=d.freeShip?'Free delivery applied.':d.discount?`Code applied. You save ${RM(d.discount)}.`:`${d.label}. Thank you!`;m.className='code-msg ok';m.hidden=false}}
     else{S.promo=null;S.code=code;save();refreshCo();const m=msg();if(m){m.textContent=d.error||'That code can’t be used right now.';m.className='code-msg bad';m.hidden=false}}
   }catch(e){if(my===codeBusy){const bb=$('#codeBtn');if(bb){bb.disabled=false;bb.textContent='Apply'}const m=msg();if(m){m.textContent='Couldn’t check the code. Please try again.';m.className='code-msg bad';m.hidden=false}}}}
 /* bag or delivery changed: check the saved code again */
@@ -359,7 +367,7 @@ function intlEnquiry(){const t=totals();const lines=S.cart.map(l=>{const m=BY[l.
 async function startCheckout(){if(isIntl()){vib(10);intlEnquiry();return}if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
   pb.classList.add('press');await wait(120);pb.classList.remove('press');pb.classList.add('sending');
   try{
-    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,coupon:promoOK()?S.promo.code:undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
+    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,coupon:promoOK()?S.promo.code:undefined,ref:getRef()||undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
     const d=await r.json().catch(()=>({}));
     if(d.coupon===false){S.promo=null;refreshCo()}
     if(!r.ok||!d.url)throw new Error(d.error||'We couldn’t open the payment page. Please try again.');
@@ -431,7 +439,7 @@ const ACT={
   lInc(el){const{l}=lineOf(el);if(inBag(l.id)<maxQty(BY[l.id])){l.qty++;save();renderBag();updateBagUI(true)}else toast(BY[l.id].stock===1?'This piece is one of a kind':`Only ${BY[l.id].stock} available`)},
   lDec(el){const{li,l}=lineOf(el);if(l.qty>1){l.qty--;save();renderBag();updateBagUI()}else removeLine(li,l)},
   lRemove(el){const{li,l}=lineOf(el);removeLine(li,l)},
-  toCheckout(){if(!S.cart.length)return;renderCheckout();go('checkout')},
+  toCheckout(){if(!S.cart.length)return;renderCheckout();go('checkout');applyRef()},
   size(el){const sec=$('#sec-'+el.dataset.sec),mm=el.dataset.mm;
     sec.querySelectorAll('.chip-s').forEach(b=>{const on=b===el;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
     const all=sec.querySelector('.show-all');let shown=0;

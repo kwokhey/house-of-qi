@@ -148,3 +148,14 @@ After editing, bump `?v=1` to `?v=2` in `index.html` if you changed CSS or JS (s
 - [ ] Shipping fees and the returns policy in `policies.html` confirmed by the client
 - [ ] Business address and a contact (WhatsApp / email) added to the site (expected for Malaysian online sellers and by Stripe)
 - [ ] Test-mode order works end to end, then live key added
+
+## Affiliates (friends who help sell)
+
+Marketing → **Affiliates** → **+ New seller**. Each seller has:
+
+- a **code** (e.g. `AMY`) and a **shop link** (`/?ref=AMY`). A customer who opens the link is remembered for 30 days, and the seller's code is applied at checkout automatically. Customers can also type the code.
+- a **commission**: either a % of what the customer paid for the pieces (delivery not included) or a fixed RM per piece.
+- an optional **customer discount** (%), given when the seller's code is used.
+- a private **seller page** (`/a/<random>`) showing their link, code, sales and earnings, with no customer details.
+
+Website orders are credited automatically once paid. If a customer came through a seller's link but used a different coupon, the seller is still credited. For bazaar, WhatsApp or Instagram sales, go to Stock → item → **Sold offline** and choose the seller under **Sold by**. Undoing that sale also removes the seller's credit. Use **Mark … as paid** after paying a seller. **Clear test orders** also removes credits from test orders.

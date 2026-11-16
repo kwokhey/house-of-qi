@@ -57,7 +57,8 @@ export async function shopPromo(env) {
   let banner = null;
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   const { results } = await D.prepare("SELECT active, starts_at, ends_at FROM coupons WHERE active = 1").all();
-  return { announce, banner, codes: results.some((r) => live(r, now)) };
+  const affs = await D.prepare("SELECT COUNT(*) AS n FROM affiliates WHERE active = 1").first().catch(() => ({ n: 0 }));
+  return { announce, banner, codes: results.some((r) => live(r, now)) || affs.n > 0 };
 }
 
 const MYR = (n) => "RM" + (Math.round(n * 100) / 100).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -75,7 +76,15 @@ export async function checkCoupon(env, rawCode, order, now = Date.now()) {
   if (!hasDB(env)) return { error: "That code isn't valid." };
   const D = await db(env);
   const c = await D.prepare("SELECT * FROM coupons WHERE code = ?").bind(code).first();
-  if (!c || !c.active) return { error: `“${code}” isn't a valid code.` };
+  if (!c) {
+    // a friend's (affiliate) code: credits the sale to them, with their customer discount if they have one
+    const a = await D.prepare("SELECT * FROM affiliates WHERE code = ? AND active = 1").bind(code).first();
+    if (!a) return { error: `“${code}” isn't a valid code.` };
+    const first = a.name.trim().split(/\s+/)[0];
+    const discount = a.disc_pct > 0 ? round2(order.subtotal * Math.min(50, a.disc_pct) / 100) : 0;
+    return { code, aff: a.id, label: discount ? `${+a.disc_pct}% off · from ${first}` : `Shopping with ${first}`, discount, freeShip: false, fee: order.fee, total: round2(order.subtotal - discount + order.fee) };
+  }
+  if (!c.active) return { error: `“${code}” isn't a valid code.` };
   if (c.starts_at && now < c.starts_at) return { error: `“${code}” isn't active yet.` };
   if (c.ends_at && now > c.ends_at) return { error: `“${code}” has expired.` };
   if (c.max_uses > 0) {

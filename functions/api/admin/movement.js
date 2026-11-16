@@ -1,7 +1,8 @@
 /**
  * Change stock (login required).
  *   POST /api/admin/movement
- *     { itemId, kind: "sale" | "restock" | "adjust", qty, price?, cost?, channel?, note? }
+ *     { itemId, kind: "sale" | "restock" | "adjust", qty, price?, cost?, channel?, note?, aff? }
+ *     aff     → id of the friend (affiliate) who made an offline sale; they get its commission
  *     sale    → offline sale (Instagram, WhatsApp, bazaar…): stock goes down by qty
  *     restock → new stock arrived: stock goes up by qty (cost updates the item's cost)
  *     adjust  → set the counted stock to qty (e.g. after a stock take)
@@ -9,7 +10,8 @@
  *   DELETE /api/admin/movement?mid=N  → undo an offline sale, restock or adjustment
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { db, hasDB } from "../../_lib/db.js";
+import { db, hasDB, itemName, itemDetails } from "../../_lib/db.js";
+import { creditSale } from "../../_lib/affiliates.js";
 import { json } from "../../_lib/stripe.js";
 
 async function guard(request, env) {
@@ -34,10 +36,13 @@ export async function onRequestPost({ request, env }) {
     if (!(qty >= 1)) return json({ error: "Enter how many were sold." }, 400);
     if (qty > item.stock) return json({ error: `Only ${item.stock} in stock. Use Adjust if the count is wrong.` }, 400);
     const price = Number.isFinite(Number(b.price)) && b.price !== "" ? Number(b.price) : item.price;
-    await D.batch([
-      D.prepare("INSERT INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, note, created_at) VALUES (?, 'sale', ?, ?, ?, ?, ?, ?)").bind(item.id, -qty, price, item.cost, channel || "Offline", note, now),
+    const aff = b.aff ? await D.prepare("SELECT * FROM affiliates WHERE id = ?").bind(Number(b.aff)).first() : null;
+    if (b.aff && !aff) return json({ error: "That seller wasn't found. Please pick again." }, 400);
+    const res = await D.batch([
+      D.prepare("INSERT INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, note, created_at) VALUES (?, 'sale', ?, ?, ?, ?, ?, ?)").bind(item.id, -qty, price, item.cost, channel || "Offline", aff ? [note, `Sold by ${aff.name}`].filter(Boolean).join(" · ").slice(0, 200) : note, now),
       D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(qty, now, item.id),
     ]);
+    if (aff) await creditSale(D, aff, { ref: `mv-${res[0].meta.last_row_id}`, channel: channel || "Offline", detail: `${qty}× ${itemName(item)}${itemDetails(item) ? " · " + itemDetails(item) : ""}`, pieces: qty, amount: price * qty, created_at: now });
   } else if (b.kind === "restock") {
     if (!(qty >= 1)) return json({ error: "Enter how many arrived." }, 400);
     const cost = Number.isFinite(Number(b.cost)) && b.cost !== "" ? Number(b.cost) : item.cost;
@@ -79,6 +84,7 @@ export async function onRequestDelete({ request, env }) {
   const vals = m.kind === "restock" ? [m.qty, m.qty] : [m.qty];
   await D.batch([
     D.prepare("DELETE FROM movements WHERE id = ?").bind(mid),
+    D.prepare("DELETE FROM aff_sales WHERE ref = ?").bind(`mv-${mid}`),
     D.prepare(`UPDATE items SET ${back}, updated_at = ? WHERE id = ?`).bind(...vals, now, m.item_id),
   ]);
   return json({ ok: true });

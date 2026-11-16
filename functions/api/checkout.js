@@ -6,6 +6,8 @@
  * Needs the secret STRIPE_SECRET_KEY in Cloudflare:
  *   Pages project → Settings → Variables and Secrets.
  */
+import { affByCode } from "../_lib/affiliates.js";
+import { db, hasDB } from "../_lib/db.js";
 import { priceOrder, orderNumber, json, loadCatalog } from "../_lib/pricing.js";
 import { checkCoupon } from "../_lib/promo.js";
 
@@ -40,6 +42,12 @@ export async function onRequestPost({ request, env }) {
       try { promo.stripeCoupon = await stripeCoupon(env, promo, catalog.currency || "myr"); }
       catch (e) { console.error("coupon", e.message); return json({ error: "We couldn't apply your code just now. Please try again." }, 502); }
     }
+  }
+
+  // Which friend (affiliate) gets credit: their code typed at checkout, else the link the customer came in on
+  if (promo?.aff) order.aff = { id: promo.aff, code: promo.code };
+  else if (body?.ref && hasDB(env)) {
+    try { const a = await affByCode(await db(env), body.ref); if (a) order.aff = { id: a.id, code: a.code }; } catch (e) { console.error("ref", e.message); }
   }
 
   const params = buildSessionParams(catalog, order, origin, orderNumber());
@@ -110,7 +118,9 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   const notes = order.lines.filter((l) => l.note).map((l) => `${l.product.name}: ${l.note}`).join(" | ");
   const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", track_key: trackKey(), fulfil_status: "confirmed", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };
   // Stripe allows 50 metadata keys; with 20 bag lines × 2 keys, the code uses 2 at most
-  if (order.promo) { meta.coupon = order.promo.code; meta.coupon_off = order.promo.freeShip ? "free delivery" : String(order.promo.discount); }
+  if (order.promo && !order.promo.aff) { meta.coupon = order.promo.code; meta.coupon_off = order.promo.freeShip ? "free delivery" : String(order.promo.discount); }
+  if (order.promo?.aff && order.promo.discount) meta.coupon_off = String(order.promo.discount);
+  if (order.aff) { meta.aff = String(order.aff.id); meta.aff_code = order.aff.code; }
   // what each piece actually sold for after sale + code (for profit figures on the Stock page)
   const factor = order.promo?.discount ? 1 - order.promo.discount / order.subtotal : 1;
   // Each item's options, so the order page shows bead size, wrist size, add-ons

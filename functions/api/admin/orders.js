@@ -54,6 +54,7 @@ export async function onRequestPost({ request, env }) {
     await D.prepare("DELETE FROM movements WHERE id = ?").bind(m.id).run();
   }
   await D.prepare("DELETE FROM coupon_uses WHERE ref LIKE 'cs_test_%'").run();
+  await D.prepare("DELETE FROM aff_sales WHERE ref LIKE 'cs_test_%'").run();
   await setSetting(D, "orders_hidden_before", Math.floor(now / 1000));
   return json({ ok: true, cleared: results.length, restocked, kept });
 }

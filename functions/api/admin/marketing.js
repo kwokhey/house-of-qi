@@ -70,6 +70,7 @@ export async function onRequestPost({ request, env }) {
       if (used.n) return json({ error: `${orig} has already been used, so it can't be renamed. Make a new code instead.` }, 409);
       await D.prepare("DELETE FROM coupons WHERE code = ?").bind(orig).run();
     }
+    if (await D.prepare("SELECT 1 FROM affiliates WHERE code = ?").bind(code).first()) return json({ error: `${code} is a seller's code. Please choose another.` }, 409);
     const exists = await D.prepare("SELECT code FROM coupons WHERE code = ?").bind(code).first();
     if (exists && b.isNew) return json({ error: `${code} already exists.` }, 409);
     if (exists) {

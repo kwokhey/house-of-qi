@@ -9,6 +9,8 @@
  *   coupons    discount codes customers type at checkout
  *   sales      automatic % off for the whole shop, a section, stones or single pieces
  *   coupon_uses one row per paid website order that used a code
+ *   affiliates  friends who sell for the shop (code, link, commission, customer discount)
+ *   aff_sales   one row per sale credited to an affiliate (website order or offline sale)
  *   collections curated groups shown in the shop (e.g. Rare Finds), picked by section, stone or piece
  */
 
@@ -80,6 +82,34 @@ const SCHEMA = [
     created_at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS coupon_uses_code ON coupon_uses(code)`,
+  `CREATE TABLE IF NOT EXISTS affiliates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL DEFAULT '',
+    code TEXT NOT NULL UNIQUE,
+    token TEXT NOT NULL UNIQUE,
+    comm_kind TEXT NOT NULL DEFAULT 'percent',
+    comm_value REAL NOT NULL DEFAULT 10,
+    disc_pct REAL NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    note TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS aff_sales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aff_id INTEGER NOT NULL,
+    ref TEXT NOT NULL UNIQUE,
+    order_no TEXT NOT NULL DEFAULT '',
+    channel TEXT NOT NULL DEFAULT 'Website',
+    detail TEXT NOT NULL DEFAULT '',
+    pieces INTEGER NOT NULL DEFAULT 0,
+    amount REAL NOT NULL DEFAULT 0,
+    commission REAL NOT NULL DEFAULT 0,
+    paid_at INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS aff_sales_aff ON aff_sales(aff_id)`,
   `CREATE TABLE IF NOT EXISTS sales (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
