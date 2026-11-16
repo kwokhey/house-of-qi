@@ -10,7 +10,8 @@
  *   sales      automatic % off for the whole shop, a section, stones or single pieces
  *   coupon_uses one row per paid website order that used a code
  *   affiliates  friends who sell for the shop (code, link, commission, customer discount)
- *   aff_sales   one row per sale credited to an affiliate (website order or offline sale)
+ *   aff_sales   one row per sale credited to an affiliate (website order, offline sale or consignment sale)
+ *   consign     pieces given to a seller to sell for the shop: give / sold / return
  *   collections curated groups shown in the shop (e.g. Rare Finds), picked by section, stone or piece
  */
 
@@ -110,6 +111,19 @@ const SCHEMA = [
     created_at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS aff_sales_aff ON aff_sales(aff_id)`,
+  `CREATE TABLE IF NOT EXISTS consign (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aff_id INTEGER NOT NULL,
+    item_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    qty INTEGER NOT NULL,
+    unit_price REAL,
+    mv_id INTEGER,
+    note TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS consign_aff ON consign(aff_id)`,
+  `CREATE INDEX IF NOT EXISTS consign_item ON consign(item_id)`,
   `CREATE TABLE IF NOT EXISTS sales (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,

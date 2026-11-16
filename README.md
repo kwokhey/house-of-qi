@@ -159,3 +159,7 @@ Marketing → **Affiliates** → **+ New seller**. Each seller has:
 - a private **seller page** (`/a/<random>`) showing their link, code, sales and earnings, with no customer details.
 
 Website orders are credited automatically once paid. If a customer came through a seller's link but used a different coupon, the seller is still credited. For bazaar, WhatsApp or Instagram sales, go to Stock → item → **Sold offline** and choose the seller under **Sold by**. Undoing that sale also removes the seller's credit. Use **Mark … as paid** after paying a seller. **Clear test orders** also removes credits from test orders.
+
+### Consignment (seller holds the pieces)
+
+In Marketing → Affiliates, open a seller and use **+ Give pieces**. The pieces leave the website stock, and the Stock page shows "x with sellers". When the seller reports a sale, press **Sold**: it counts as a sale, the seller keeps their commission, and "They owe you" shows the rest. Press **Mark … as received** once they've paid. Unsold pieces go back into stock with **Returned**. Each entry can be undone from the seller's History. The seller's private page lists the pieces they hold and what they need to pay.

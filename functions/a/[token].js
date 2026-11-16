@@ -3,7 +3,7 @@
  * Shows no customer details. The token is random, so the page can only be opened from the link.
  */
 import { db, hasDB } from "../_lib/db.js";
-import { commLabel } from "../_lib/affiliates.js";
+import { commLabel, holdings } from "../_lib/affiliates.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const RM = (n) => "RM" + (Math.round((n || 0) * 100) / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -53,7 +53,11 @@ export async function onRequestGet({ params, request, env }) {
   const a = await D.prepare("SELECT * FROM affiliates WHERE token = ?").bind(params.token).first();
   if (!a) return notFound();
   const { results: sales } = await D.prepare("SELECT order_no, channel, detail, pieces, amount, commission, paid_at, created_at FROM aff_sales WHERE aff_id = ? ORDER BY created_at DESC LIMIT 300").bind(a.id).all();
-  const earned = sales.reduce((t, s) => t + s.commission, 0), due = sales.filter((s) => !s.paid_at).reduce((t, s) => t + s.commission, 0);
+  const isC = (s) => s.channel === "Consignment";
+  const earned = sales.reduce((t, s) => t + s.commission, 0), due = sales.filter((s) => !s.paid_at && !isC(s)).reduce((t, s) => t + s.commission, 0);
+  const owe = sales.filter((s) => !s.paid_at && isC(s)).reduce((t, s) => t + s.amount - s.commission, 0);
+  const hold = await holdings(D, a.id), holdN = hold.reduce((t, h) => t + h.qty, 0);
+  const hName = (h) => [`${h.stone || ""} ${h.type || ""}`.trim() || h.item_id, h.variant, h.size_mm ? `${+h.size_mm} mm` : ""].filter(Boolean).join(" · ");
   const amount = sales.reduce((t, s) => t + s.amount, 0), pieces = sales.reduce((t, s) => t + s.pieces, 0);
   const origin = new URL(request.url).origin, link = `${origin}/?ref=${encodeURIComponent(a.code)}`;
   const first = a.name.trim().split(/\s+/)[0];
@@ -69,12 +73,16 @@ export async function onRequestGet({ params, request, env }) {
 </div>
 ${a.active ? "" : `<p class="terms"><b>Your link is paused.</b> New sales won't count for now. Please contact House of Qi.</p>`}
 <div class="tiles">
-  <div><span>To be paid</span><b>${RM(due)}</b><small>${due ? "House of Qi will pay this to you" : "all paid"}</small></div>
-  <div><span>Earned so far</span><b>${RM(earned)}</b><small>${RM(earned - due)} paid</small></div>
+  <div><span>To be paid to you</span><b>${RM(due)}</b><small>${due ? "House of Qi will pay this to you" : "nothing waiting"}</small></div>
+  <div><span>Earned so far</span><b>${RM(earned)}</b><small>commission on all your sales</small></div>
   <div><span>Your sales</span><b>${sales.length}</b><small>${pieces} piece${pieces === 1 ? "" : "s"} · ${RM(amount)}</small></div>
 </div>
+${hold.length || owe ? `<h2>Pieces with you</h2>
+<div class="card">${hold.length ? hold.map((h) => `<div class="sale" style="padding:9px 0"><span class="it">${esc(hName(h))}</span><span class="c">${h.qty} pc${h.qty === 1 ? "" : "s"}</span><span class="d">${esc(h.item_id)} · price ${RM(h.price)}</span><span></span></div>`).join("") : `<p class="empty" style="padding:4px 0">You have no House of Qi pieces at the moment.</p>`}
+${owe ? `<p class="terms" style="margin:12px 0 0">For the pieces you've sold, please pay <b>${RM(owe)}</b> to House of Qi (the sale price minus your commission, which you keep).</p>` : ""}
+${holdN ? `<p class="terms" style="margin:8px 0 0">${holdN} piece${holdN === 1 ? "" : "s"} with you. Let House of Qi know when you sell any, or return what's left.</p>` : ""}</div>` : ""}
 <h2>Sales</h2>
-${sales.length ? sales.map((s) => `<div class="sale"><span class="d">${day(s.created_at)} · ${esc(s.channel)}${s.order_no ? " · " + esc(s.order_no) : ""}<span class="tag ${s.paid_at ? "paid" : "due"}">${s.paid_at ? "Paid" : "To be paid"}</span></span><span class="c">${RM(s.commission)}</span>
+${sales.length ? sales.map((s) => `<div class="sale"><span class="d">${day(s.created_at)} · ${esc(s.channel)}${s.order_no ? " · " + esc(s.order_no) : ""}<span class="tag ${s.paid_at ? "paid" : "due"}">${isC(s) ? (s.paid_at ? "Settled" : "You keep commission") : s.paid_at ? "Paid" : "To be paid"}</span></span><span class="c">${RM(s.commission)}</span>
   <span class="it">${esc(s.detail || `${s.pieces} piece${s.pieces === 1 ? "" : "s"}`)}</span><span class="a">sale ${RM(s.amount)}</span></div>`).join("") : `<p class="empty">No sales yet. Share your link to get started.</p>`}
 <p class="foot">Keep this page private. It's only for you. Questions about your earnings? Message House of Qi on WhatsApp.</p>
 <script>function cp(t,b){navigator.clipboard.writeText(t).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1600)})}</script>`;

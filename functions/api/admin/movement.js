@@ -78,6 +78,7 @@ export async function onRequestDelete({ request, env }) {
   const mid = Number(new URL(request.url).searchParams.get("mid"));
   const m = await D.prepare("SELECT * FROM movements WHERE id = ?").bind(mid).first();
   if (!m) return json({ error: "Not found." }, 404);
+  if (m.kind === "consign" || m.channel === "Consignment") return json({ error: "This is a consignment entry. Undo it from the seller in Marketing → Affiliates." }, 400);
   if (m.ref) return json({ error: "Website orders can't be undone here. Use Adjust to correct the stock (e.g. after a refund)." }, 400);
   const now = Date.now();
   const back = m.kind === "restock" ? "stock = stock - ?, stock_in = stock_in - ?" : "stock = stock - ?";
