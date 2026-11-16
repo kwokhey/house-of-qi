@@ -879,3 +879,9 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .sh-t img{width:100%;height:100%;object-fit:cover;display:block}
 .sh-t.on{opacity:1;border-color:#fff;transform:translateY(-2px)}
 @media (min-width:1000px){.sh-th{bottom:22px}.sh-t{width:58px;height:58px}}
+
+/* gemstone notes */
+.d-gem-note{margin:18px 0 6px;padding:12px 14px;border-left:2px solid var(--gold,#B08A4E);background:rgba(176,138,78,.08);border-radius:0 6px 6px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2,#6E5A4E)}
+.d-gem-note b{color:var(--ink,#2E221C);font-weight:600}
+.foot-gem{max-width:640px;margin-left:auto;margin-right:auto;font-size:12.5px;line-height:1.7}
+.foot-gem b{font-weight:600}

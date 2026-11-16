@@ -132,7 +132,8 @@ function renderHome(){
   ${secs.join('\n')}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
     <nav class="foot-links"><a href="/policies.html">Shipping &amp; returns</a><a href="/policies.html#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
-    <p>Prices in Malaysian Ringgit. Natural stones vary slightly in colour and pattern.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
+    <p class="foot-gem"><b>Please Note:</b> Due to the natural characteristics of gemstones, variations in colour, tone, clarity and patterns may occur. Actual product colours may also differ slightly from photographs due to lighting conditions, photography and individual screen settings. These natural variations contribute to the unique beauty and individuality of each piece.</p>
+    <p>Prices in Malaysian Ringgit.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
   document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
   renderMega();initBan();
   setTab(SPY[0],false);
@@ -248,7 +249,8 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   m.groups.map(g=>{if(g.type==='many')return`<div class="og" role="group" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em>Optional</em></div>${g.opts.map(o=>`<button class="chk" data-act="chk" data-g="${g.id}" data-o="${o[0]}" role="checkbox" aria-checked="false"><span class="chk-l">${o[1]}</span><span class="chk-p">${o[2]?'+'+RM(o[2]):'Complimentary'}</span><span class="box">${IC.check}</span></button>`).join('')}</div>`;
     return`<div class="og" role="radiogroup" aria-label="${g.label}"><div class="og-h"><b>${g.label}</b><em class="req">Choose 1</em></div><div class="seg" style="--n:${g.opts.length}">${g.opts.map(o=>`<button class="opt" data-act="opt" data-g="${g.id}" data-o="${o[0]}" role="radio"><span>${o[1]}</span><small>${o[2]?'+'+RM(o[2]):(o[3]||'Included')}</small></button>`).join('')}</div></div>`}).join('')+
   gift+
-  `<div class="og note"><div class="og-h"><b>${co?'Special request':'Gift message or request'}</b><em>Optional</em></div><textarea id="note" rows="2" maxlength="140" placeholder="${co?'e.g. Please wrap two pieces separately':'e.g. Happy birthday, with love'}"></textarea></div>`;
+  `<div class="og note"><div class="og-h"><b>${co?'Special request':'Gift message or request'}</b><em>Optional</em></div><textarea id="note" rows="2" maxlength="140" placeholder="${co?'e.g. Please wrap two pieces separately':'e.g. Happy birthday, with love'}"></textarea></div>
+  <p class="d-gem-note"><b>Please Note:</b> Natural gemstones may vary in colour, clarity and patterns. Actual colours may differ slightly due to lighting, photography and screen settings, making each piece uniquely beautiful.</p>`;
   if(co){['#gTo','#gMsg','#gFrom'].forEach(s=>$(s).addEventListener('input',paintCard))}
   if(prev){$('#gTo')&&($('#gTo').value=prev.card.to,$('#gMsg').value=prev.card.msg,$('#gFrom').value=prev.card.from);$('#note').value=prev.card.note}
   if(co)paintCard();
