@@ -860,3 +860,13 @@ input,textarea{-webkit-user-select:text;user-select:text}
 }
 @media (prefers-reduced-motion:reduce){.ban-img,.ban.in .ban-img.on,.ban-ln{transition:opacity .4s!important;transform:none!important}}
 .sl-from{white-space:nowrap}
+
+/* ---------- sold out ---------- */
+[data-out] img{filter:grayscale(.85);opacity:.55}
+[data-out] .pc-img,[data-out] .gc-img,[data-out] .lead-img,[data-out] .ri-img{position:relative}
+[data-out] .pc-img::after,[data-out] .gc-img::after,[data-out] .lead-img::after,[data-out] .ri-img::after{content:"Sold out";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;white-space:nowrap;font:600 10px var(--f-body,sans-serif);letter-spacing:.2em;text-transform:uppercase;color:#F7EEE4;background:rgba(43,31,24,.82);padding:7px 12px;border-radius:2px;pointer-events:none}
+[data-out] .ri-add{display:none}
+[data-out] .pc-name,[data-out] .ri-name{opacity:.7}
+.vopt.out .vimg img{filter:grayscale(.85);opacity:.55}
+.vopt.out .vl,.vopt.out .vpz{opacity:.6}
+.vopt.out .v1{background:rgba(43,31,24,.82);color:#F7EEE4}

@@ -26,18 +26,18 @@ const byIds=ids=>ids.map(id=>BY[id]).filter(Boolean);
 function showFiltered(title,sub,items){$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;
   const fams=famList(items);showResults(title,`${fams.length} design${fams.length===1?'':'s'}${sub?` · ${sub}`:''}`,fams)}
 /** The card shown in lists for a family of pieces */
-function famCard(m){const f=FAM[m.fam]||[m];if(f.length<2)return m;const rep=f.find(x=>x.image)||m;const min=f.reduce((a,b)=>b.price<a.price?b:a);
+function famCard(m){const f=FAM[m.fam]||[m];if(f.length<2)return m;const live=f.filter(x=>!x.soldOut),pool=live.length?live:f;const rep=pool.find(x=>x.image)||pool[0];const min=pool.reduce((a,b)=>b.price<a.price?b:a);
   const mm=[...new Set(f.map(x=>x.size).filter(Boolean))].sort((a,b)=>a-b);
-  return{...rep,price:min.price,was:min.was,sale:(f.find(x=>x.sale)||{}).sale||null,fromP:f.some(x=>x.price!==min.price),multi:f.length,stock:undefined,
+  return{...rep,price:min.price,was:min.was,sale:(f.find(x=>x.sale)||{}).sale||null,fromP:pool.some(x=>x.price!==min.price),multi:f.length,stock:undefined,soldOut:!live.length,
     details:`${f.length} options${mm.length>1?` · ${mm[0]}–${mm[mm.length-1]} mm`:mm.length?` · ${mm[0]} mm`:''}`,mms:mm.join(' '),
     desc:f.every(x=>x.stock===1)?`${f.length} one-of-a-kind pieces to choose from.`:`Choose from ${f.length} ${mm.length>1?'sizes and tones':'pieces'}.`}}
-const famList=items=>{const seen=new Set();return items.filter(m=>!seen.has(m.fam)&&seen.add(m.fam)).map(famCard)};
+const famList=items=>{const seen=new Set();const L=items.filter(m=>!seen.has(m.fam)&&seen.add(m.fam)).map(famCard);return L.filter(m=>!m.soldOut).concat(L.filter(m=>m.soldOut))};
 /* Real photos: set "image" on a product in catalog.json (e.g. "assets/img/products/star-rose-12mm.jpg").
    Products without a photo use the drawn artwork from art.js. */
 const img=(id,v='sq')=>(BY[id]&&BY[id].image)?'/'+BY[id].image.replace(/^\//,''):ART.get(id,v,BY[id]&&BY[id].art);
 const maxQty=m=>typeof m.stock==='number'?Math.min(20,m.stock):20;
 const inBag=id=>S.cart.filter(l=>l.id===id).reduce((t,l)=>t+l.qty,0);
-const stockTag=m=>typeof m.stock!=='number'?'':m.stock===1?'One of a kind':m.stock<=3?`Only ${m.stock} left`:'';
+const stockTag=m=>typeof m.stock!=='number'||m.stock<=0?'':m.stock===1?'One of a kind':m.stock<=3?`Only ${m.stock} left`:'';
 const subLine=m=>{const t=[m.details,m.zh?`<span class="zh">${m.zh}</span>`:''].filter(Boolean).join(' · ');return t?`<span class="ri-zh">${t}</span>`:''};
 
 /* =====================================================================
@@ -81,10 +81,10 @@ const IC={
 const priceHTML=m=>`${hasFrom(m)||m.fromP?'<span class="from">From</span>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}`;
 const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
-const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
-const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.desc}</span></button>`;
-const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"><span class="gc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span><span class="ri-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
-const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
+const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
+const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.desc}</span></button>`;
+const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="gc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span><span class="ri-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
+const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
 function renderHome(){
   const W=WIDE.matches,h=CFG.hero||{},feat=BY[h.product]||CAT[0],best=CAT.filter(m=>m.best).sort((a,b)=>a.best-b.best),nov=CAT.filter(m=>m.nov),of=c=>CAT.filter(m=>m.cat===c);
   const head=(name,zh,n,unit='pieces')=>`<div class="sec-head"><h3 class="disp">${name}</h3>${zh?`<span class="zh">${esc(zh)}</span>`:''}<span class="count">${n} ${unit}</span></div>`;
@@ -230,7 +230,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
   const sub=[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(' · ');
   const pick=fam.length<2?'':`<div class="og vp" role="radiogroup" aria-label="Choose your piece"><div class="og-h"><b>Choose your piece</b><em class="req">${fam.length} options</em></div>
-    <div class="vp-row">${fam.map(x=>`<button class="vopt${x.id===m.id?' on':''}" data-act="variant" data-id="${x.id}" role="radio" aria-checked="${x.id===m.id}"><span class="vimg"><img src="${img(x.id,'sq')}" alt="" loading="lazy"></span><span class="vl">${esc(x.optLabel)}</span><span class="vpz">${x.was?`<s>${RM(x.was)}</s> `:''}${RM(x.price)}</span>${x.stock===1?'<span class="v1">One of a kind</span>':x.stock<=3?`<span class="v1">${x.stock} left</span>`:''}</button>`).join('')}</div>
+    <div class="vp-row">${fam.map(x=>`<button class="vopt${x.id===m.id?' on':''}${x.soldOut?' out':''}" data-act="variant" data-id="${x.id}" role="radio" aria-checked="${x.id===m.id}"><span class="vimg"><img src="${img(x.id,'sq')}" alt="" loading="lazy"></span><span class="vl">${esc(x.optLabel)}</span><span class="vpz">${x.was?`<s>${RM(x.was)}</s> `:''}${RM(x.price)}</span>${x.soldOut?'<span class="v1">Sold out</span>':x.stock===1?'<span class="v1">One of a kind</span>':x.stock<=3?`<span class="v1">${x.stock} left</span>`:''}</button>`).join('')}</div>
     <p class="vp-note">${fam.every(x=>x.image&&!isSample(x))?'Each photo shows the actual piece you will receive.':'Natural stones vary, so every piece is a little different.'}</p></div>`;
   const co=cardOptOf(m);
   const gift=!co?'':`<div class="og gcard" id="gCard" hidden><div class="og-h"><b>Your gift card</b><em>Handwritten by us</em></div>

@@ -60,14 +60,15 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   const { results } = await D.prepare(
     includeHidden
       ? "SELECT * FROM items ORDER BY sort, id"
-      : "SELECT * FROM items WHERE published = 1 AND stock > 0 ORDER BY featured = 0, featured, sort, id"
+      : "SELECT * FROM items WHERE published = 1 ORDER BY stock <= 0, featured = 0, featured, sort, id" // sold-out pieces stay visible, listed last
   ).all();
   if (!results.length && !includeHidden) {
     const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();
     if (!count.n) return { ...settings, banner: bannerOf(settings, (await shopPromo(env)).banner), source: "sample" }; // nothing imported yet
   }
   const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
-  const hero = products.find((p) => p.bestseller) || [...products].sort((a, b) => b.price - a.price)[0];
+  const inStock = products.filter((p) => !p.soldOut);
+  const hero = inStock.find((p) => p.bestseller) || [...inStock].sort((a, b) => b.price - a.price)[0];
   const heroCfg = hero
     ? {
         product: hero.id,

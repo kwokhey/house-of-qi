@@ -57,6 +57,7 @@ export function priceOrder(catalog, items, shipKey) {
   for (const l of lines) perItem[l.product.id] = (perItem[l.product.id] || 0) + l.qty;
   for (const l of lines) {
     if (typeof l.product.stock === "number" && perItem[l.product.id] > l.product.stock) {
+      if (l.product.stock <= 0) return { error: `${l.product.name} has just sold out. Please remove it from your bag.` };
       return { error: `Only ${l.product.stock} of ${l.product.name} left. Please lower the quantity.` };
     }
   }
