@@ -66,7 +66,8 @@ export async function syncSales(env, { force = false } = {}) {
   await setSetting(D, "sync_run", now);
 
   const since = Number(await getSetting(D, "sync_since")) || Math.floor(now / 1000) - 30 * 86400;
-  const hiddenBefore = Number(await getSetting(D, "orders_hidden_before")) || 0; // cleared test orders
+  // orders before a cleared test-order list, or before "Start over" in Stock, don't count towards stock again
+  const hiddenBefore = Math.max(Number(await getSetting(D, "orders_hidden_before")) || 0, Number(await getSetting(D, "stock_reset_at")) || 0);
   let after = null, newest = since, recorded = 0;
   for (let page = 0; page < 5; page++) {
     const p = new URLSearchParams({ limit: "100", status: "complete" });

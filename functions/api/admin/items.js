@@ -7,7 +7,7 @@
  *   DELETE /api/admin/items?id=...   → remove an item (and its photo)
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { db, hasDB } from "../../_lib/db.js";
+import { setSetting, db, hasDB } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { json } from "../../_lib/stripe.js";
 import { COLOURS, autoColour, isColour } from "../../_lib/colours.js";
@@ -44,6 +44,7 @@ export async function onRequestPost({ request, env }) {
   const D = await db(env);
   let b = {};
   try { b = await request.json(); } catch {}
+  if (b.action === "clearAll") return clearAll(D, b);
   const id = str(b.id, 40).toUpperCase().replace(/\s+/g, "");
   if (!ID_RE.test(id)) return json({ error: "Item ID can use letters, numbers and dashes only (e.g. LRM-1001)." }, 400);
   const stone = str(b.stone, 80);
@@ -90,4 +91,22 @@ export async function onRequestDelete({ request, env }) {
     D.prepare("DELETE FROM movements WHERE item_id = ?").bind(id),
   ]);
   return json({ ok: true });
+}
+
+/**
+ * Start over: delete every stock item with its photos, stock history (sold counts) and pieces with sellers.
+ * Kept: orders (they live in Stripe), coupons, sales, collections, banner, affiliates and their commission records.
+ * Needs { action: "clearAll", confirm: "DELETE" }.
+ */
+async function clearAll(D, b) {
+  if (b.confirm !== "DELETE") return json({ error: 'Type DELETE to confirm.' }, 400);
+  const n = (await D.prepare("SELECT COUNT(*) AS n FROM items").first()).n;
+  await D.batch([
+    D.prepare("DELETE FROM images WHERE item_id IN (SELECT id FROM items) OR item_id LIKE 'prev-%'"),
+    D.prepare("DELETE FROM movements"),
+    D.prepare("DELETE FROM consign"),
+    D.prepare("DELETE FROM items"),
+  ]);
+  await setSetting(D, "stock_reset_at", Math.floor(Date.now() / 1000)); // orders paid before now won't be counted again
+  return json({ ok: true, deleted: n });
 }

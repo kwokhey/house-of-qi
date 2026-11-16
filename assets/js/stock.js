@@ -244,10 +244,24 @@
         <div class="imp-url"><input id="iUrl" placeholder="Paste a Google Sheets link"><button class="btn sm" id="iUrlGo">Read sheet</button></div>
       </div>
       <p class="err" id="iErr" hidden></p>
-      <div id="iPrev"></div></div>`;
+      <div id="iPrev"></div>
+      ${ITEMS.length ? `<details class="imp-reset"><summary>Start over: delete all ${ITEMS.length} items</summary>
+        <p>Deletes every item in Stock with its photos, stock counts, stock history and sold counts, and pieces recorded as with sellers. Orders, coupons, sales, collections, the banner, and affiliates with their commission records are kept. <b>This can't be undone.</b> Export Excel first if you want a copy.</p>
+        <div class="row-b"><input id="iDelTxt" placeholder="Type DELETE" autocomplete="off" autocapitalize="characters"><button type="button" class="btn sm danger" id="iDelGo" disabled>Delete all items</button></div></details>` : ""}</div>`;
     d.querySelector("[data-x]").onclick = () => d.close();
     $("#iFile").onchange = (e) => readFile(e.target.files[0]);
     $("#iUrlGo").onclick = readUrl;
+    if ($("#iDelGo")) {
+      $("#iDelTxt").oninput = () => ($("#iDelGo").disabled = $("#iDelTxt").value.trim() !== "DELETE");
+      $("#iDelGo").onclick = async () => {
+        $("#iDelGo").disabled = true;
+        try {
+          const r = await api("/api/admin/items", { method: "POST", body: JSON.stringify({ action: "clearAll", confirm: $("#iDelTxt").value.trim() }) });
+          toast(`${r.deleted} items deleted. Import your new list now.`);
+          await load(); openImport();
+        } catch (x) { toast(x.message); $("#iDelGo").disabled = false; }
+      };
+    }
     d.showModal();
   }
   const iErr = (m) => { $("#iErr").textContent = m; $("#iErr").hidden = !m; };

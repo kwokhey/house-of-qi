@@ -3,7 +3,7 @@
  * data/catalog.json, products from the inventory database.
  * If the database is not connected yet, the sample products in catalog.json are used.
  */
-import { db, hasDB, itemName, itemDetails } from "./db.js";
+import { db, hasDB, itemName, itemDetails, getSetting } from "./db.js";
 import { applySales, liveSales, shopPromo, saleCovers } from "./promo.js";
 import { COLOURS, colourOf } from "./colours.js";
 
@@ -64,7 +64,11 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   ).all();
   if (!results.length && !includeHidden) {
     const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();
-    if (!count.n) return { ...settings, banner: bannerOf(settings, (await shopPromo(env)).banner), source: "sample" }; // nothing imported yet
+    if (!count.n) {
+      // nothing imported yet → sample products; after "Start over" in Stock → an empty shop until the new list is imported
+      const reset = await getSetting(D, "stock_reset_at");
+      return { ...settings, ...(reset ? { products: [] } : {}), banner: bannerOf(settings, (await shopPromo(env)).banner), source: reset ? "empty" : "sample" };
+    }
   }
   const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
   const inStock = products.filter((p) => !p.soldOut);
