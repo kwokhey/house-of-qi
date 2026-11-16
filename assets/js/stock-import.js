@@ -92,7 +92,7 @@
     const c = findCols(rows[hi]);
     if (c.product == null || c.price == null) throw new Error("Couldn't find the Product Name and Selling Price columns.");
     const items = [], ids = new Set(), used = new Map();
-    let supplier = "", stone = "", stoneRaw = "", details = "", generated = 0, fixed = new Set(), dups = [], madeIds = [];
+    let supplier = "", stone = "", stoneRaw = "", details = "", generated = 0, fixed = new Set(), dups = [], noId = [];
     for (let r = hi + 1; r < rows.length; r++) {
       const row = rows[r].map((x) => (x == null ? "" : String(x).trim()));
       const get = (k) => (c[k] == null ? "" : row[c[k]] || "");
@@ -120,17 +120,12 @@
         d.variant = parts.join(", ");
         if (d.variant) d.variant = d.variant[0].toUpperCase() + d.variant.slice(1);
       }
-      let id = get("id").toUpperCase().replace(/\s+/g, "");
-      const dupOf = id && ids.has(id) ? id : "";
-      if (!id || ids.has(id)) {
-        const base = `${abbrFor(stone, used)}-1-${d.size != null ? String(d.size).replace(".", "") : "X"}`;
-        id = base; let k = 0;
-        while (ids.has(id)) id = `${base}-${String.fromCharCode(66 + k++)}`;
-        if (dupOf) dups.push(`row ${r + 1}: ${dupOf} → ${id}`); else { generated++; madeIds.push(id); }
-      } else used.set(id.split("-")[0], stone);
+      // only the Item IDs written in the sheet are used; nothing is made up
+      const id = get("id").toUpperCase().replace(/\s+/g, "");
+      if (!id) { noId.push(`row ${r + 1} (${stone}${details ? ", " + String(details).trim() : ""})`); continue; }
+      if (ids.has(id)) { dups.push(`row ${r + 1}: ${id}`); continue; }
       ids.add(id);
       const out = num(get("stockOut")) || 0;
-      // the ID above is made from the full name, so it stays the same as in earlier imports
       const k = splitType(shown);
       if (k) { shown = k.stone; d.type = k.type; d.variant = [k.extra, d.variant].filter(Boolean).join(", "); }
       items.push({
@@ -140,8 +135,8 @@
         stock_in: qtyIn || 0, stock: Math.max(0, (qtyIn || 0) - out),
       });
     }
-    if (dups.length) notes.push(`⚠ ${dups.length} row${dups.length > 1 ? "s use" : " uses"} an Item ID that's already used higher up in the sheet, so ${dups.length > 1 ? "they were" : "it was"} given a new ID: ${dups.slice(0, 8).join("; ")}${dups.length > 8 ? "; …" : ""}. To keep your own IDs, give each row its own ID in the sheet and import again.`);
-    if (generated) notes.push(`${generated} row${generated > 1 ? "s" : ""} had no Item ID, so ${generated > 1 ? "IDs were" : "an ID was"} made in your format (stone-sheet-size), e.g. ${madeIds[0] || ""}.`);
+    if (dups.length) notes.push(`⚠ Not imported: ${dups.length} row${dups.length > 1 ? "s repeat an Item ID" : " repeats an Item ID"} already used higher up in the sheet: ${dups.slice(0, 10).join("; ")}${dups.length > 10 ? "; …" : ""}. Give each piece its own ID in the sheet and import again.`);
+    if (noId.length) notes.push(`⚠ Not imported: ${noId.length} row${noId.length > 1 ? "s have" : " has"} no Item ID: ${noId.slice(0, 10).join("; ")}${noId.length > 10 ? "; …" : ""}. Add an ID in the sheet and import again.`);
     if (fixed.size) notes.push(`Names tidied: ${[...fixed].filter((f) => !/^[A-Z ]+ → /.test(f) || /Larimar|Selenite|Aventurine|Onyx|\(|Tourmalinated|Multi/.test(f)).slice(0, 12).join("; ")}.`);
     return { items, notes };
   }

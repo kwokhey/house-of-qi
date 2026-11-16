@@ -295,3 +295,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .ang-t{position:absolute;left:4px;right:4px;bottom:4px;display:flex;justify-content:space-between;gap:2px}
 .ang-t button{width:21px;height:21px;border-radius:50%;background:rgba(255,255,255,.92);color:#3B2C23;font-size:12px;line-height:1;display:grid;place-items:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .ang-t button:disabled{opacity:.35}.ang-t button[data-adel]{color:#A33A2B}
+.notes li.warn{color:#A33A2B;font-weight:500}

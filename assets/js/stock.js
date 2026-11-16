@@ -382,7 +382,7 @@
     const fresh = items.filter((i) => !have.has(i.id)).length;
     PREVIEW = items;
     $("#iPrev").innerHTML = `<div class="imp-sum"><b>${items.length} lines · ${items.reduce((t, i) => t + i.stock, 0)} pieces</b><span>${fresh} new · ${items.length - fresh} already in stock</span></div>
-      ${notes.length ? `<ul class="notes">${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+      ${notes.length ? `<ul class="notes">${notes.map((n) => `<li${/^⚠/.test(n) ? ' class="warn"' : ""}>${esc(n)}</li>`).join("")}</ul>` : ""}
       <div class="tbl"><table><thead><tr><th>ID</th><th>Name</th><th>Details</th><th>Stock</th><th>Cost</th><th>Price</th><th>Supplier</th></tr></thead><tbody>
       ${items.map((i) => `<tr${have.has(i.id) ? ' class="ex"' : ""}><td>${esc(i.id)}</td><td>${esc(name(i))}</td><td>${esc(details(i))}</td><td>${i.stock}</td><td>${i.cost}</td><td>${i.price}</td><td>${esc(i.supplier)}</td></tr>`).join("")}
       </tbody></table></div>
