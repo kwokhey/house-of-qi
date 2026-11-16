@@ -78,6 +78,19 @@ const ART = (() => {
     s+=`<path d="${path(W,H)}" transform="translate(${x} ${y})" fill="${G(c,[[.55,'#000',0],[1,'#2a1006',.25]],{cx:.6,cy:.64,r:.6})}"/>`;
     return s+spec(c,x+W*.15,y-H*.12,W*.95,P,cp)}
 
+  /* ring: gold band seen at an angle, oval stone on top */
+  function ring(c,x,y,P,{W=40,H=30}={}){const path=(w,h)=>`M0 ${-h}A${w} ${h} 0 1 1 0 ${h}A${w} ${h} 0 1 1 0 ${-h}Z`;
+    const bx=x,by=y+58,RX=78,RY=34;let s='';
+    s+=`<ellipse cx="${bx+10}" cy="${by+RY+18}" rx="${RX+8}" ry="14" fill="#3a1c10" opacity=".28" ${B(c,'b9')}/>`;
+    s+=`<ellipse cx="${bx}" cy="${by}" rx="${RX}" ry="${RY}" fill="none" stroke="${GOLD(c)}" stroke-width="13"/>`;
+    s+=`<ellipse cx="${bx}" cy="${by}" rx="${RX}" ry="${RY}" fill="none" stroke="${GOLDL(c)}" stroke-width="5" opacity=".75"/>`;
+    s+=`<path d="M${bx-RX} ${by}A${RX} ${RY} 0 0 0 ${bx+RX} ${by}" fill="none" stroke="${GOLD(c)}" stroke-width="15"/><path d="M${bx-RX+6} ${by+6}A${RX-6} ${RY-4} 0 0 0 ${bx+RX-6} ${by+6}" fill="none" stroke="#FFF3D6" stroke-width="2.5" opacity=".7"/>`;
+    const sy=by-RY-H+8,cp=clip(c,`<path d="${path(W,H)}" transform="translate(${x} ${sy})"/>`);
+    s+=`<g transform="translate(${x} ${sy})"><path d="${path(W+9,H+9)}" fill="#3a1c10" opacity=".3" transform="translate(5 9)" ${B(c,'b4')}/><path d="${path(W+8,H+8)}" fill="${GOLD(c)}"/><path d="${path(W+4,H+4)}" fill="${GOLDL(c)}"/><path d="${path(W+2,H+2)}" fill="none" stroke="#6E4A1F" stroke-opacity=".5"/><path d="${path(W,H)}" fill="${stoneFill(c,P,P.k+'r')}"/></g>`;
+    s+=fx(c,x,sy,W*1.1,P,cp);
+    s+=`<path d="${path(W,H)}" transform="translate(${x} ${sy})" fill="${G(c,[[.55,'#000',0],[1,'#2a1006',.25]],{cx:.6,cy:.64,r:.6})}"/>`;
+    return s+spec(c,x+W*.15,sy-H*.12,W*.95,P,cp)}
+
   /* ---------- décor ---------- */
   function sphere(c,cx,cy,R,P){const cp=clip(c,`<circle cx="${cx}" cy="${cy}" r="${R}"/>`);let s='';
     s+=`<ellipse cx="${cx+14}" cy="${cy+R+16}" rx="${f(R*1.1)}" ry="22" fill="#3a1c10" opacity=".28" ${B(c,'b9')}/><ellipse cx="${cx+8}" cy="${cy+R+26}" rx="${f(R*.45)}" ry="12" fill="#FFF8EC" opacity=".9" ${B(c,'b9')}/>`;
@@ -233,6 +246,7 @@ const ART = (() => {
     const lum=h=>(h.match(/[0-9A-F]{2}/gi)||[]).reduce((t,x)=>t+parseInt(x,16),0);
     const surf=lum(P.c[0])>740&&lum(P.c[1])>660&&!P.moon?'velvet':lum(P.c[1])<200?'linen':SURFS[hash(key)%SURFS.length];
     if(/pendant|necklace/i.test(spec.type||'')) return[surf,c=>pendant(c,200,246,'oval',{...P,k:'sp'},{W:46,H:64})];
+    if(/^ring/i.test(spec.type||'')) return[surf,c=>ring(c,200,170,{...P,k:'sp'})];
     const mm=Math.max(4,Math.min(16,+spec.size||8)),R=Math.max(7.5,Math.min(25,mm*1.6)),n=Math.max(12,Math.round(PI2*116/(2.02*R)));
     return[surf,c=>{const r=c.r;const pal=isTour?Array.from({length:n},()=>TOURM[Math.floor(r()*TOURM.length)]):null;
       return bracelet(c,200,206,n,R,i=>pal?{c:pal[i],trans:1,cloud:1,k:'t'+TOURM.indexOf(pal[i])}:{...P,k:'sp'},{gold:mm>=8?Math.floor(n/2):-1})}];

@@ -8,7 +8,7 @@
   const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); };
   const CHANNELS = ["Instagram", "WhatsApp", "Facebook", "Bazaar / event", "In person", "Other"];
   const TYPES = ["Bracelet", "Pendant", "Necklace", "Ring", "Earrings", "Sphere", "Cluster", "Tumbled", "Other"];
-  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["decor", "Spheres & Décor"], ["sets", "Gift Sets"]];
+  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["rings", "Rings"], ["decor", "Spheres & Décor"], ["sets", "Gift Sets"]];
   const KIND = { sale: "Sold", restock: "Stock in", adjust: "Adjusted", consign: "Seller" };
 
   let ITEMS = [], MONTH = {}, FILTER = "all", Q = "", loaded = false, COLS = [];
@@ -55,7 +55,7 @@
       ? list.map((i) => `<button class="s-row${i.stock <= 0 ? " out" : ""}" data-sid="${esc(i.id)}">
           <img src="${thumb(i)}" alt="" loading="lazy">
           <span class="s-main"><b>${esc(name(i))}</b><small>${esc([i.id, details(i)].filter(Boolean).join(" · "))}</small>
-            <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}${i.with_sellers > 0 ? `<em>${i.with_sellers} with sellers</em>` : ""}</span></span>
+            <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}${i.with_sellers > 0 ? `<em>${i.with_sellers} with sellers</em>` : ""}${!(i.price > 0) ? `<em class="w">No price · not in shop</em>` : ""}</span></span>
           <span class="s-num"><b class="${i.stock <= 0 ? "zero" : isLow(i) ? "low" : ""}">${i.stock}</b><small>${RM0(i.price)}</small></span>
         </button>`).join("")
       : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;

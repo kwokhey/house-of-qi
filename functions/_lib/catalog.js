@@ -15,7 +15,7 @@ export async function loadSettings(env, origin) {
 
 /** Turn an inventory row into a shop product. */
 export function rowToProduct(r, settings) {
-  const pendant = /pendant|necklace/i.test(r.type);
+  const pendant = /pendant|necklace/i.test(r.type), ring = /^ring/i.test(r.type);
   const name = itemName(r);
   const details = itemDetails(r);
   let intentions = [];
@@ -26,7 +26,7 @@ export function rowToProduct(r, settings) {
     name,
     zh: r.zh || "",
     details,
-    collection: r.collection || (pendant ? "pendants" : "bracelets"),
+    collection: r.collection || (ring ? "rings" : pendant ? "pendants" : "bracelets"),
     price: r.price,
     stock: r.stock,
     soldOut: r.stock <= 0,
@@ -60,7 +60,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   const { results } = await D.prepare(
     includeHidden
       ? "SELECT * FROM items ORDER BY sort, id"
-      : "SELECT * FROM items WHERE published = 1 ORDER BY stock <= 0, featured = 0, featured, sort, id" // sold-out pieces stay visible, listed last
+      : "SELECT * FROM items WHERE published = 1 AND price > 0 ORDER BY stock <= 0, featured = 0, featured, sort, id" // sold-out pieces stay visible, listed last
   ).all();
   if (!results.length && !includeHidden) {
     const count = await D.prepare("SELECT COUNT(*) AS n FROM items").first();

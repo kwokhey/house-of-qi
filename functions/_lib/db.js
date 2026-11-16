@@ -154,12 +154,44 @@ const SCHEMA = [
 // columns added after the first release (ignored if they already exist)
 const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
 
+/**
+ * The sheet sometimes puts the kind of piece in the product name:
+ *   "Rose Quartz (Rings)", "Boulder Opal (Pendants)", "Golden Rutilated Quartz (Pendant (Rimmed))", "Topaz Ring"
+ * → stone "Rose Quartz", type "Ring" (extra words like "Rimmed" go to the variant).
+ * Returns null when the name has no kind in it.
+ */
+export function splitType(stone) {
+  const KIND = (w) => (/^ring/i.test(w) ? "Ring" : "Pendant");
+  let s = String(stone || "").trim(), m;
+  if ((m = s.match(/^(.*?)\s*\(\s*(rings?|pendants?|necklaces?)\b\s*(.*)\)$/i))) {
+    const extra = m[3].replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+    return { stone: m[1].trim(), type: KIND(m[2]), extra: extra ? extra[0].toUpperCase() + extra.slice(1) : "" };
+  }
+  if ((m = s.match(/^(.*?)\s*\b(rings?|pendants?|necklaces?)$/i))) return { stone: m[1].trim(), type: KIND(m[2]), extra: "" };
+  return null;
+}
+const DEFAULT_COLL = { Ring: "rings", Pendant: "pendants", Bracelet: "bracelets" };
+
+/** One-time tidy of items imported before the kind was read from the name. Safe to run again. */
+export async function fixTypes(D) {
+  const { results } = await D.prepare("SELECT id, stone, type, variant, collection FROM items WHERE stone LIKE '%ring%' OR stone LIKE '%pendant%' OR stone LIKE '%necklace%'").all();
+  const now = Date.now();
+  for (const r of results) {
+    const t = splitType(r.stone);
+    if (!t) continue;
+    const variant = [t.extra, r.variant].filter(Boolean).join(", ");
+    const coll = !r.collection || r.collection === DEFAULT_COLL[r.type] || r.collection === "bracelets" ? DEFAULT_COLL[t.type] : r.collection;
+    await D.prepare("UPDATE items SET stone = ?, type = ?, variant = ?, collection = ?, updated_at = ? WHERE id = ?").bind(t.stone, t.type, variant, coll, now, r.id).run();
+  }
+}
+
 let ready = null;
 export function hasDB(env) { return !!(env && env.DB && typeof env.DB.prepare === "function"); }
 export async function db(env) {
   if (!hasDB(env)) throw new Error("no-db");
   if (!ready) ready = env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s)))
     .then(async () => { for (const sql of ADD_COLUMNS) { try { await env.DB.prepare(sql).run(); } catch { /* already there */ } } })
+    .then(() => fixTypes(env.DB).catch((e) => console.error("fixTypes", e.message)))
     .catch((e) => { ready = null; throw e; });
   await ready;
   return env.DB;

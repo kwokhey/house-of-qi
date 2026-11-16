@@ -27,11 +27,23 @@
     return s;
   }
 
+  // "Rose Quartz (Rings)", "Boulder Opal (Pendants)", "Topaz Ring" → the kind of piece is in the name (same rule as functions/_lib/db.js)
+  function splitType(stone) {
+    const KIND = (w) => (/^ring/i.test(w) ? "Ring" : "Pendant");
+    let s = String(stone || "").trim(), m;
+    if ((m = s.match(/^(.*?)\s*\(\s*(rings?|pendants?|necklaces?)\b\s*(.*)\)$/i))) {
+      const extra = m[3].replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+      return { stone: m[1].trim(), type: KIND(m[2]), extra: extra ? extra[0].toUpperCase() + extra.slice(1) : "" };
+    }
+    if ((m = s.match(/^(.*?)\s*\b(rings?|pendants?|necklaces?)$/i))) return { stone: m[1].trim(), type: KIND(m[2]), extra: "" };
+    return null;
+  }
+
   function parseDetails(raw, stone) {
     let d = String(raw || "").replace(/\s+/g, " ").trim();
     const size = (d.match(/\[(\d+(?:\.\d+)?)\s*mm\]/i) || [])[1];
-    const type = /pendant|necklace/i.test(d) ? "Pendant" : "Bracelet";
-    let v = d.replace(/\[[^\]]*\]/g, "").replace(/\b(bracelet|pendant|necklace)\b/gi, "");
+    const type = /pendant|necklace/i.test(d) ? "Pendant" : /\brings?\b/i.test(d) ? "Ring" : "Bracelet";
+    let v = d.replace(/\[[^\]]*\]/g, "").replace(/\b(bracelets?|pendants?|necklaces?|rings?)\b/gi, "");
     const premium = /\*?\s*premium/i.test(v);
     v = v.replace(/\(?\*?\s*premium\)?/gi, "").replace(/[()]/g, " ").replace(/\s*,\s*/g, ", ").replace(/^[\s,.-]+|[\s,.-]+$/g, "").replace(/\s+/g, " ");
     v = v.split(/\s*,\s*/).filter((part) => part && part.toLowerCase() !== stone.toLowerCase()).join(", ");
@@ -117,9 +129,12 @@
       } else used.set(id.split("-")[0], stone);
       ids.add(id);
       const out = num(get("stockOut")) || 0;
+      // the ID above is made from the full name, so it stays the same as in earlier imports
+      const k = splitType(shown);
+      if (k) { shown = k.stone; d.type = k.type; d.variant = [k.extra, d.variant].filter(Boolean).join(", "); }
       items.push({
         id, stone: shown, type: d.type, variant: d.variant, size_mm: d.size, supplier,
-        collection: d.type === "Pendant" ? "pendants" : "bracelets",
+        collection: { Pendant: "pendants", Ring: "rings" }[d.type] || "bracelets",
         cost: num(get("cost")) || 0, price: price || 0,
         stock_in: qtyIn || 0, stock: Math.max(0, (qtyIn || 0) - out),
       });

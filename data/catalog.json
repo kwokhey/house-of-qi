@@ -84,6 +84,12 @@
       "layout": "grid"
     },
     {
+      "id": "rings",
+      "name": "Rings",
+      "zh": "戒指",
+      "layout": "grid"
+    },
+    {
       "id": "decor",
       "name": "Spheres & Décor",
       "zh": "摆件",
