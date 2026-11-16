@@ -57,7 +57,7 @@
             <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}</span></span>
           <span class="s-num"><b class="${i.stock <= 0 ? "zero" : isLow(i) ? "low" : ""}">${i.stock}</b><small>${RM0(i.price)}</small></span>
         </button>`).join("")
-      : `<p class="empty">${ITEMS.length ? "Nothing matches." : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
+      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
   }
 
   /* Link previews: for pieces without a photo, save the drawn picture as a JPG so
