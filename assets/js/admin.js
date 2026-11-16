@@ -28,7 +28,7 @@ function openTab(tab) {
   try { localStorage.setItem("hq-admin-tab", tab); } catch {}
   if (tab === "stock" && window.Stock) { show("stockView"); window.Stock.load(); }
   else if (tab === "marketing" && window.Marketing) { show("marketingView"); window.Marketing.load(); }
-  else load();
+  else { show("ordersView"); render(); load(); }
 }
 const savedTab = () => { try { return localStorage.getItem("hq-admin-tab") || "orders"; } catch { return "orders"; } };
 async function api(path, opt = {}) {
