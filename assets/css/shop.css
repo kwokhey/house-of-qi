@@ -908,3 +908,6 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .zv-hint{text-shadow:0 1px 4px rgba(0,0,0,.6);position:absolute;left:0;right:0;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 58px);text-align:center;color:rgba(255,255,255,.75);font-size:12.5px;margin:0;pointer-events:none;transition:opacity .6s}
 .zv-hint.fade{opacity:0}
 @media (hover:none){.zv-nav{width:42px;height:42px}}
+
+/* product facts: Stone + Details (no shipping time) */
+.specs{grid-template-columns:repeat(2,minmax(0,1fr))}

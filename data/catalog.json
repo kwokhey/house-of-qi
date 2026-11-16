@@ -44,13 +44,8 @@
     "opts": [
       {
         "id": "moon",
-        "label": "Full-moon cleanse & charge",
+        "label": "Cleanse & Recharge",
         "price": 0
-      },
-      {
-        "id": "box",
-        "label": "Gift box & handwritten card",
-        "price": 15
       }
     ]
   },
@@ -217,13 +212,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -307,13 +297,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -398,13 +383,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -489,13 +469,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -578,13 +553,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -667,13 +637,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -755,13 +720,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -843,13 +803,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             },
             {
               "id": "charm",
@@ -935,13 +890,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1021,13 +971,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1094,13 +1039,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1151,13 +1091,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1209,13 +1144,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1267,13 +1197,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1304,13 +1229,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
@@ -1341,13 +1261,8 @@
           "opts": [
             {
               "id": "moon",
-              "label": "Full-moon cleanse & charge",
+              "label": "Cleanse & Recharge",
               "price": 0
-            },
-            {
-              "id": "box",
-              "label": "Gift box & handwritten card",
-              "price": 15
             }
           ]
         }
