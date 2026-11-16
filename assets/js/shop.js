@@ -271,6 +271,41 @@ function galGo(n){const L=GAL.L;if(L.length<2)return;n=(n%L.length+L.length)%L.l
   setTimeout(()=>{im.src=L[n];im.onload=()=>im.classList.remove('swap');setTimeout(()=>im.classList.remove('swap'),400)},120);
   $('#shTh').querySelectorAll('.sh-t').forEach((b,k)=>{b.classList.toggle('on',k===n);if(k===n)b.scrollIntoView({block:'nearest',inline:'nearest'})})}
 
+/* ---------- zoom viewer: pinch / scroll / double-tap to zoom, drag to look around ---------- */
+const ZV={k:1,x:0,y:0,on:false};
+function zoomOpen(){if(!DR)return;let v=$('#zv');
+  if(!v){v=document.createElement('div');v.id='zv';v.className='zv';v.setAttribute('role','dialog');v.setAttribute('aria-modal','true');v.setAttribute('aria-label','Zoomed photo');
+    v.innerHTML=`<div class="zv-stage" id="zvStage"><img id="zvImg" alt="" draggable="false"></div>
+    <button type="button" class="zv-x" data-act="zoomClose" aria-label="Close">✕</button>
+    <button type="button" class="zv-nav p" data-act="zoomStep" data-d="-1" aria-label="Previous photo">‹</button><button type="button" class="zv-nav n" data-act="zoomStep" data-d="1" aria-label="Next photo">›</button>
+    <div class="zv-bar"><button type="button" data-act="zoomBy" data-f="0.6" aria-label="Zoom out">−</button><span id="zvPct">100%</span><button type="button" data-act="zoomBy" data-f="1.6" aria-label="Zoom in">+</button></div>
+    <p class="zv-hint" id="zvHint">Pinch, scroll or double-tap to zoom · drag to move</p>`;
+    document.body.appendChild(v);zvBind()}
+  ZV.on=true;v.classList.add('on');document.documentElement.classList.add('zv-lock');zvShow(GAL.i||0);setTimeout(()=>{const h=$('#zvHint');if(h)h.classList.add('fade')},2600)}
+function zoomClose(){const v=$('#zv');if(!v)return;ZV.on=false;v.classList.remove('on');document.documentElement.classList.remove('zv-lock')}
+function zvShow(n){const L=GAL.L.length?GAL.L:[$('#shImg').src];n=(n%L.length+L.length)%L.length;if(GAL.L.length>1&&n!==GAL.i)galGo(n);
+  const im=$('#zvImg');im.src=L[n];im.alt=(DR&&DR.m.name)||'';ZV.k=1;ZV.x=ZV.y=0;zvApply();
+  $('#zv').classList.toggle('multi',L.length>1)}
+function zvApply(){const st=$('#zvStage'),im=$('#zvImg');if(!st||!im)return;const W=st.clientWidth,H=st.clientHeight,s=Math.min(W,H);
+  const mx=Math.max(0,(s*ZV.k-W)/2),my=Math.max(0,(s*ZV.k-H)/2);ZV.x=Math.max(-mx,Math.min(mx,ZV.x));ZV.y=Math.max(-my,Math.min(my,ZV.y));
+  im.style.transform=`translate(${ZV.x}px,${ZV.y}px) scale(${ZV.k})`;const p=$('#zvPct');if(p)p.textContent=Math.round(ZV.k*100)+'%';st.classList.toggle('zoomed',ZV.k>1.01)}
+function zvZoom(k,px,py){const st=$('#zvStage');const r=st.getBoundingClientRect();px=px??r.left+r.width/2;py=py??r.top+r.height/2;
+  k=Math.max(1,Math.min(5,k));const f=k/ZV.k,cx=px-(r.left+r.width/2),cy=py-(r.top+r.height/2);ZV.x=cx-(cx-ZV.x)*f;ZV.y=cy-(cy-ZV.y)*f;ZV.k=k;zvApply()}
+function zvBind(){const st=$('#zvStage'),pts=new Map();let last=null,moved=false,tap=0;
+  st.addEventListener('wheel',e=>{e.preventDefault();zvZoom(ZV.k*Math.exp(-e.deltaY*0.0018),e.clientX,e.clientY)},{passive:false});
+  st.addEventListener('pointerdown',e=>{st.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);last=null;moved=false});
+  st.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const p=pts.get(e.pointerId),c=[e.clientX,e.clientY];pts.set(e.pointerId,c);
+    if(pts.size===1){const dx=c[0]-p[0],dy=c[1]-p[1];if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(ZV.k>1.01){ZV.x+=dx;ZV.y+=dy;zvApply()}}
+    else if(pts.size===2){moved=true;const[a,b]=[...pts.values()],dist=Math.hypot(a[0]-b[0],a[1]-b[1]);if(last)zvZoom(ZV.k*dist/last,(a[0]+b[0])/2,(a[1]+b[1])/2);last=dist}});
+  const up=e=>{const s=pts.get(e.pointerId);pts.delete(e.pointerId);last=null;
+    if(!moved&&s&&e.type==='pointerup'){const now=Date.now();if(now-tap<300){zvZoom(ZV.k>1.5?1:2.5,e.clientX,e.clientY);tap=0}else tap=now}};
+  st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+  // swipe between photos when not zoomed in
+  let sx=null;st.addEventListener('touchstart',e=>{sx=e.touches.length===1?e.touches[0].clientX:null},{passive:true});
+  st.addEventListener('touchend',e=>{if(sx==null||ZV.k>1.01||GAL.L.length<2)return;const dx=e.changedTouches[0].clientX-sx;sx=null;if(Math.abs(dx)>50)zvShow(GAL.i+(dx<0?1:-1))},{passive:true});
+  document.addEventListener('keydown',e=>{if(!ZV.on)return;if(e.key==='Escape'){e.stopPropagation();zoomClose()}else if(e.key==='ArrowRight')zvShow(GAL.i+1);else if(e.key==='ArrowLeft')zvShow(GAL.i-1);else if(e.key==='+'||e.key==='=')zvZoom(ZV.k*1.5);else if(e.key==='-')zvZoom(ZV.k/1.5)},true);
+  window.addEventListener('resize',()=>{if(ZV.on)zvApply()})}
+
 function closeDetail(){$('#sheet').classList.remove('open');$('#backdrop').classList.remove('on');const n=$('#note');if(n)n.blur()}
 function updateDetail(tick=true){const{m,sel,qty}=DR;
   document.querySelectorAll('#shBody .opt').forEach(b=>{const on=sel[b.dataset.g]===b.dataset.o;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
@@ -435,6 +470,7 @@ const ACT={
     if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
   banSet(el){banSet(+el.dataset.i)},
   galGo(el){galGo(+el.dataset.i)},
+  zoomOpen(){zoomOpen()},zoomClose(){zoomClose()},zoomStep(el){zvShow(GAL.i+(+el.dataset.d))},zoomBy(el){zvZoom(ZV.k*(+el.dataset.f))},
   banGo(){const t=$('#sec-colls')||$('#sec-colour')||$('#homeBody .sec');if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];
