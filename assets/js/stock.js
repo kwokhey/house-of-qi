@@ -109,6 +109,10 @@
       ${isNew ? "" : `<div class="ed-photo"><img id="edImg" src="${thumb(i, "tall")}" alt="">
         <div class="ed-ph-act"><label class="btn ghost sm">${i.image_v ? "Change photo" : "Add photo"}<input type="file" id="edFile" accept="image/*" hidden></label>
         ${i.image_v ? '<button type="button" class="btn ghost sm" id="edAdjPh">Adjust photo</button><button type="button" class="link" id="edDelPh">Remove photo</button>' : '<small>Drawn picture shown until you add a photo</small>'}</div></div>
+      ${(() => { const g = angles(i); return `<div class="ed-ang"><div class="ang-h"><b>More angles</b><small>${g.length}/5 · shown after the main photo, customers swipe through them</small></div>
+        <div class="ang-grid">${g.map((p, n) => `<span class="ang"><img src="/img/${encodeURIComponent(p.k)}.jpg?v=${p.v}" alt="">
+          <span class="ang-t"><button type="button" data-amv="${esc(p.k)}" data-d="-1" ${n ? "" : "disabled"} aria-label="Move earlier">‹</button><button type="button" data-amv="${esc(p.k)}" data-d="1" ${n < g.length - 1 ? "" : "disabled"} aria-label="Move later">›</button><button type="button" data-aadj="${esc(p.k)}" aria-label="Adjust">✎</button><button type="button" data-adel="${esc(p.k)}" aria-label="Remove">✕</button></span></span>`).join("")}
+          ${g.length < 5 ? `<label class="ang ang-add"><input type="file" id="edAngFile" accept="image/*" hidden><em>+ Add angle</em></label>` : ""}</div></div>`; })()}
       <div class="ed-stock"><div><span>In stock</span><b id="edStock" class="${i.stock <= 0 ? "zero" : ""}">${i.stock}</b><small>${i.sold || 0} sold · ${i.stock_in} received</small></div>
         <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button></div>
         <div id="mvForm"></div></div>`}
@@ -156,6 +160,19 @@
     if (!isNew) {
       $("#edFile").onchange = (e) => { const f = e.target.files[0]; if (f) adjustPhoto(i, f); };
       if ($("#edAdjPh")) $("#edAdjPh").onclick = () => adjustPhoto(i, `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}`);
+      if ($("#edAngFile")) $("#edAngFile").onchange = (e) => { const f = e.target.files[0]; if (f) adjustPhoto(i, f, "new"); };
+      const ang = $("#sEdit .ed-ang");
+      if (ang) ang.onclick = async (e) => {
+        const mv = e.target.closest("[data-amv]"), adj = e.target.closest("[data-aadj]"), del = e.target.closest("[data-adel]");
+        if (adj) { const p = angles(i).find((x) => x.k === adj.dataset.aadj); return adjustPhoto(i, `/img/${encodeURIComponent(p.k)}.jpg?v=${p.v}`, p.k); }
+        if (!mv && !del) return;
+        if (del && del.dataset.sure !== "1") { del.dataset.sure = "1"; del.textContent = "?"; del.title = "Tap again to remove"; return; }
+        try {
+          if (mv) await api("/api/admin/image", { method: "POST", body: JSON.stringify({ id: i.id, action: "move", k: mv.dataset.amv, d: +mv.dataset.d }) });
+          else { await api(`/api/admin/image?id=${encodeURIComponent(i.id)}&k=${encodeURIComponent(del.dataset.adel)}`, { method: "DELETE" }); toast("Photo removed"); }
+          await load(); openEditor(ITEMS.find((x) => x.id === i.id));
+        } catch (x) { toast(x.message); }
+      };
       if ($("#edDelPh")) $("#edDelPh").onclick = async () => { await api(`/api/admin/image?id=${encodeURIComponent(i.id)}`, { method: "DELETE" }); toast("Photo removed"); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); };
       if ($("#edDel")) $("#edDel").onclick = async () => {
         if ($("#edDel").dataset.sure !== "1") { $("#edDel").dataset.sure = "1"; $("#edDel").textContent = "Tap again to delete for good"; return; }
@@ -217,12 +234,13 @@
   }
 
   /* ---------- adjust a photo: zoom, drag into place, rotate; saved as a square like the shop shows it ---------- */
-  async function adjustPhoto(i, src) {
+  const angles = (i) => { try { return JSON.parse(i.gallery || "[]").filter((p) => p && p.k); } catch { return []; } };
+  async function adjustPhoto(i, src, slot) {
     let bmp, orig = null;
     try {
       if (typeof src === "string") {
         // start from the full original when one was kept, so nothing cut off earlier is lost
-        const o = await fetch(`/api/admin/image?id=${encodeURIComponent(i.id)}&orig=1`, { credentials: "same-origin", cache: "no-store" });
+        const o = await fetch(`/api/admin/image?id=${encodeURIComponent(i.id)}&orig=1${slot && slot !== "new" ? `&k=${encodeURIComponent(slot)}` : ""}`, { credentials: "same-origin", cache: "no-store" });
         bmp = await createImageBitmap(o.ok ? await o.blob() : await (await fetch(src, { cache: "no-store" })).blob());
       } else {
         bmp = await createImageBitmap(src);
@@ -296,7 +314,7 @@
       try {
         let q = 0.88, data = cv.toDataURL("image/jpeg", q);
         while (data.length > 1_700_000 && q > 0.5) { q -= 0.08; data = cv.toDataURL("image/jpeg", q); }
-        await api("/api/admin/image", { method: "POST", body: JSON.stringify({ id: i.id, data, orig: orig || undefined }) });
+        await api("/api/admin/image", { method: "POST", body: JSON.stringify({ id: i.id, data, orig: orig || undefined, slot: slot || undefined }) });
         d.close(); toast("Photo saved"); await load(); openEditor(ITEMS.find((x) => x.id === i.id));
       } catch (x) { toast(x.message || "Couldn't save the photo. Please try again."); $("#cSave").disabled = false; }
     };

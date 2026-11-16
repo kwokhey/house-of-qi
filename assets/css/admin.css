@@ -284,3 +284,14 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .crop-bg button[data-bg="#FFFFFF"]{background:#fff}.crop-bg button[data-bg="#EFE3D7"]{background:#EFE3D7}.crop-bg button[data-bg="#1E1714"]{background:#1E1714}
 .crop-bg button.on{outline:2px solid var(--ink);outline-offset:2px}
 .ed-ph-act{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+
+/* extra angles */
+.ed-ang{margin:-4px 0 16px}
+.ang-h{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}.ang-h small{color:var(--ink-3);font-size:12px}
+.ang-grid{display:flex;flex-wrap:wrap;gap:10px}
+.ang{position:relative;width:96px;aspect-ratio:1;border-radius:6px;overflow:hidden;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+.ang img{width:100%;height:100%;object-fit:cover}
+.ang-add{border:1px dashed rgba(59,44,35,.3);cursor:pointer}.ang-add em{font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);text-align:center;padding:4px}
+.ang-t{position:absolute;left:4px;right:4px;bottom:4px;display:flex;justify-content:space-between;gap:2px}
+.ang-t button{width:21px;height:21px;border-radius:50%;background:rgba(255,255,255,.92);color:#3B2C23;font-size:12px;line-height:1;display:grid;place-items:center;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ang-t button:disabled{opacity:.35}.ang-t button[data-adel]{color:#A33A2B}

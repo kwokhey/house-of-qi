@@ -6,7 +6,7 @@ import { db, hasDB } from "../_lib/db.js";
 
 export async function onRequestGet({ params, env }) {
   const id = decodeURIComponent(String(params.file || "")).replace(/\.jpg$/i, "");
-  if (!hasDB(env) || !id) return new Response("Not found", { status: 404 });
+  if (!hasDB(env) || !id || id.startsWith("orig-")) return new Response("Not found", { status: 404 }); // originals are for admin only
   const D = await db(env);
   const row = await D.prepare("SELECT mime, data FROM images WHERE item_id = ?").bind(id).first();
   if (!row) return new Response("Not found", { status: 404 });

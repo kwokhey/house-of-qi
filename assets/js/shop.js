@@ -226,6 +226,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   const im=$('#shImg');if(prev){im.classList.add('swap');setTimeout(()=>{im.src=img(m.id,WIDE.matches?'portrait':'hero');im.onload=()=>im.classList.remove('swap');setTimeout(()=>im.classList.remove('swap'),400)},140)}
   else{im.src=img(m.id,WIDE.matches?'portrait':'hero');$('#sheetScroll').scrollTop=0;im.style.transform=''}
   im.alt=m.name;const hero=im.closest('.sheet-hero');if(hero)hero.classList.toggle('sample',isSample(m));
+  galPaint(m);
   const fam=FAM[m.fam]||[m];
   const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
   const sub=[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(' · ');
@@ -256,6 +257,17 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   const vr=$('.vp-row'),vo=$('.vopt.on');if(vr&&vo){const l=vo.offsetLeft-vr.offsetLeft-20;if(l>0&&vo.offsetLeft+vo.offsetWidth>vr.clientWidth+vr.scrollLeft)vr.scrollLeft=prev?Math.max(vr.scrollLeft,vo.offsetLeft+vo.offsetWidth-vr.clientWidth+20):l}
   if(prev)$('#sheetScroll').scrollTop=prev.y;
   else{$('#backdrop').classList.add('on');$('#sheet').classList.add('open')}}
+
+/* extra photo angles: thumbnails over the photo, swipe or tap to change */
+let GAL={i:0,L:[]};
+function galPaint(m){const box=$('#shTh');if(!box)return;const L=[img(m.id,WIDE.matches?'portrait':'hero'),...(m.gallery||[]).map(u=>'/'+String(u).replace(/^\//,''))];GAL={i:0,L};
+  box.hidden=L.length<2;box.innerHTML=L.length<2?'':L.map((u,n)=>`<button type="button" class="sh-t${n?'':' on'}" data-act="galGo" data-i="${n}" aria-label="Photo ${n+1} of ${L.length}"><img src="${u}" alt="" loading="lazy"></button>`).join('');
+  const hero=$('#shImg').closest('.sheet-hero');if(hero&&!hero.dataset.sw){hero.dataset.sw=1;let x0=null,y0=0;
+    hero.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
+    hero.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(GAL.L.length>1&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.3)galGo(GAL.i+(dx<0?1:-1))},{passive:true})}}
+function galGo(n){const L=GAL.L;if(L.length<2)return;n=(n%L.length+L.length)%L.length;if(n===GAL.i)return;GAL.i=n;const im=$('#shImg');im.classList.add('swap');
+  setTimeout(()=>{im.src=L[n];im.onload=()=>im.classList.remove('swap');setTimeout(()=>im.classList.remove('swap'),400)},120);
+  $('#shTh').querySelectorAll('.sh-t').forEach((b,k)=>{b.classList.toggle('on',k===n);if(k===n)b.scrollIntoView({block:'nearest',inline:'nearest'})})}
 
 function closeDetail(){$('#sheet').classList.remove('open');$('#backdrop').classList.remove('on');const n=$('#note');if(n)n.blur()}
 function updateDetail(tick=true){const{m,sel,qty}=DR;
@@ -420,6 +432,7 @@ const ACT={
     const r=$('#results');const head=r.querySelector('.res-head');const box=`<div class="ck-about" style="--ck:${c.colour}"><b>${esc(c.theme)}</b><p>${esc(c.about)}</p><small>Stones: ${c.stones.map(esc).join(' · ')}</small></div>`;
     if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
   banSet(el){banSet(+el.dataset.i)},
+  galGo(el){galGo(+el.dataset.i)},
   banGo(){const t=$('#sec-colls')||$('#sec-colour')||$('#homeBody .sec');if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search'))closeSearch();ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},
   intent(el){closeMega();const k=el.dataset.k;$('#topbar').classList.add('searching');$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;$('#q').value=INTENTS[k][0];

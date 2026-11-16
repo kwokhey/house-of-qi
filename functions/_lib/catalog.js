@@ -32,6 +32,8 @@ export function rowToProduct(r, settings) {
     soldOut: r.stock <= 0,
     // a real photo from the Stock tab wins; otherwise a showcase sample (data/catalog.json → samplePhotos), else drawn art
     image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : (settings.samplePhotos && settings.samplePhotos[r.id]) || "",
+    // extra angles, shown after the main photo in the product view
+    gallery: (() => { try { return JSON.parse(r.gallery || "[]").filter((p) => p && p.k).map((p) => `img/${encodeURIComponent(p.k)}.jpg?v=${p.v}`); } catch { return []; } })(),
     bestseller: r.featured ? r.featured : 0,
     stone: r.stone,
     quality: r.size_mm ? `${+r.size_mm} mm beads` : (r.variant || ""),
