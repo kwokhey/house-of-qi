@@ -41,6 +41,18 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 .f-label.noqr{grid-template-columns:1fr}
 .f-label.small .nm{font-size:2.9mm}.f-label.small .pr{font-size:3.8mm}.f-label.small .dt{font-size:1.95mm}
 
+/* wrap-around (rat-tail) bracelet tag: printed head + long blank tail */
+.f-rt{width:calc(var(--w) + var(--t));height:var(--h);display:flex;align-items:center;background:transparent;box-shadow:none}
+.f-rt .head{width:var(--w);height:var(--h);background:#fff;border-radius:1.6mm;padding:1.3mm 1.8mm 1.1mm;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative}
+.f-rt .head::before{content:"";position:absolute;left:1.1mm;top:50%;width:1.3mm;height:1.3mm;margin-top:-.65mm;border-radius:50%;background:transparent}
+.f-rt .tl{flex:1;height:calc(var(--h) * .3);background:#fff;border-radius:0 2mm 2mm 0;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.f-rt .nm{font-size:2.75mm;line-height:1.04;margin:0;-webkit-line-clamp:2}
+.f-rt .row{display:flex;justify-content:space-between;align-items:baseline;gap:1mm}
+.f-rt .dt{font-size:2.1mm;font-weight:500}
+.f-rt .pr{font-size:3.5mm;white-space:nowrap}
+.f-rt .id{font-size:1.75mm;letter-spacing:.06em}
+.f-rt.small .head{padding:1mm 1.4mm .9mm}.f-rt.small .nm{font-size:2.3mm;-webkit-line-clamp:1}.f-rt.small .pr{font-size:3mm}.f-rt.small .dt{font-size:1.85mm}.f-rt.small .id{font-size:1.5mm}
+
 /* dumbbell jewellery tag: two printable halves joined by a thin tail; fold around the bracelet */
 .f-db{width:72mm;height:13mm;display:grid;grid-template-columns:24mm 1fr 24mm;background:transparent;box-shadow:none}
 .f-db .half{background:#fff;border-radius:2mm;padding:1.2mm 1.6mm;display:flex;flex-direction:column;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.18);min-width:0}
@@ -63,6 +75,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   body.a4 #sheet{display:grid!important;padding:0!important}
   body.a4 .tag{outline:.2mm dashed #999}
   .f-db .half,.f-db .tail{box-shadow:none!important;outline:.15mm dashed #aaa}
+  .f-rt .head,.f-rt .tl{box-shadow:none!important}
 }
 </style>
 </head>
@@ -70,6 +83,8 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
 <div class="bar">
   <h1>Print tags</h1>
   <label>Tag size<select id="fmt">
+    <option value="rt3015">Bracelet tag, wrap-around (30 × 15 mm + tail)</option>
+    <option value="rt2512">Bracelet tag, wrap-around small (25 × 12 mm + tail)</option>
     <option value="5030">Label 50 × 30 mm (thermal printer)</option>
     <option value="4030">Label 40 × 30 mm (thermal printer)</option>
     <option value="db">Jewellery tag 72 × 13 mm (dumbbell)</option>
@@ -92,6 +107,8 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   const RM = (n) => "RM" + (Number(n) % 1 ? Number(n).toFixed(2) : Number(n).toLocaleString("en-MY"));
   const want = (new URLSearchParams(location.search).get("ids") || "").split(",").filter(Boolean);
   const FMT = {
+    rt3015: { rt: 1, w: 30, h: 15, tail: 40, tip: "For wrap-around (rat-tail) jewellery tag rolls with a 30 × 15 mm head. Choose the label size your roll says (for example 70 × 15 mm, head plus tail), margins None, scale 100%. Wrap the tail round the bracelet and stick it to the back of the head." },
+    rt2512: { rt: 1, w: 25, h: 12, tail: 40, small: 1, tip: "For wrap-around (rat-tail) tag rolls with a 25 × 12 mm head. Choose the label size your roll says (for example 65 × 12 mm), margins None, scale 100%." },
     "5030": { w: 50, h: 30, qr: 17, tip: "In your printer settings choose paper size 50 × 30 mm, margins None, scale 100%. One tag prints on each label." },
     "4030": { w: 40, h: 30, qr: 13, small: 1, tip: "In your printer settings choose paper size 40 × 30 mm, margins None, scale 100%. One tag prints on each label." },
     db: { tip: "For dumbbell jewellery tag rolls (72 × 13 mm). Choose paper size 72 × 13 mm, margins None, scale 100%. The left half shows the name and size, the right half the price and ID. There's no space for a QR code on this size." },
@@ -105,6 +122,9 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     const size = i.size_mm ? `${+i.size_mm} mm` : "";
     const dt = [size, i.variant].filter(Boolean).join(" · ");
     const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
+    if (FMT[f].rt) { const F = FMT[f];
+      return `<div class="tag f-rt${F.small ? " small" : ""}" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm"><div class="head">
+        <div class="nm">${esc(name(i))}</div><div class="row"><span class="dt">${esc(size || i.variant || "\u00a0")}</span>${price}</div><div class="id">${esc(i.id)}</div></div><div class="tl"></div></div>`; }
     if (f === "db") return `<div class="tag f-db"><div class="half"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt)}</div></div><div class="tail"></div>
       <div class="half">${price}<div class="id">${esc(i.id)}</div></div></div>`;
     const F = FMT[f === "a4" ? "5030" : f];
@@ -115,11 +135,12 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   }
 
   function render() {
-    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db", pr: $("#prOn").checked };
-    $("#qrOn").disabled = f === "db";
+    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && !FMT[f].rt, pr: $("#prOn").checked };
+    const noQR = f === "db" || !!FMT[f].rt;
+    $("#qrOn").disabled = noQR;
     document.body.className = f === "a4" ? "a4" : "roll";
     const F = FMT[f];
-    $("#pageSize").textContent = f === "a4" ? "@page{size:A4;margin:0}" : f === "db" ? "@page{size:72mm 13mm;margin:0}" : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
+    $("#pageSize").textContent = F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "db" ? "@page{size:72mm 13mm;margin:0}" : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
     for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
