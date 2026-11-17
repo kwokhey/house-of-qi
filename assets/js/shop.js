@@ -265,6 +265,8 @@ let GAL={i:0,L:[]};
 function galPaint(m){const box=$('#shTh');if(!box)return;const L=[img(m.id,WIDE.matches?'portrait':'hero'),...(m.gallery||[]).map(u=>'/'+String(u).replace(/^\//,''))];GAL={i:0,L};
   box.hidden=L.length<2;box.innerHTML=L.length<2?'':L.map((u,n)=>`<button type="button" class="sh-t${n?'':' on'}" data-act="galGo" data-i="${n}" aria-label="Photo ${n+1} of ${L.length}"><img src="${u}" alt="" loading="lazy"></button>`).join('');
   const hero=$('#shImg').closest('.sheet-hero');if(hero&&!hero.dataset.sw){hero.dataset.sw=1;let x0=null,y0=0;
+    // tap the photo to zoom (a swipe isn't a tap, so swiping between angles still works)
+    $('#shImg').addEventListener('click',()=>zoomOpen());
     hero.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
     hero.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(GAL.L.length>1&&Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.3)galGo(GAL.i+(dx<0?1:-1))},{passive:true})}}
 function galGo(n){const L=GAL.L;if(L.length<2)return;n=(n%L.length+L.length)%L.length;if(n===GAL.i)return;GAL.i=n;const im=$('#shImg');im.classList.add('swap');

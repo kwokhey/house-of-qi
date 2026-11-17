@@ -911,3 +911,7 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 
 /* product facts: Stone + Details (no shipping time) */
 .specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* phones: tap the photo to zoom, no magnifier button */
+#shImg{cursor:zoom-in}
+@media (max-width:999px){.sh-zoom{display:none}}
