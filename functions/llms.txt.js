@@ -10,7 +10,7 @@ export async function onRequestGet({ request, env }) {
   try { cat = await buildCatalog(env, new URL(request.url).origin); } catch {}
   const lines = [
     `# ${BRAND}`, "",
-    `> ${BRAND} is a Malaysian online shop selling natural crystal bracelets, pendants and rings, run by ${COMPANY}. Prices are in Malaysian Ringgit (MYR). Every piece uses natural gemstones, so colour and pattern vary slightly from piece to piece.`, "",
+    `> ${BRAND} is a Malaysian online shop selling natural crystal bracelets, pendants and rings, run by ${COMPANY} Prices are in Malaysian Ringgit (MYR). Every piece uses natural gemstones, so colour and pattern vary slightly from piece to piece.`, "",
     `- Shop: ${SITE}/`, `- Shipping, returns & crystal care: ${SITE}/policies`,
     ...(cat && cat.whatsapp ? [`- Customer service (WhatsApp): https://wa.me/${cat.whatsapp}`] : []),
     ...SOCIAL.map((s) => `- ${/instagram/.test(s) ? "Instagram" : "Facebook"}: ${s}`), "",

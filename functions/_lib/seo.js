@@ -29,7 +29,7 @@ export function faqs(cfg) {
     ["How do I care for and cleanse my crystal bracelet?", "Take it off before showering, swimming or exercise, and keep it away from perfume and chemicals. Coloured stones such as rose quartz and amethyst can fade in strong sunlight, so cleanse them under moonlight, with sound, or on a selenite plate instead. Roll elastic bracelets on and off rather than stretching them."],
     ["What is Cleanse & Recharge?", "Cleanse & Recharge is a complimentary option you can tick before adding a piece to your bag. House of Qi cleanses and recharges the crystal before it is sent to you."],
     ["Which crystal should I choose?", "Browse by intention, birthstone, chakra, colour or bead size in the shop menu. The meanings shared describe traditional and spiritual beliefs about each stone; they are not medical advice."],
-    ["Who runs House of Qi?", `House of Qi is a Malaysian crystal jewellery shop run by ${COMPANY}. You can reach customer service on WhatsApp${cfg && cfg.whatsapp ? ` at +${cfg.whatsapp}` : ""}.`],
+    ["Who runs House of Qi?", `House of Qi is a Malaysian crystal jewellery shop run by ${COMPANY} You can reach customer service on WhatsApp${cfg && cfg.whatsapp ? ` at +${cfg.whatsapp}` : ""}.`],
   ];
 }
 
