@@ -7,7 +7,7 @@ import { db, hasDB, itemName, itemDetails, getSetting } from "./db.js";
 import { applySales, liveSales, shopPromo, saleCovers } from "./promo.js";
 import { COLOURS, colourOf } from "./colours.js";
 import { faqs } from "./seo.js";
-import { stoneBelief, stoneAbout } from "./stones.js";
+import { stoneBelief, stoneAbout, stoneMeaning } from "./stones.js";
 
 export async function loadSettings(env, origin) {
   const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
@@ -42,7 +42,7 @@ export function rowToProduct(r, settings) {
     specLabel: r.size_mm ? "Size" : "Details",
     intentions,
     description: r.description || defaultDescription(r, details),
-    meaning: r.meaning || stoneBelief(r.stone),
+    meaning: r.meaning || stoneMeaning(r.stone),
     blurb: stoneBelief(r.stone),
     size: r.size_mm ? +r.size_mm : null,
     colour: colourOf(r),

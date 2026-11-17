@@ -115,7 +115,7 @@ export function stonePage(cat, s) {
   const para = stoneParagraph(info);
   const meaningQ = info.belief || info.chakras.length || info.intentions.length;
   const Q = [
-    ...(meaningQ ? [[`What is ${name} good for?`, [info.belief, info.intentions.length ? `House of Qi lists it under ${list(info.intentions.map((x) => x.toLowerCase()))}.` : "", "These are traditional and spiritual beliefs, not medical claims."].filter(Boolean).join(" ")]] : []),
+    ...(meaningQ ? [[`What is ${name} good for?`, [info.meaning, info.intentions.length ? `House of Qi lists it under ${list(info.intentions.map((x) => x.toLowerCase()))}.` : "", "These are traditional and spiritual beliefs, not medical claims."].filter(Boolean).join(" ")]] : []),
     ...(info.chakras.length ? [[`Which chakra is ${name} for?`, `${name} is associated with the ${list(info.chakras)} chakra${info.chakras.length > 1 ? "s" : ""}.`]] : []),
     ...(info.months.length ? [[`Is ${name} a birthstone?`, `${name} is a birthstone or birth-month crystal for ${list(info.months)} in the House of Qi birthstone guide.`]] : []),
     [`How much is ${/^[aeiou]/i.test(name) ? "an" : "a"} ${name} ${types[0].replace(/s$/, "")} in Malaysia?`, prices.length ? `At House of Qi, ${name} ${typeWords} cost from ${RM(Math.min(...prices))}${prices.length > 1 ? ` to ${RM(Math.max(...prices))}` : ""}, depending on bead size and quality. Delivery within West Malaysia is RM10 and East Malaysia RM20.` : `${name} pieces at House of Qi are currently sold out. Message House of Qi on WhatsApp to ask about new stock.`],
