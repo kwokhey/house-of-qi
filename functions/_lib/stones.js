@@ -63,6 +63,20 @@ export const STONES = {
   "unakite": ["Unakite is a granite of pink feldspar and green epidote.", "It is traditionally linked to balance, patience and emotional healing."],
   "variscite": ["Variscite is a green phosphate mineral, often mistaken for turquoise.", "It is traditionally worn for calm, courage and hope."],
   "yellow calcite": ["Yellow calcite is a golden form of calcium carbonate.", "It is traditionally associated with optimism, motivation and confidence."],
+  "green aventurine": ["Green aventurine is a quartz with tiny flakes of fuchsite mica that give it a soft green shimmer.", "Often called the stone of opportunity, it is traditionally worn for luck, prosperity and optimism."],
+  "citrine": ["Citrine is the yellow to golden variety of quartz.", "Known as the merchant's stone, it is traditionally worn for abundance, success and positive energy."],
+  "aquamarine": ["Aquamarine is the sea-blue variety of beryl and the birthstone of March.", "It is traditionally associated with calm, courage and clear communication."],
+  "smoky quartz": ["Smoky quartz is a brown to grey quartz coloured by natural irradiation.", "It is traditionally worn for grounding and to let go of stress and negativity."],
+  "pyrite": ["Pyrite is a brassy iron sulphide, nicknamed fool's gold.", "It is traditionally kept for prosperity, willpower and protection."],
+  "herkimer diamond": ["Herkimer diamonds are naturally double-terminated, very clear quartz crystals from Herkimer County, New York.", "They are traditionally associated with clarity, high energy and amplifying intention."],
+  "blue topaz": ["Blue topaz is a hard, sparkling blue gem and a birthstone of December.", "It is traditionally associated with calm, clear communication and loyalty."],
+  "carnelian": ["Carnelian is an orange to red chalcedony.", "It is traditionally worn for courage, motivation and creativity."],
+  "sodalite": ["Sodalite is a royal-blue mineral often veined with white.", "It is traditionally linked to logic, calm and honest communication."],
+  "obsidian": ["Obsidian is natural volcanic glass, usually glossy black.", "It is traditionally worn as a strong protection and grounding stone."],
+  "hematite": ["Hematite is a heavy, metallic grey iron oxide.", "It is traditionally worn for grounding, focus and strength."],
+  "kunzite": ["Kunzite is the pink to lilac variety of spodumene.", "It is traditionally associated with love, peace and an open heart."],
+  "prehnite": ["Prehnite is a pale green mineral, often with a soft, translucent glow.", "It is traditionally linked to calm, trust and inner peace."],
+  "turquoise": ["Turquoise is an opaque blue-green copper mineral prized for thousands of years and a birthstone of December.", "It is traditionally worn for protection, wisdom and good fortune."],
   "star rose quartz": ["Star rose quartz is a rare rose quartz that shows a six-rayed star under direct light, an effect called asterism.", "It is traditionally worn for love, compassion and emotional healing."],
 };
 
@@ -93,3 +107,12 @@ export function stoneParagraph(info) {
 }
 
 export const list = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
+
+/** "Amethyst is traditionally known as a stone of calm…" (one sentence, for lists and the Meaning box) */
+export function stoneBelief(stone) {
+  const e = STONES[stoneKey(stone)];
+  if (!e) return "";
+  const name = String(stone).replace(/\s*\(.*?\)/, "").trim();
+  return e[1].replace(/^(It|They) (is|are) /, `${name} ${/s$/.test(name) && /^They/.test(e[1]) ? "are" : "is"} `).replace(/^(Often called|Known as|Prized since|Linked to|Celebrated as)([^,]*), it /, `$1$2, ${name.toLowerCase()} `).replace(/^([a-z])/, (c) => c.toUpperCase());
+}
+export const stoneAbout = (stone) => (STONES[stoneKey(stone)] || [""])[0];

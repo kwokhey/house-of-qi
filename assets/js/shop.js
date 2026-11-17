@@ -12,7 +12,7 @@ async function loadCatalog(){
   SHIP=Object.fromEntries(Object.entries(d.shipping).map(([k,s])=>[k,{...s,sub:s.note,eta:s.days?`${s.days[0]}–${s.days[1]} working days`:'By appointment'}]));
   TABS=d.collections.map(c=>[c.id,c.name,c.zh,c.layout]);
   INTENTS=Object.fromEntries(Object.entries(d.intentions).map(([k,v])=>[k,[v.name,v.colour]]));
-  CAT=d.products.map(p=>({...p,details:p.details||'',cat:p.collection,best:p.bestseller||0,sig:p.signature,nov:p.spotlight,desc:p.description||'',ints:p.intentions||[],grade:p.quality||'',meaning:p.meaning||'',zh:p.zh||'',stone:p.stone||'',
+  CAT=d.products.map(p=>({...p,details:p.details||'',cat:p.collection,best:p.bestseller||0,sig:p.signature,nov:p.spotlight,desc:p.description||'',blurb:p.blurb||'',ints:p.intentions||[],grade:p.quality||'',meaning:p.meaning||'',zh:p.zh||'',stone:p.stone||'',
     groups:(p.groups||[]).map(g=>({...g,def:g.default,opts:g.opts.map(o=>[o.id,o.label,o.price||0,o.note,o.short])}))}));
   BY=Object.fromEntries(CAT.map(m=>[m.id,m]));
   /* one card per stone + type: the sheet lets the customer choose the exact piece (size, tone…) */
@@ -30,7 +30,7 @@ function famCard(m){const f=FAM[m.fam]||[m];if(f.length<2)return m;const live=f.
   const mm=[...new Set(f.map(x=>x.size).filter(Boolean))].sort((a,b)=>a-b);
   return{...rep,price:min.price,was:min.was,sale:(f.find(x=>x.sale)||{}).sale||null,fromP:pool.some(x=>x.price!==min.price),multi:f.length,stock:undefined,soldOut:!live.length,
     details:`${f.length} options${mm.length>1?` · ${mm[0]}–${mm[mm.length-1]} mm`:mm.length?` · ${mm[0]} mm`:''}`,mms:mm.join(' '),
-    desc:f.every(x=>x.stock===1)?`${f.length} one-of-a-kind pieces to choose from.`:`Choose from ${f.length} ${mm.length>1?'sizes and tones':'pieces'}.`}}
+    desc:rep.blurb?rep.blurb:f.every(x=>x.stock===1)?`${f.length} one-of-a-kind pieces to choose from.`:`Choose from ${f.length} ${mm.length>1?'sizes and tones':'pieces'}.`}}
 const famList=items=>{const seen=new Set();const L=items.filter(m=>!seen.has(m.fam)&&seen.add(m.fam)).map(famCard);return L.filter(m=>!m.soldOut).concat(L.filter(m=>m.soldOut))};
 /* Real photos: set "image" on a product in catalog.json (e.g. "assets/img/products/star-rose-12mm.jpg").
    Products without a photo use the drawn artwork from art.js. */
@@ -81,8 +81,8 @@ const IC={
 const priceHTML=m=>`${hasFrom(m)||m.fromP?'<span class="from">From</span>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}`;
 const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
-const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
-const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.desc}</span></button>`;
+const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
+const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span></button>`;
 const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="gc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span><span class="ri-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
 const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
 function renderHome(){

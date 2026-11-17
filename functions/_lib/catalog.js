@@ -7,6 +7,7 @@ import { db, hasDB, itemName, itemDetails, getSetting } from "./db.js";
 import { applySales, liveSales, shopPromo, saleCovers } from "./promo.js";
 import { COLOURS, colourOf } from "./colours.js";
 import { faqs } from "./seo.js";
+import { stoneBelief, stoneAbout } from "./stones.js";
 
 export async function loadSettings(env, origin) {
   const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
@@ -41,7 +42,8 @@ export function rowToProduct(r, settings) {
     specLabel: r.size_mm ? "Size" : "Details",
     intentions,
     description: r.description || defaultDescription(r, details),
-    meaning: r.meaning || "",
+    meaning: r.meaning || stoneBelief(r.stone),
+    blurb: stoneBelief(r.stone),
     size: r.size_mm ? +r.size_mm : null,
     colour: colourOf(r),
     art: { stone: r.stone, variant: r.variant, type: r.type, size: r.size_mm || 8 },
@@ -53,7 +55,8 @@ function defaultDescription(r, details) {
   const one = r.stock === 1 ? " One piece only." : "";
   // keep place names capitalised: Baltic amber, Libyan glass, Tanzania sunstone
   const stone = r.stone.toLowerCase().replace(/\b(baltic|libyan|tanzania|tanzanian|brazil|brazilian|madagascar|african|tibetan|himalayan|russian|mexican|peruvian|dominican)\b/g, (w) => w[0].toUpperCase() + w.slice(1));
-  return `Natural ${stone} ${r.type.toLowerCase()}${details ? `, ${details.toLowerCase()}` : ""}.${one}`;
+  const about = stoneAbout(r.stone);
+  return `Natural ${stone} ${r.type.toLowerCase()}${details ? `, ${details.toLowerCase()}` : ""}.${about ? " " + about : ""}${one}`;
 }
 
 export async function buildCatalog(env, origin, { includeHidden = false } = {}) {
