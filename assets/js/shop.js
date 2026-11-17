@@ -271,6 +271,13 @@ function galGo(n){const L=GAL.L;if(L.length<2)return;n=(n%L.length+L.length)%L.l
   setTimeout(()=>{im.src=L[n];im.onload=()=>im.classList.remove('swap');setTimeout(()=>im.classList.remove('swap'),400)},120);
   $('#shTh').querySelectorAll('.sh-t').forEach((b,k)=>{b.classList.toggle('on',k===n);if(k===n)b.scrollIntoView({block:'nearest',inline:'nearest'})})}
 
+/* tap the product photo to open the zoom viewer (a swipe between photos does not count as a tap) */
+(()=>{const hero=$('#shImg')&&$('#shImg').closest('.sheet-hero');if(!hero)return;let sx=0,sy=0,moved=false;
+  hero.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false},{passive:true});
+  hero.addEventListener('touchmove',e=>{if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10)moved=true},{passive:true});
+  hero.addEventListener('click',e=>{if(moved){moved=false;return}if(e.target.closest('button,a,.sh-th'))return;zoomOpen();try{localStorage.setItem('hoq_zoomed','1')}catch{}hero.classList.add('zoom-known')});
+  try{if(localStorage.getItem('hoq_zoomed'))hero.classList.add('zoom-known')}catch{}})();
+
 /* ---------- zoom viewer: pinch / scroll / double-tap to zoom, drag to look around ---------- */
 const ZV={k:1,x:0,y:0,on:false};
 function zoomOpen(){if(!DR)return;let v=$('#zv');

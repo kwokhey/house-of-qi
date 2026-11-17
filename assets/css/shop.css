@@ -911,3 +911,11 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 
 /* product facts: Stone + Details (no shipping time) */
 .specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ---------- tap photo to zoom ---------- */
+.sheet-hero img{cursor:zoom-in}
+.sheet-hero::before{content:"Tap photo to zoom";position:absolute;z-index:3;top:calc(env(safe-area-inset-top,0px) + 22px);right:16px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:rgba(46,34,28,.55);color:#FBF3EC;padding:6px 11px;border-radius:12px;pointer-events:none;opacity:0;animation:zoomHint 4s .8s ease both}
+.sheet-hero.zoom-known::before{display:none}
+@keyframes zoomHint{0%{opacity:0}12%,80%{opacity:1}100%{opacity:0}}
+@media (max-width:999px){.sh-zoom{display:none}}
+@media (min-width:1000px){.sheet-hero::before{content:"Click photo to zoom";top:22px;left:76px;right:auto}}
