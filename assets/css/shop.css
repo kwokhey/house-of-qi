@@ -931,3 +931,8 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .faq-i p{margin:0 2px 18px;font-size:14px;line-height:1.7;color:var(--ink-2,#6E5A4E);max-width:640px}
 @media (min-width:1000px){.faq{padding:80px 40px 30px}}
 .faq h2{font-size:clamp(30px,4.2vw,46px);line-height:1.05}
+/* search / filter results: products first, no Q&A above them; tidy heading with subtitle on its own line */
+#home.is-search #homeBody{display:none}
+.res-head{flex-wrap:wrap;align-items:center;row-gap:4px}
+.res-head h3{display:flex;align-items:center;gap:14px;line-height:1.05}
+.res-head span{flex-basis:100%;max-width:640px;line-height:1.5}
