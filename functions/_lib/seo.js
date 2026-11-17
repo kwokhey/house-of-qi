@@ -55,24 +55,42 @@ export function faqLd(list) {
   return { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: list.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
 }
 
-export function productLd(p, image) {
+const ship = (fee, min, max) => ({ "@type": "OfferShippingDetails", shippingRate: { "@type": "MonetaryAmount", value: fee, currency: "MYR" },
+  shippingDestination: { "@type": "DefinedRegion", addressCountry: "MY" },
+  deliveryTime: { "@type": "ShippingDeliveryTime", handlingTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 2, unitCode: "DAY" }, transitTime: { "@type": "QuantitativeValue", minValue: min, maxValue: max, unitCode: "DAY" } } });
+
+/** Search-friendly product name: "Natural Amethyst Crystal Bracelet 10 mm" */
+export function seoName(p) {
+  let n = String(p.name || "");
+  if (/bracelet|pendant|necklace|\bring\b/i.test(n) && !/crystal|quartz|opal|jade|glass|amber|emerald|garnet|topaz|peridot/i.test(n)) n = n.replace(/\s+(Bracelet|Pendant|Necklace|Ring)\b/i, " Crystal $1");
+  if (!/^natural\b/i.test(n)) n = "Natural " + n;
+  return n + (p.size ? ` ${p.size} mm` : "");
+}
+
+export function productLd(p, image, extra = {}) {
   const url = `${SITE}/p/${encodeURIComponent(p.id)}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Product", "@id": url + "#product", name: p.name, sku: p.id, url,
-        image: [image], description: productDesc(p), brand: { "@type": "Brand", name: BRAND },
+        "@type": "Product", "@id": url + "#product", name: seoName(p), sku: p.id, mpn: p.id, url,
+        image: [image, ...(p.gallery || []).map(abs)], description: extra.description || productDesc(p),
+        additionalProperty: [
+          ...(p.stone ? [{ "@type": "PropertyValue", name: "Gemstone", value: p.stone }] : []),
+          ...(p.size ? [{ "@type": "PropertyValue", name: "Bead size", value: p.size, unitText: "mm" }] : []),
+          ...(p.details ? [{ "@type": "PropertyValue", name: "Details", value: p.details }] : []),
+        ], brand: { "@type": "Brand", name: BRAND },
         ...(p.stone ? { material: p.stone } : {}), category: p.collectionName || "Crystal jewellery",
         offers: {
           "@type": "Offer", url, priceCurrency: "MYR", price: Number(p.price).toFixed(2), itemCondition: "https://schema.org/NewCondition",
           availability: p.soldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock", seller: { "@id": SITE + "/#store" },
-          shippingDetails: { "@type": "OfferShippingDetails", shippingDestination: { "@type": "DefinedRegion", addressCountry: "MY" } },
+          shippingDetails: [ship(10, 3, 5), ship(20, 5, 7)],
+          hasMerchantReturnPolicy: { "@type": "MerchantReturnPolicy", applicableCountry: "MY", returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow", merchantReturnDays: 14, returnMethod: "https://schema.org/ReturnByMail" },
         },
       },
       { "@type": "BreadcrumbList", itemListElement: [
         { "@type": "ListItem", position: 1, name: BRAND, item: SITE + "/" },
-        { "@type": "ListItem", position: 2, name: p.collectionName || "Shop", item: SITE + "/" },
+        extra.crumb ? { "@type": "ListItem", position: 2, name: extra.crumb[0], item: SITE + extra.crumb[1] } : { "@type": "ListItem", position: 2, name: p.collectionName || "Shop", item: SITE + "/" },
         { "@type": "ListItem", position: 3, name: p.name, item: url },
       ] },
     ],

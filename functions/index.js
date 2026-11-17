@@ -31,7 +31,7 @@ export async function onRequestGet({ request, env }) {
       <p>${BRAND} is a Malaysian online shop for natural crystal bracelets, pendants and rings. Every piece is made with natural gemstones, cleansed and packed by hand, and delivered across Malaysia. Shop by intention, birthstone, chakra, colour or bead size.</p></header>
       ${groups}
       <section><h2>Frequently asked questions</h2>${Q.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("")}</section>
-      <p><a href="/policies">Shipping, returns &amp; crystal care</a></p>`));
+      <p><a href="/crystals">Crystal meanings A–Z</a> · <a href="/bracelets">Bracelets</a> · <a href="/pendants">Pendants</a> · <a href="/rings">Rings</a> · <a href="/policies">Shipping, returns &amp; crystal care</a></p>`));
   }
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
 }

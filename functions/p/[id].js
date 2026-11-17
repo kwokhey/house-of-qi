@@ -5,7 +5,8 @@
  */
 import { buildCatalog } from "../_lib/catalog.js";
 import { db, hasDB } from "../_lib/db.js";
-import { SITE, BRAND, esc as e2, RM as rm, ld, productLd, productDesc, setHead, ssr, putSsr } from "../_lib/seo.js";
+import { SITE, BRAND, esc as e2, RM as rm, ld, productLd, productDesc, seoName, setHead, ssr, putSsr } from "../_lib/seo.js";
+import { stoneInfo, stoneParagraph } from "../_lib/stones.js";
 
 /** Photo for the link preview: real/sample photo → saved drawing → pre-made drawing → logo */
 async function previewPath(env, url, p) {
@@ -40,15 +41,22 @@ export async function onRequestGet({ request, env, params }) {
     const image = new URL(await previewPath(env, url, p), SITE).toString();
     const canonical = `${SITE}/p/${encodeURIComponent(p.id)}`;
     const desc = productDesc(p);
+    const info = p.stone ? stoneInfo(p.stone, cat, cat.products.filter((x) => x.stone === p.stone)) : null;
+    const about = info ? stoneParagraph(info) : "";
+    const sName = p.stone ? p.stone.replace(/\s*\(.*?\)/, "") : "";
+    const nice = seoName(p);
     html = setHead(html, {
-      title: `${p.name}${p.details ? ` · ${p.details}` : ""} · ${rm(p.price)} | ${BRAND}`,
-      description: desc.slice(0, 170), canonical, image, type: "product",
-      extra: `<meta property="product:price:amount" content="${Number(p.price).toFixed(2)}"><meta property="product:price:currency" content="MYR">` + ld(productLd(p, image)),
+      title: `${nice} · ${rm(p.price)} | ${BRAND} Malaysia`,
+      description: `${nice}${p.details && p.details !== `${p.size} mm` ? ` (${p.details.replace(/\s*·?\s*\d+(\.\d+)? mm$/, "")})` : ""} for ${rm(p.price)}. ${info && info.belief ? info.belief + " " : ""}Cleansed before dispatch, delivery across Malaysia.`.slice(0, 200),
+      canonical, image, type: "product",
+      extra: `<meta property="product:price:amount" content="${Number(p.price).toFixed(2)}"><meta property="product:price:currency" content="MYR">` +
+        ld(productLd(p, image, { description: [desc, about].filter(Boolean).join(" ").slice(0, 1000), crumb: info ? [sName, "/crystals/" + info.slug] : null })),
     });
-    html = putSsr(html, ssr(`<nav><a href="/">${BRAND}</a>${p.collectionName ? " › " + e2(p.collectionName) : ""}</nav>
-      <h1>${e2(p.name)}</h1>${p.details ? `<p>${e2(p.details)}</p>` : ""}<p><strong>${rm(p.price)}</strong> · ${p.soldOut ? "Sold out" : "In stock"} · Item ${e2(p.id)}</p>
+    html = putSsr(html, ssr(`<nav><a href="/">${BRAND}</a>${info ? ` › <a href="/crystals/${info.slug}">${e2(sName)}</a>` : p.collectionName ? " › " + e2(p.collectionName) : ""}</nav>
+      <h1>${e2(nice)}</h1>${p.details ? `<p>${e2(p.details)}</p>` : ""}<p><strong>${rm(p.price)}</strong> · ${p.soldOut ? "Sold out" : "In stock"} · Item ${e2(p.id)}</p>
       <img src="${e2(image)}" alt="${e2(p.name)}" width="600" height="600"><p>${e2(desc)}</p>
-      <p>Natural gemstones may vary in colour, clarity and patterns. Delivery across Malaysia; see <a href="/policies">shipping &amp; returns</a>.</p>`));
+      ${about ? `<h2>About ${e2(sName)}</h2><p>${e2(about)}</p><p><a href="/crystals/${info.slug}">More ${e2(sName)} pieces and meaning</a></p>` : ""}
+      <p>Natural gemstones may vary in colour, clarity and patterns. Dispatched in 1–2 working days; delivery RM10 West Malaysia, RM20 East Malaysia; 14-day returns. See <a href="/policies">shipping &amp; returns</a>.</p>`));
   } else {
     html = html.replace("</head>", '<meta name="robots" content="noindex"></head>');
   }

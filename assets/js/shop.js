@@ -132,7 +132,7 @@ function renderHome(){
   ${secs.join('\n')}
   ${faqHTML()}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
-    <nav class="foot-links"><a href="/policies.html">Shipping &amp; returns</a><a href="/policies.html#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
+    <nav class="foot-links"><a href="/crystals">Crystal meanings</a><a href="/bracelets">Bracelets</a><a href="/policies">Shipping &amp; returns</a><a href="/policies#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
     <p class="foot-gem"><b>Please Note:</b> Due to the natural characteristics of gemstones, variations in colour, tone, clarity and patterns may occur. Actual product colours may also differ slightly from photographs due to lighting conditions, photography and individual screen settings. These natural variations contribute to the unique beauty and individuality of each piece.</p>
     <p>Prices in Malaysian Ringgit.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
   document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
