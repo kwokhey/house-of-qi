@@ -915,3 +915,19 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 /* phones: tap the photo to zoom, no magnifier button */
 #shImg{cursor:zoom-in}
 @media (max-width:999px){.sh-zoom{display:none}}
+
+/* ---------- questions & answers ---------- */
+.faq{padding:56px 22px 20px}
+.faq-in{max-width:760px;margin:0 auto}
+.faq h2{margin:6px 0 22px}
+.faq-i{border-top:1px solid var(--line,rgba(59,44,35,.14))}
+.faq-i:last-child{border-bottom:1px solid var(--line,rgba(59,44,35,.14))}
+.faq-i summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 2px;font-size:15.5px;font-weight:500;color:var(--ink,#2E221C)}
+.faq-i summary::-webkit-details-marker{display:none}
+.faq-i summary i{flex:none;width:12px;height:12px;position:relative}
+.faq-i summary i::before,.faq-i summary i::after{content:"";position:absolute;left:0;right:0;top:50%;height:1.5px;margin-top:-.75px;background:currentColor;transition:transform .25s}
+.faq-i summary i::after{transform:rotate(90deg)}
+.faq-i[open] summary i::after{transform:rotate(0)}
+.faq-i p{margin:0 2px 18px;font-size:14px;line-height:1.7;color:var(--ink-2,#6E5A4E);max-width:640px}
+@media (min-width:1000px){.faq{padding:80px 40px 30px}}
+.faq h2{font-size:clamp(30px,4.2vw,46px);line-height:1.05}

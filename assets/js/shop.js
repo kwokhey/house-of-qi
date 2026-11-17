@@ -130,6 +130,7 @@ function renderHome(){
   ${collSec}${colSec}${birthSec}${chakSec}
   <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
+  ${faqHTML()}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
     <nav class="foot-links"><a href="/policies.html">Shipping &amp; returns</a><a href="/policies.html#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
     <p class="foot-gem"><b>Please Note:</b> Due to the natural characteristics of gemstones, variations in colour, tone, clarity and patterns may occur. Actual product colours may also differ slightly from photographs due to lighting conditions, photography and individual screen settings. These natural variations contribute to the unique beauty and individuality of each piece.</p>
@@ -183,6 +184,11 @@ function initBan(){const r=$('#ban');clearTimeout(BAN.t);if(!r)return;BAN.i=0;co
   if('IntersectionObserver' in window)new IntersectionObserver(es=>{BAN.seen=es[0].isIntersecting;banTimer()},{threshold:.3}).observe(r);
   if(!BAN.vis){BAN.vis=1;document.addEventListener('visibilitychange',banTimer)}
   banTimer()}
+
+/* questions & answers (same answers search engines and AI assistants read) */
+function faqHTML(){const Q=CFG.faqs||[];if(!Q.length)return'';
+  return`<section class="faq gx" id="faq" aria-labelledby="faqH"><div class="faq-in"><span class="eyebrow">Good to know</span><h2 class="disp" id="faqH">Questions &amp; <em>answers</em></h2>
+  <div class="faq-list">${Q.map(([q,a])=>`<details class="faq-i"><summary>${esc(q)}<i aria-hidden="true"></i></summary><p>${esc(a)}</p></details>`).join('')}</div></div></section>`}
 let spyLock=0;
 let SPY=[];
 function hdrH(){return $('#topbar').offsetHeight+($('.tabs')?.offsetHeight||0)}
@@ -361,6 +367,8 @@ function removeLine(li,l){vib(8);const h=li.offsetHeight;const done=()=>{S.cart=
   if(li.animate){li.animate([{height:h+'px',opacity:1,transform:'none'},{height:h+'px',opacity:0,transform:'translateX(-30px)',offset:.45},{height:'0px',opacity:0,paddingTop:'0px',paddingBottom:'0px',transform:'translateX(-30px)'}],{duration:380,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished.then(done,done)}else done()}
 
 
+/* the plain-HTML copy of the page is for search engines and AI assistants; the shop takes over from here */
+(()=>{const s=document.getElementById('ssr');if(s)s.remove()})();
 /* affiliate link: ?ref=CODE credits the friend who shared it (kept for 30 days) */
 const REF_KEY='hq-ref',REF_DAYS=30;
 (()=>{const r=new URLSearchParams(location.search).get('ref');if(r&&/^[A-Za-z0-9-]{2,24}$/.test(r)){try{localStorage.setItem(REF_KEY,JSON.stringify({c:r.toUpperCase(),t:Date.now()}))}catch(e){}}})();

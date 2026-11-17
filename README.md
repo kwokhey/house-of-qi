@@ -163,3 +163,10 @@ Website orders are credited automatically once paid. If a customer came through 
 ### Consignment (seller holds the pieces)
 
 In Marketing → Affiliates, open a seller and use **+ Give pieces**. The pieces leave the website stock, and the Stock page shows "x with sellers". When the seller reports a sale, press **Sold**: it counts as a sale, the seller keeps their commission, and "They owe you" shows the rest. Press **Mark … as received** once they've paid. Unsold pieces go back into stock with **Returned**. Each entry can be undone from the seller's History. The seller's private page lists the pieces they hold and what they need to pay.
+
+## Search engines & AI assistants (SEO / AEO)
+
+- **Official address:** https://houseofqi.shop. house-of-qi.pages.dev and www.houseofqi.shop permanently redirect there (`functions/_middleware.js`).
+- **Home (`functions/index.js`) and product pages (`functions/p/[id].js`):** page-specific title, description and canonical link; structured data (OnlineStore, WebSite, FAQPage, ItemList, and Product with price, MYR and stock); and a plain-HTML copy of the content (`#ssr`) for crawlers that don't run JavaScript. The shop script removes `#ssr` when it starts.
+- **`/sitemap.xml`, `/llms.txt` (a plain summary for AI assistants) and `/robots.txt`.**
+- **Questions & answers:** shown on the home page and sent to search engines. The text lives in `functions/_lib/seo.js` (`faqs`) and matches policies.html.

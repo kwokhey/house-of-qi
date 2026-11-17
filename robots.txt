@@ -1,0 +1,10 @@
+# House of Qi · https://houseofqi.shop
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /a/
+Disallow: /track
+Disallow: /tags.html
+
+Sitemap: https://houseofqi.shop/sitemap.xml

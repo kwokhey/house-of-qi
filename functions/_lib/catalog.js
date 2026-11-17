@@ -6,6 +6,7 @@
 import { db, hasDB, itemName, itemDetails, getSetting } from "./db.js";
 import { applySales, liveSales, shopPromo, saleCovers } from "./promo.js";
 import { COLOURS, colourOf } from "./colours.js";
+import { faqs } from "./seo.js";
 
 export async function loadSettings(env, origin) {
   const res = await env.ASSETS.fetch(new URL("/data/catalog.json", origin));
@@ -95,7 +96,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, coverImg: c.cover_v ? `img/coll-${c.id}.jpg?v=${c.cover_v}` : "", ids };
   }).filter((c) => c.ids.length);
   const { samplePhotos, _samplePhotosNote, ...pub } = settings;
-  return { ...pub, banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
+  return { ...pub, faqs: faqs(settings), banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
 }
 
 function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }

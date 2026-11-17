@@ -22,3 +22,9 @@
 
 /track*
   X-Robots-Tag: noindex
+
+/a/*
+  X-Robots-Tag: noindex, nofollow
+
+/tags.html
+  X-Robots-Tag: noindex, nofollow

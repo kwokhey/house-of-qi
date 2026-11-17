@@ -5,6 +5,7 @@
  */
 import { buildCatalog } from "../_lib/catalog.js";
 import { db, hasDB } from "../_lib/db.js";
+import { SITE, BRAND, esc as e2, RM as rm, ld, productLd, productDesc, setHead, ssr, putSsr } from "../_lib/seo.js";
 
 /** Photo for the link preview: real/sample photo → saved drawing → pre-made drawing → logo */
 async function previewPath(env, url, p) {
@@ -31,17 +32,25 @@ export async function onRequestGet({ request, env, params }) {
   const page = await env.ASSETS.fetch(new URL("/", url).toString());
   let html = await page.text();
   let p = null;
-  try { const cat = await buildCatalog(env, url.origin); p = cat.products.find((x) => x.id === id) || null; } catch {}
+  let cat = null;
+  try { cat = await buildCatalog(env, url.origin); p = cat.products.find((x) => x.id === id) || null; } catch {}
   if (p) {
-    const RM = (n) => "RM" + Number(n).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    const title = `${p.name}${p.details ? ` · ${p.details}` : ""} · ${RM(p.price)}`;
-    const desc = (p.description || "Natural crystal jewellery from House of Qi.").slice(0, 180);
-    const image = new URL(await previewPath(env, url, p), url.origin).toString();
-    html = html
-      .replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${esc(title)}">`)
-      .replace(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${esc(desc)}">`)
-      .replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="${esc(image)}"><meta property="og:url" content="${esc(url.toString())}"><meta name="twitter:card" content="summary_large_image">`)
-      .replace(/<title>[^<]*<\/title>/, `<title>${esc(p.name)} · House of Qi</title>`);
+    const coll = (cat && (cat.collections || []).find((c) => c.id === p.collection)) || null;
+    p.collectionName = coll ? coll.name : "";
+    const image = new URL(await previewPath(env, url, p), SITE).toString();
+    const canonical = `${SITE}/p/${encodeURIComponent(p.id)}`;
+    const desc = productDesc(p);
+    html = setHead(html, {
+      title: `${p.name}${p.details ? ` · ${p.details}` : ""} · ${rm(p.price)} | ${BRAND}`,
+      description: desc.slice(0, 170), canonical, image, type: "product",
+      extra: `<meta property="product:price:amount" content="${Number(p.price).toFixed(2)}"><meta property="product:price:currency" content="MYR">` + ld(productLd(p, image)),
+    });
+    html = putSsr(html, ssr(`<nav><a href="/">${BRAND}</a>${p.collectionName ? " › " + e2(p.collectionName) : ""}</nav>
+      <h1>${e2(p.name)}</h1>${p.details ? `<p>${e2(p.details)}</p>` : ""}<p><strong>${rm(p.price)}</strong> · ${p.soldOut ? "Sold out" : "In stock"} · Item ${e2(p.id)}</p>
+      <img src="${e2(image)}" alt="${e2(p.name)}" width="600" height="600"><p>${e2(desc)}</p>
+      <p>Natural gemstones may vary in colour, clarity and patterns. Delivery across Malaysia; see <a href="/policies">shipping &amp; returns</a>.</p>`));
+  } else {
+    html = html.replace("</head>", '<meta name="robots" content="noindex"></head>');
   }
   html = html.replace("</head>", `<script>window.OPEN_P=${JSON.stringify(id)}</script></head>`);
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
