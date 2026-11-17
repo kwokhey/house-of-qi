@@ -53,7 +53,7 @@ function itemList(name, pieces) {
 const crumbs = (trail) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList",
   itemListElement: trail.map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: SITE + path })) });
 
-function page({ title, description, path, h1, body, schema = [], image }) {
+function page({ title, description, path, h1, body, schema = [], image, noindex = false }) {
   const canonical = SITE + path;
   return `<!doctype html>
 <html lang="en-MY">
@@ -61,7 +61,7 @@ function page({ title, description, path, h1, body, schema = [], image }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
+<meta name="description" content="${esc(description)}">${noindex ? '\n<meta name="robots" content="noindex">' : ""}
 <link rel="canonical" href="${esc(canonical)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}"><meta property="og:type" content="website"><meta property="og:site_name" content="${BRAND}"><meta property="og:locale" content="en_MY">
@@ -177,7 +177,7 @@ export function categoryPage(cat, key) {
   ${stones.length > 1 ? `<h2>Shop by stone</h2><ul class="tags">${stones.map((s) => `<li><a href="/crystals/${slug(s.stone)}">${esc(s.stone)}</a> <span class="note">(${s.pieces.length})</span></li>`).join("")}</ul>` : ""}
   ${key === "bracelets" && sizes.length ? `<h2>Choosing a bead size</h2><p>Bead size is the width of each bead. 4–6 mm beads are delicate and easy to stack, 8 mm is the classic everyday size, and 10–14 mm beads make a bolder statement. We currently have ${sizes.join(", ")} mm.</p>` : ""}
   <h2>All ${c.name.toLowerCase()}</h2>${pieces.length ? cards(pieces) : "<p>New pieces are coming soon.</p>"}`;
-  return page({ title: `${c.title} | ${BRAND}`, description: c.intro.replace(/^(.{0,158}\.).*$/, "$1"), path: "/" + key, h1: c.title, body,
+  return page({ title: `${c.title} | ${BRAND}`, description: c.intro.replace(/^(.{0,158}\.).*$/, "$1"), path: "/" + key, h1: c.title, body, noindex: !pieces.length,
     image: pieces[0] && img(pieces[0]), schema: [
       { "@context": "https://schema.org", "@type": "CollectionPage", name: c.title, url: SITE + "/" + key, isPartOf: { "@id": SITE + "/#website" } },
       itemList(c.title, pieces), crumbs([[BRAND, "/"], [c.name, "/" + key]]),
