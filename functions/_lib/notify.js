@@ -52,18 +52,41 @@ export async function notifyOrder(env, D, s) {
   if (!String(s.id).startsWith("cs_live_") && !env.NOTIFY_TEST) return false; // only real orders
   const claim = await D.prepare("INSERT OR IGNORE INTO notified (sid, at) VALUES (?, ?)").bind(s.id, Date.now()).run();
   if (!claim.meta || !claim.meta.changes) return false; // already sent
-  let to = DEFAULT_TO;
-  try { const v = await getSetting(D, "order_emails"); if (v) to = v.split(/[,\s]+/).filter((x) => /@/.test(x)); } catch {}
-  const m = orderEmail(s);
+  const res = await sendTeam(env, D, orderEmail(s));
+  if (!res.ok) {
+    console.error("order email", res.status, res.error);
+    await D.prepare("DELETE FROM notified WHERE sid = ?").bind(s.id).run(); // let the next trigger retry
+    return false;
+  }
+  return true;
+}
+
+/** Who gets the team email */
+export async function teamList(D) {
+  try { const v = D && (await getSetting(D, "order_emails")); if (v) return v.split(/[,\s]+/).filter((x) => /@/.test(x)); } catch {}
+  return DEFAULT_TO;
+}
+
+/** Send one email to the team through Resend */
+export async function sendTeam(env, D, m) {
+  const to = await teamList(D);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: env.ORDER_EMAIL_FROM || FROM, to, subject: m.subject, html: m.html, text: m.text, ...(m.replyTo ? { reply_to: m.replyTo } : {}) }),
   });
-  if (!res.ok) {
-    console.error("order email", res.status, await res.text().catch(() => ""));
-    await D.prepare("DELETE FROM notified WHERE sid = ?").bind(s.id).run(); // let the next trigger retry
-    return false;
-  }
-  return true;
+  const body = await res.text().catch(() => "");
+  return { ok: res.ok, status: res.status, error: res.ok ? "" : body.slice(0, 300), to };
+}
+
+/** A clearly marked sample order, for the "send test email" button */
+export function sampleEmail() {
+  const s = { id: "cs_live_SAMPLE", created: Math.floor(Date.now() / 1000), payment_status: "paid", amount_subtotal: 9600, amount_total: 10600, total_details: { amount_shipping: 1000, amount_discount: 0 },
+    metadata: { order_no: "TEST-0000", delivery: "West Malaysia", pickup: "no", gift_notes: "Amethyst Bracelet: (sample) please make it 16 cm", i1: "1× Amethyst Bracelet · Deep purple · 10 mm", i2: "1× Moss Agate Bracelet · 6 mm" },
+    line_items: { data: [{ description: "Amethyst Bracelet", quantity: 1, amount_subtotal: 6800 }, { description: "Moss Agate Bracelet", quantity: 1, amount_subtotal: 2800 }] },
+    customer_details: { name: "Sample Customer", email: "", phone: "+60120000000" },
+    shipping_details: { name: "Sample Customer", address: { line1: "1 Jalan Contoh", postal_code: "50000", city: "Kuala Lumpur", state: "Kuala Lumpur", country: "MY" } } };
+  const m = orderEmail(s);
+  const note = `<p style="background:#fff3cd;padding:10px 14px;border-radius:8px;font-family:Arial,sans-serif;font-size:14px">TEST EMAIL · This is a sample to show what the team receives for each paid order. No order was placed.</p>`;
+  return { subject: "[TEST] " + m.subject, html: note + m.html, text: "TEST EMAIL · sample only, no order was placed.\n\n" + m.text };
 }
