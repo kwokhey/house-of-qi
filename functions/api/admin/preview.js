@@ -5,6 +5,7 @@
  *   GET  /api/admin/preview            → { prev: { ITEM: updated_at }, staticAt }
  *   POST /api/admin/preview { id, data }
  */
+import { realImage } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
@@ -30,6 +31,7 @@ export async function onRequestPost({ request, env }) {
   if (!m) return json({ error: "Bad image." }, 400);
   const bin = Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0));
   if (bin.length > 400_000) return json({ error: "Too large." }, 413);
+  if (!realImage(bin, "image/jpeg")) return json({ error: "Bad image." }, 400);
   const item = await D.prepare("SELECT id FROM items WHERE id = ?").bind(String(b.id || "")).first();
   if (!item) return json({ error: "Item not found." }, 404);
   await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, 'image/jpeg', ?, ?) ON CONFLICT(item_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at").bind("prev-" + item.id, bin, Date.now()).run();

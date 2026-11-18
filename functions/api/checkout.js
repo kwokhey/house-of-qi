@@ -58,7 +58,7 @@ export async function onRequestPost({ request, env }) {
   });
   const session = await res.json();
   if (!res.ok) {
-    console.error("Stripe error", JSON.stringify(session?.error));
+    console.error("Stripe error", session?.error?.type || "", session?.error?.code || "", session?.error?.param || "");
     return json({ error: "We couldn't open the payment page. Please try again in a moment." }, 502);
   }
   return json({ url: session.url });

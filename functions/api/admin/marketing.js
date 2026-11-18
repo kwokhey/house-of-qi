@@ -9,6 +9,7 @@
  *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3 | ?type=collection&id=2
  * Dates are "YYYY-MM-DD" in Malaysia time; a sale/code runs from the start of the first day to the end of the last.
  */
+import { realImage } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, getSetting, setSetting } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
@@ -123,6 +124,7 @@ export async function onRequestPost({ request, env }) {
     if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
     const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
     if (bin.length > 1_500_000) return json({ error: "That photo is too large. Please try another." }, 413);
+    if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
     await D.batch([
       D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(`coll-${id}`, m[1], bin, now),
       D.prepare("UPDATE collections SET cover_v = ?, updated_at = ? WHERE id = ?").bind(now, now, id),
@@ -142,6 +144,7 @@ export async function onRequestPost({ request, env }) {
       if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
       const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
       if (bin.length > 1_800_000) return json({ error: "That photo is too large. Please try another." }, 413);
+      if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
       const k = `banner-${now}`;
       await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(k, m[1], bin, now).run();
       photos.push({ k, v: now });

@@ -330,7 +330,7 @@
     d.innerHTML = `<div class="ed"><div class="ed-h"><b>Import stock</b><button type="button" class="link" data-x>Close</button></div>
       <p class="lede">Bring in your inventory list. Rows are matched by Item ID, so importing the same list again updates it instead of adding duplicates.</p>
       <div class="imp-opts">
-        <label class="btn ghost">Choose Excel or CSV file<input type="file" id="iFile" accept=".xlsx,.xls,.csv" hidden></label>
+        <label class="btn ghost">Choose Excel or CSV file<input type="file" id="iFile" accept=".xlsx,.csv" hidden></label>
         <span class="or">or</span>
         <div class="imp-url"><input id="iUrl" placeholder="Paste a Google Sheets link"><button class="btn sm" id="iUrlGo">Read sheet</button></div>
       </div>
@@ -362,9 +362,19 @@
       let rows;
       if (/\.csv$/i.test(file.name)) rows = StockImport.csv(await file.text());
       else {
-        await loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
-        const wb = XLSX.read(await file.arrayBuffer());
-        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: "" });
+        if (/\.xls$/i.test(file.name)) throw new Error("Please save the sheet as .xlsx or .csv first (old .xls files aren't supported).");
+        await loadScript(EXCELJS);
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(await file.arrayBuffer());
+        const ws = wb.worksheets[0];
+        if (!ws) throw new Error("That file has no sheets.");
+        rows = [];
+        ws.eachRow({ includeEmpty: true }, (row, n) => {
+          const out = [];
+          for (let c = 1; c <= ws.columnCount; c++) { const cell = row.getCell(c); out.push(cell.text == null ? "" : String(cell.text)); }
+          rows[n - 1] = out;
+        });
+        for (let i = 0; i < rows.length; i++) if (!rows[i]) rows[i] = [];
       }
       preview(rows);
     } catch (x) { iErr(x.message); }
@@ -400,12 +410,13 @@
   }
 
   /* ---------- export to Excel, with photos ---------- */
+  const EXCELJS = "/assets/vendor/exceljs-4.4.0.min.js"; // self-hosted (no third-party CDN)
   const loadScript = (src) => new Promise((ok, no) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("Couldn't load the Excel tool. Check your connection.")); document.head.appendChild(s); });
   async function exportExcel() {
     if (!ITEMS.length) return toast("Nothing to export yet");
     toast("Preparing Excel file…");
     try {
-      await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js");
+      await loadScript(EXCELJS);
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet("Stock", { views: [{ state: "frozen", ySplit: 1 }] });
       ws.columns = [
