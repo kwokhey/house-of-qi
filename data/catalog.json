@@ -8,33 +8,36 @@
   ],
   "shipping": {
     "west": {
-      "label": "West Malaysia (Semenanjung)",
-      "note": "DHL · 3–5 working days · up to 500 g",
+      "label": "West Malaysia (Peninsular)",
+      "note": "DHL · 3–5 working days",
       "fee": 10,
+      "extra": 2,
+      "perItems": 3,
       "days": [
         3,
         5
       ],
-      "country": "MY",
-      "maxG": 500
+      "country": "MY"
     },
     "east": {
       "label": "East Malaysia",
-      "note": "Sabah, Sarawak & Labuan · DHL · 5–7 working days · up to 500 g",
+      "note": "Sabah, Sarawak & Labuan · DHL · 5–7 working days",
       "fee": 20,
+      "extra": 5,
+      "perItems": 3,
       "days": [
         5,
         7
       ],
-      "country": "MY",
-      "maxG": 500
+      "country": "MY"
     },
     "sg": {
       "label": "Singapore",
-      "note": "DHL · up to 500 g",
+      "note": "DHL",
       "fee": 88,
-      "country": "SG",
-      "maxG": 500
+      "extra": 15,
+      "perItems": 3,
+      "country": "SG"
     },
     "sgpick": {
       "label": "Singapore self-collect",
@@ -52,7 +55,7 @@
     },
     "intl": {
       "label": "Other countries",
-      "note": "DHL worldwide · contact our customer service for a quote",
+      "note": "Contact our customer service for a quote",
       "fee": 0,
       "contact": true
     }

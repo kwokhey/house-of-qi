@@ -66,12 +66,12 @@ export function priceOrder(catalog, items, shipKey) {
   if (!ship) return { error: "Please choose a delivery option." };
   // international orders are arranged with customer service, not paid online
   if (ship.contact) return { error: "For delivery to other countries, please contact our customer service on WhatsApp before ordering." };
-  const grams = lines.reduce((t, l) => t + (Number(l.product.grams) || 0) * l.qty, 0);
-  if (ship.maxG && grams > ship.maxG) return { error: `This order is over ${ship.maxG} g, so the ${ship.label} DHL rate doesn't apply. Please WhatsApp us for a delivery quote.`, overweight: true };
+
 
   const subtotal = round2(lines.reduce((t, l) => t + l.unit * l.qty, 0));
-  const fee = ship.fee;
-  return { lines, ship, shipKey, subtotal, fee, total: round2(subtotal + fee) };
+  const count = lines.reduce((t, l) => t + l.qty, 0);
+  const fee = shipFee(ship, count);
+  return { lines, ship, shipKey, subtotal, fee, count, weightNote: weightNote(ship, count), total: round2(subtotal + fee) };
 }
 
 /** Short, readable order number, e.g. HQ-241112-7K3P */
@@ -91,3 +91,14 @@ export function json(data, status = 200) {
 }
 
 export { buildCatalog as loadCatalog } from "./catalog.js";
+
+/**
+ * Delivery fee by number of pieces: 1–3 pieces (estimated up to 500 g) pay the base rate;
+ * every further block of 3 pieces adds ship.extra (e.g. Peninsular RM10, 4–6 pieces RM12, 7–9 pieces RM14).
+ */
+export function shipFee(ship, count) {
+  if (!ship || ship.pickup || ship.contact) return 0;
+  const per = ship.perItems || 3, blocks = Math.max(1, Math.ceil((count || 1) / per));
+  return round2(ship.fee + (blocks - 1) * (ship.extra || 0));
+}
+export const weightNote = (ship, count) => (ship && !ship.pickup && !ship.contact ? ((count || 1) > (ship.perItems || 3) ? "estimated over 500 g" : "up to 500 g") : "");

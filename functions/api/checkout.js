@@ -104,7 +104,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   // Delivery: the customer already picked it on our site, so we pass exactly one option
   const s = order.ship, r = "shipping_options[0][shipping_rate_data]";
   p.append(`${r}[type]`, "fixed_amount");
-  p.append(`${r}[display_name]`, s.note ? `${s.label} (${s.note.split(" · ")[0]})` : s.label);
+  p.append(`${r}[display_name]`, [s.label, order.weightNote, order.count > 1 ? `${order.count} pieces` : ""].filter(Boolean).join(" · ").slice(0, 100));
   p.append(`${r}[fixed_amount][amount]`, String(Math.round(order.fee * 100)));
   p.append(`${r}[fixed_amount][currency]`, cur);
   if (s.days) {
