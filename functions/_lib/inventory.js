@@ -65,19 +65,21 @@ export async function syncSales(env, { force = false } = {}) {
   if (!force && now - lastRun < 30_000) return 0;
   await setSetting(D, "sync_run", now);
 
-  const since = Number(await getSetting(D, "sync_since")) || Math.floor(now / 1000) - 30 * 86400;
+  // Only look back a little: the Stripe account also has checkouts from other shops, and reading
+  // hundreds of them on every page view uses up the server's time limit.
+  const since = Math.max(Number(await getSetting(D, "sync_since")) || 0, Math.floor(now / 1000) - 2 * 86400);
   // orders before a cleared test-order list, or before "Start over" in Stock, don't count towards stock again
   const hiddenBefore = Math.max(Number(await getSetting(D, "orders_hidden_before")) || 0, Number(await getSetting(D, "stock_reset_at")) || 0);
   let after = null, newest = since, recorded = 0;
-  for (let page = 0; page < 5; page++) {
-    const p = new URLSearchParams({ limit: "100", status: "complete" });
+  for (let page = 0; page < 2; page++) {
+    const p = new URLSearchParams({ limit: "50", status: "complete" });
     p.set("created[gte]", String(since - 3600));
     if (after) p.set("starting_after", after);
     const list = await stripe(env, "checkout/sessions", { params: p });
     for (const s of list.data) {
+      if (s.created > newest) newest = s.created; // move forward past every checkout seen, ours or not
       if (!s.metadata?.order_no || s.created <= hiddenBefore) continue;
       recorded += await recordSession(D, s);
-      if (s.created > newest) newest = s.created;
     }
     if (!list.has_more) break;
     after = list.data[list.data.length - 1].id;

@@ -10,3 +10,10 @@ export function realImage(bytes, mime) {
   const webp = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
   return (mime === "image/jpeg" && jpeg) || (mime === "image/png" && png) || (mime === "image/webp" && webp);
 }
+
+/** Fast base64 → bytes (a plain loop is much cheaper than Uint8Array.from with a callback) */
+export function b64(str) {
+  const s = atob(str), n = s.length, out = new Uint8Array(n);
+  for (let i = 0; i < n; i++) out[i] = s.charCodeAt(i);
+  return out;
+}

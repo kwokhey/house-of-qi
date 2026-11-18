@@ -9,7 +9,7 @@
  *   DELETE /api/admin/marketing?type=coupon&code=QI10 | ?type=sale&id=3 | ?type=collection&id=2
  * Dates are "YYYY-MM-DD" in Malaysia time; a sale/code runs from the start of the first day to the end of the last.
  */
-import { realImage } from "../../_lib/upload.js";
+import { realImage, b64 } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, getSetting, setSetting } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
@@ -122,7 +122,7 @@ export async function onRequestPost({ request, env }) {
     }
     const m = String(b.data).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
     if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
-    const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+    const bin = b64(m[2]);
     if (bin.length > 1_500_000) return json({ error: "That photo is too large. Please try another." }, 413);
     if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
     await D.batch([
@@ -142,7 +142,7 @@ export async function onRequestPost({ request, env }) {
       if (photos.length >= 8) return json({ error: "The banner can hold up to 8 photos. Remove one first." }, 400);
       const m = String(b.data || "").match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
       if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
-      const bin = Uint8Array.from(atob(m[2]), (ch) => ch.charCodeAt(0));
+      const bin = b64(m[2]);
       if (bin.length > 1_800_000) return json({ error: "That photo is too large. Please try another." }, 413);
       if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
       const k = `banner-${now}`;

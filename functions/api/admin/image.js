@@ -8,7 +8,7 @@
  *   DELETE /api/admin/image?id=ITEM&k=KEY   → remove one extra angle
  *   DELETE /api/admin/image?id=ITEM
  */
-import { realImage } from "../../_lib/upload.js";
+import { realImage, b64 } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
@@ -22,7 +22,7 @@ export async function onRequestPost({ request, env }) {
   if (b.action === "move") return moveAngle(D, b);
   const m = String(b.data || "").match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/);
   if (!m) return json({ error: "Please choose a JPG, PNG or WebP photo." }, 400);
-  const bin = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+  const bin = b64(m[2]);
   if (bin.length > 1_500_000) return json({ error: "That photo is too large. Please try another." }, 413);
   if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
   const item = await D.prepare("SELECT id, gallery FROM items WHERE id = ?").bind(String(b.id || "")).first();
@@ -47,7 +47,7 @@ export async function onRequestPost({ request, env }) {
   }
   const o = b.orig ? String(b.orig).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/) : null;
   if (o) {
-    const ob = Uint8Array.from(atob(o[2]), (c) => c.charCodeAt(0));
+    const ob = b64(o[2]);
     if (ob.length <= 1_900_000 && realImage(ob, o[1])) st.push(D.prepare(UPSERT).bind(`orig-${key}`, o[1], ob, now));
   }
   await D.batch(st);

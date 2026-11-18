@@ -5,7 +5,7 @@
  *   GET  /api/admin/preview            → { prev: { ITEM: updated_at }, staticAt }
  *   POST /api/admin/preview { id, data }
  */
-import { realImage } from "../../_lib/upload.js";
+import { realImage, b64 } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
@@ -29,7 +29,7 @@ export async function onRequestPost({ request, env }) {
   try { b = await request.json(); } catch {}
   const m = String(b.data || "").match(/^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/);
   if (!m) return json({ error: "Bad image." }, 400);
-  const bin = Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0));
+  const bin = b64(m[1]);
   if (bin.length > 400_000) return json({ error: "Too large." }, 413);
   if (!realImage(bin, "image/jpeg")) return json({ error: "Bad image." }, 400);
   const item = await D.prepare("SELECT id FROM items WHERE id = ?").bind(String(b.id || "")).first();
