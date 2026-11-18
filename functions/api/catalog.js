@@ -15,6 +15,6 @@ export async function onRequestGet({ request, env, waitUntil }) {
     });
   } catch (e) {
     console.error("catalog", e.message);
-    return new Response(JSON.stringify({ error: "Catalogue unavailable", why: String(e && e.message).slice(0, 200) }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Catalogue unavailable" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
