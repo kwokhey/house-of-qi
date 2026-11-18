@@ -9,7 +9,7 @@ async function loadCatalog(){
   if(!r||!r.ok)r=await fetch('/data/catalog.json',{cache:'no-cache'});
   if(!r.ok)throw new Error('catalog');const d=await r.json();
   CFG=d;
-  SHIP=Object.fromEntries(Object.entries(d.shipping).map(([k,s])=>[k,{...s,sub:s.note,eta:s.days?`${s.days[0]}–${s.days[1]} working days`:'By appointment'}]));
+  SHIP=Object.fromEntries(Object.entries(d.shipping).map(([k,s])=>[k,{...s,sub:s.note,eta:s.days?`${s.days[0]}–${s.days[1]} working days`:s.pickup?'By appointment':'DHL'}]));
   TABS=d.collections.map(c=>[c.id,c.name,c.zh,c.layout]);
   INTENTS=Object.fromEntries(Object.entries(d.intentions).map(([k,v])=>[k,[v.name,v.colour]]));
   CAT=d.products.map(p=>({...p,details:p.details||'',cat:p.collection,best:p.bestseller||0,sig:p.signature,nov:p.spotlight,desc:p.description||'',blurb:p.blurb||'',ints:p.intentions||[],grade:p.quality||'',meaning:p.meaning||'',zh:p.zh||'',stone:p.stone||'',
@@ -61,7 +61,10 @@ const unit=(m,sel)=>R2(m.price+m.groups.reduce((t,g)=>{const v=sel[g.id];if(g.ty
 const hasFrom=m=>m.groups.some(g=>g.type==='one'&&g.opts.some(o=>o[2]>0));
 function optText(m,sel){const out=[];for(const g of m.groups){const v=sel[g.id];if(g.type==='many'){g.opts.filter(o=>v.includes(o[0])).forEach(o=>out.push(o[1]));continue}const o=g.opts.find(o=>o[0]===v);if(o)out.push(o[4]||o[1])}return out}
 const lineTotal=l=>R2(unit(BY[l.id],l.sel)*l.qty);
-function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||Object.values(SHIP)[0];let fee=s.contact?0:s.fee;
+const cartG=(lines=S.cart)=>lines.reduce((t,l)=>t+((BY[l.id]&&BY[l.id].grams)||0)*l.qty,0);
+const overW=(k,lines=S.cart)=>!!(SHIP[k]&&SHIP[k].maxG&&cartG(lines)>SHIP[k].maxG);
+const quoteShip=(k,lines=S.cart)=>!!(SHIP[k]&&(SHIP[k].contact||overW(k,lines)));
+function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||Object.values(SHIP)[0];let fee=quoteShip(ship,lines)?0:s.fee;
   const p=lines===S.cart&&ship===S.ship&&promoOK()?S.promo:null;if(p&&p.freeShip)fee=0;const disc=p?p.discount:0;
   return{sub,fee,disc,code:p?p.code:'',freeCode:!!(p&&p.freeShip),total:R2(sub-disc+fee),count:lines.reduce((t,l)=>t+l.qty,0)}}
 function pruneCart(){S.cart=S.cart.filter(l=>{const m=BY[l.id];if(!m||m.soldOut||!l.sel)return false;for(const g of m.groups){const v=l.sel[g.id];if(g.type==='many'){if(!Array.isArray(v))return false}else if(!g.opts.some(o=>o[0]===v))return false}return true});if(!SHIP[S.ship])S.ship=Object.keys(SHIP)[0];save()}
@@ -379,7 +382,7 @@ async function applyRef(){const c=getRef();if(!c||S.code)return;
     if(r.ok&&d.ok&&!S.code){S.code=d.code;S.promo={...d,sig:bagSig()};save();refreshCo()}else if(!r.ok){try{localStorage.removeItem(REF_KEY)}catch(e){}}}catch(e){}}
 /* ---------- checkout ---------- */
 function coSum(){const t=totals();return`<span class="eyebrow">Your order · ${t.count} piece${t.count===1?'':'s'}</span><ul>${S.cart.map(l=>{const m=BY[l.id];return`<li><img src="${img(l.id)}" alt=""><span class="n">${l.qty>1?l.qty+'× ':''}${esc(m.name)}<small>${optText(m,l.sel).slice(0,2).join(' · ')}</small></span><span class="num">${RM(lineTotal(l))}</span></li>`}).join('')}</ul>${totHTML()}`}
-function totHTML(){const t=totals();if(isIntl())return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>International delivery</span><span class="num">Quoted by us</span></div></div>`;return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${SHIP[S.ship].pickup?'No charge':RM(t.fee)}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
+function totHTML(){const t=totals();if(isIntl())return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div><div class="tr"><span>${overW(S.ship)?`DHL delivery (over ${SHIP[S.ship].maxG} g)`:'Delivery'}</span><span class="num">Quoted by us</span></div></div>`;return`<div class="totals"><div class="tr"><span>Subtotal</span><span class="num">${RM(t.sub)}</span></div>${t.disc?`<div class="tr disc"><span>Code ${esc(t.code)}</span><span class="num">−${RM(t.disc)}</span></div>`:''}<div class="tr"><span>${SHIP[S.ship].label}${t.freeCode?` <small>(${esc(t.code)})</small>`:''}</span><span class="num">${SHIP[S.ship].pickup?'No charge':RM(t.fee)}</span></div><div class="tr total"><span>Total</span><span class="num">${RM(t.total)}</span></div></div>`}
 function codeHTML(){if(!CFG.codes&&!S.code)return'';const on=promoOK();
   return`<div class="fs" id="codeFs"><div class="fs-h"><b>Discount or referral code</b></div>${on?`<div class="code-on"><span class="code-tag">${esc(S.promo.code)}</span><span class="code-txt">${esc(S.promo.label)}${S.promo.discount?` · you save ${RM(S.promo.discount)}`:''}</span><button class="link-btn" data-act="removeCode">Remove</button></div>`:
   `<div class="code-row"><input id="codeIn" placeholder="Enter code" value="${esc(S.code||'')}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Discount code" maxlength="24"><button class="ghost code-btn" data-act="applyCode" id="codeBtn">Apply</button></div>`}<p class="code-msg" id="codeMsg" role="status" hidden></p></div>`}
@@ -399,13 +402,14 @@ async function applyCode(code){const inp=$('#codeIn');code=((code??(inp?inp.valu
   }catch(e){if(my===codeBusy){const bb=$('#codeBtn');if(bb){bb.disabled=false;bb.textContent='Apply'}const m=msg();if(m){m.textContent='Couldn’t check the code. Please try again.';m.className='code-msg bad';m.hidden=false}}}}
 /* bag or delivery changed: check the saved code again */
 function recheckCode(){if(S.code&&!promoOK())applyCode(S.code)}
-const feeTxt=(k,f)=>SHIP[k].contact?'Quote':SHIP[k].pickup?'No charge':RM(f);
-const isIntl=()=>!!(SHIP[S.ship]&&SHIP[S.ship].contact);
+const feeTxt=(k,f)=>quoteShip(k)?'Quote':SHIP[k].pickup?'No charge':RM(f);
+const isIntl=()=>quoteShip(S.ship);
+const noteHTML=()=>`<div class="intl-note"><b>${overW(S.ship)?`Order over ${SHIP[S.ship].maxG} g`:"Other countries"}</b><p>${overW(S.ship)?`Our DHL rates cover parcels up to ${SHIP[S.ship].maxG} g. For a heavier order, tap the button below to send us your bag on WhatsApp and we will quote the DHL delivery and how to pay.`:"All parcels go by DHL. Online payment covers Malaysia and Singapore. For other countries, contact our customer service on WhatsApp before ordering: we will confirm availability, DHL cost, delivery time and how to pay. Import duties, taxes and customs charges are paid by the customer."}</p></div>`;
 const payText=()=>`Next, you’ll enter your ${SHIP[S.ship].pickup?'contact details':'delivery address'} and pay on Stripe’s secure page with a card, FPX online banking or the other methods shown there.`;
 function renderCheckout(){
   $('#coBody').innerHTML=`<div class="cols"><div class="col-main"><h1 class="disp page-h">Checkout</h1>
   <div class="fs"><div class="fs-h"><b>Delivery</b></div>${Object.entries(SHIP).map(([k,s])=>{const fee=totals(S.cart,k).fee;return`<button class="radio${S.ship===k?' on':''}" data-act="ship" data-k="${k}" role="radio" aria-checked="${S.ship===k}"><span class="dot"></span><span><b>${esc(s.label)}</b><small>${esc(s.note||'')}</small></span><span class="rp" data-fee="${k}">${feeTxt(k,fee)}</span></button>`}).join('')}
-  <div class="intl-note"><b>International customers</b><p>Online payment is for delivery within Malaysia only. If you are outside Malaysia, choose <em>Outside Malaysia</em> and contact our customer service on WhatsApp before ordering. We will confirm availability, shipping cost, delivery time and how to pay. Import duties, taxes and customs charges in your country are paid by the customer, and delivery times depend on customs clearance.</p></div></div>
+  ${noteHTML()}</div>
   ${codeHTML()}
   <div class="fs" id="payFs"><div class="fs-h"><b>Payment</b></div><div class="pay-box">${IC.lock}<div><b>Secure payment by Stripe</b><p id="payText">${payText()}</p><div class="pay-marks"><span class="pay-ic">VISA</span><span class="pay-ic">MASTERCARD</span><span class="pay-ic">FPX</span></div></div></div></div>
   <div class="co-mob" id="coTot">${totHTML()}</div>
@@ -413,7 +417,7 @@ function renderCheckout(){
   <aside class="col-side co-sum" id="coSum">${coSum()}</aside></div>`;
   $('#placeAmt').textContent=RM(totals().total);resetPlaceBtn();bindCode();recheckCode()}
 function setShip(k){if(!SHIP[k])return;S.ship=k;save();vib(6);document.querySelectorAll('[data-act=ship]').forEach(b=>{const on=b.dataset.k===k;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
-  $('#payText').textContent=payText();refreshCo();recheckCode()}
+  $('#payText').textContent=payText();const n=document.querySelector('.intl-note');if(n)n.outerHTML=noteHTML();refreshCo();recheckCode()}
 
 /* =====================================================================
    PAYMENT → STRIPE → THANK YOU
@@ -421,7 +425,7 @@ function setShip(k){if(!SHIP[k])return;S.ship=k;save();vib(6);document.querySele
 let placing=false;
 function resetPlaceBtn(){placing=false;const pb=$('#placeBtn');pb.classList.remove('sending','press')}
 function intlEnquiry(){const t=totals();const lines=S.cart.map(l=>{const m=BY[l.id];return m?`• ${l.qty}× ${m.name}${m.details?` (${m.details})`:''} [${m.id}] ${RM(lineTotal(l))}`:''}).filter(Boolean).join('\n');
-  const msg=`Hi House of Qi, I'm outside Malaysia and would like to order:\n${lines}\nSubtotal: ${RM(t.sub)}\n\nCountry: \nCould you quote international delivery and how to pay? Thank you!`;
+  const ow=overW(S.ship);const msg=ow?`Hi House of Qi, I would like to order (over ${SHIP[S.ship].maxG} g):\n${lines}\nSubtotal: ${RM(t.sub)}\n\nDelivery to: ${SHIP[S.ship].label}\nCould you quote the DHL delivery and how to pay? Thank you!`:`Hi House of Qi, I'm outside Malaysia and Singapore and would like to order:\n${lines}\nSubtotal: ${RM(t.sub)}\n\nCountry: \nCould you quote DHL delivery and how to pay? Thank you!`;
   if(CFG.whatsapp)window.open(`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent(msg)}`,'_blank','noopener');else toast('Please contact us through Instagram or Facebook.')}
 async function startCheckout(){if(isIntl()){vib(10);intlEnquiry();return}if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
   pb.classList.add('press');await wait(120);pb.classList.remove('press');pb.classList.add('sending');

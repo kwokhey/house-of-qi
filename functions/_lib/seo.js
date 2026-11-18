@@ -22,8 +22,8 @@ export function faqs(cfg) {
   return [
     ["Are House of Qi crystals natural?", "Yes. Every House of Qi piece is made with natural gemstones. Because they are natural, colour, clarity and patterns vary slightly from piece to piece and from the photos, which makes each piece unique."],
     ["How do I choose a bracelet bead size?", "Bead size is the width of each bead in millimetres. 4–6 mm beads are delicate and easy to stack, 8 mm is the classic everyday size, and 10–14 mm beads make a bolder statement. Use “Bracelets by bead size” in the shop menu to see only the sizes you want."],
-    ["Do you deliver across Malaysia, and how much is delivery?", `Yes. Orders are cleansed, packed by hand and dispatched within 1–2 working days. Delivery to West Malaysia (Peninsular) is ${RM(w.fee)} and takes ${days(w) || "3–5 working days"}; East Malaysia (Sabah, Sarawak & Labuan) is ${RM(e.fee)} and takes ${days(e) || "5–7 working days"}. Self pick-up by appointment is free.`],
-    ["Do you ship outside Malaysia?", "Yes, on request. Online payment on the website is for delivery within Malaysia, so international customers should message House of Qi on WhatsApp before ordering to confirm availability, shipping cost and payment. Import duties and taxes are paid by the customer."],
+    ["Do you deliver across Malaysia, and how much is delivery?", `Yes. Orders are cleansed, packed by hand and dispatched within 1–2 working days. Delivery to West Malaysia (Peninsular) is ${RM(w.fee)} and takes ${days(w) || "3–5 working days"}; East Malaysia (Sabah, Sarawak & Labuan) is ${RM(e.fee)} and takes ${days(e) || "5–7 working days"}. All parcels go by DHL, and these rates cover parcels up to 500 g; heavier orders are quoted on WhatsApp. Self pick-up by appointment is free.`],
+    ["Do you ship outside Malaysia?", `Yes, by DHL. Delivery to Singapore is ${RM((s.sg && s.sg.fee) || 88)} for parcels up to 500 g and can be paid online, and Singapore customers can sometimes self-collect when House of Qi is in Singapore. For other countries, message House of Qi on WhatsApp before ordering to confirm availability, the DHL cost and payment. Import duties and taxes are paid by the customer.`],
     ["How do I pay?", "Pay securely online at checkout. Payments are processed by Stripe, and House of Qi never sees or stores your card details."],
     ["Can I return or exchange a piece?", "Unworn pieces in their original packaging can be returned or exchanged within 14 days of delivery. Contact House of Qi to start a return. Custom-sized or engraved pieces can only be returned if they arrive damaged."],
     ["How do I care for and cleanse my crystal bracelet?", "Take it off before showering, swimming or exercise, and keep it away from perfume and chemicals. Coloured stones such as rose quartz and amethyst can fade in strong sunlight, so cleanse them under moonlight, with sound, or on a selenite plate instead. Roll elastic bracelets on and off rather than stretching them."],
@@ -84,7 +84,7 @@ export function productLd(p, image, extra = {}) {
         offers: {
           "@type": "Offer", url, priceCurrency: "MYR", price: Number(p.price).toFixed(2), itemCondition: "https://schema.org/NewCondition",
           availability: p.soldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock", seller: { "@id": SITE + "/#store" },
-          shippingDetails: [ship(10, 3, 5), ship(20, 5, 7)],
+          shippingDetails: [ship(10, 3, 5), ship(20, 5, 7), { ...ship(88, 3, 7), shippingDestination: { "@type": "DefinedRegion", addressCountry: "SG" } }],
           hasMerchantReturnPolicy: { "@type": "MerchantReturnPolicy", applicableCountry: "MY", returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow", merchantReturnDays: 14, returnMethod: "https://schema.org/ReturnByMail" },
         },
       },

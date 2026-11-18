@@ -113,7 +113,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
     p.append(`${r}[delivery_estimate][maximum][unit]`, "business_day");
     p.append(`${r}[delivery_estimate][maximum][value]`, String(s.days[1]));
   }
-  if (!s.pickup) (catalog.shipToCountries || ["MY"]).forEach((c, n) => p.append(`shipping_address_collection[allowed_countries][${n}]`, c));
+  if (!s.pickup) (s.country ? [s.country] : catalog.shipToCountries || ["MY"]).forEach((c, n) => p.append(`shipping_address_collection[allowed_countries][${n}]`, c));
 
   const notes = order.lines.filter((l) => l.note).map((l) => `${l.product.name}: ${l.note}`).join(" | ");
   const meta = { order_no: orderNo, delivery: s.label, pickup: s.pickup ? "yes" : "no", track_key: trackKey(), fulfil_status: "confirmed", ...(notes ? { gift_notes: notes.slice(0, 500) } : {}) };

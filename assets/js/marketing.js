@@ -60,11 +60,26 @@
       <div><span>Live sales</span><b>${liveSales}</b><small>${D.sales.length} in total</small></div>
       <div><span>Orders with a code</span><b>${uses}</b><small>${RM(rev)} in sales</small></div>
       <div><span>Discount given</span><b>${RM(given)}</b><small>through codes</small></div>`;
-    renderAnn(); renderBan();
+    renderAnn(); renderBan(); renderSg();
     $("#mCodes").innerHTML = D.coupons.length ? D.coupons.map(codeRow).join("") : `<p class="m-empty">No codes yet. Try one like <b>WELCOME10</b> for 10% off a first order.</p>`;
     $("#mColls").innerHTML = (D.collections || []).length ? D.collections.map(collRow).join("") : `<p class="m-empty">No collections yet. They appear as picture tiles on the shop's home page.</p>`;
     $("#mSales").innerHTML = D.sales.length ? D.sales.map(saleRow).join("") : `<p class="m-empty">No sales yet. A sale lowers prices automatically between the dates you choose.</p>`;
   }
+
+  function renderSg() {
+    const a = D.sgCollect || { on: false, note: "" };
+    $("#mSg").innerHTML = `
+      <label class="f full"><span>Note for customers (dates and place)</span><input id="sgNote" maxlength="160" value="${esc(a.note || "")}" placeholder="e.g. Collect at Orchard on 12–15 Dec · we will WhatsApp you"></label>
+      <label class="tgl"><input type="checkbox" id="sgOn"${a.on ? " checked" : ""}> Show "Singapore self-collect" at checkout <em class="st ${a.on ? "live" : "off"}">${a.on ? "On" : "Off"}</em></label>
+      <div class="ed-f"><button class="btn sm" type="submit">Save</button></div>`;
+  }
+  $("#mSg").onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const r = await api("/api/admin/marketing", { method: "POST", body: JSON.stringify({ type: "sgcollect", on: $("#sgOn").checked, note: $("#sgNote").value }) });
+      D.sgCollect = r.sgCollect; renderSg(); toast(r.sgCollect.on ? "Singapore self-collect is on" : "Singapore self-collect is off");
+    } catch (x) { toast(x.message); }
+  };
 
   function renderAnn() {
     const a = D.announce || { text: "", link: "", active: false };

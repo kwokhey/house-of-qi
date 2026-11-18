@@ -42,10 +42,12 @@ export async function onRequestGet({ request, env }) {
   const { results: collections } = await D.prepare("SELECT * FROM collections ORDER BY sort, id").all();
   let announce = null, banner = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
+  let sgCollect = null;
+  try { sgCollect = JSON.parse((await getSetting(D, "sg_collect")) || "null"); } catch {}
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   banner = { ...(banner || {}), photos: bannerPhotos(banner) };
   const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]") });
-  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, now: Date.now() });
+  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, now: Date.now() });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -161,6 +163,12 @@ export async function onRequestPost({ request, env }) {
     }
     await setSetting(D, "banner", JSON.stringify(a));
     return json({ ok: true, banner: a });
+  }
+
+  if (b.type === "sgcollect") {
+    const a = { on: !!b.on, note: str(b.note, 160) };
+    await setSetting(D, "sg_collect", JSON.stringify(a));
+    return json({ ok: true, sgCollect: a });
   }
 
   if (b.type === "announce") {

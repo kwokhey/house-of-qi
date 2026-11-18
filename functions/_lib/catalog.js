@@ -15,6 +15,19 @@ export async function loadSettings(env, origin) {
   return res.json();
 }
 
+/** Estimated weight of one piece in grams (a set weight_g wins). Bead bracelets: ~16 cm of round stone beads. */
+export function gramsOf(r) {
+  if (Number(r.weight_g) > 0) return Number(r.weight_g);
+  const t = String(r.type || "");
+  if (/ring/i.test(t)) return 10;
+  if (/pendant|necklace/i.test(t)) return 25;
+  if (/bracelet/i.test(t)) {
+    const mm = Number(r.size_mm) || 8, beads = Math.ceil(165 / mm), cm3 = (4 / 3) * Math.PI * Math.pow(mm / 20, 3);
+    return Math.round(beads * cm3 * 2.7 + 5);
+  }
+  return 150; // spheres, décor and anything else: ask for a quote sooner rather than later
+}
+
 /** Turn an inventory row into a shop product. */
 export function rowToProduct(r, settings) {
   const pendant = /pendant|necklace/i.test(r.type), ring = /^ring/i.test(r.type);
@@ -31,6 +44,7 @@ export function rowToProduct(r, settings) {
     collection: r.collection || (ring ? "rings" : pendant ? "pendants" : "bracelets"),
     price: r.price,
     stock: r.stock,
+    grams: gramsOf(r),
     soldOut: r.stock <= 0,
     // a real photo from the Stock tab wins; otherwise a showcase sample (data/catalog.json → samplePhotos), else drawn art
     image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : (settings.samplePhotos && settings.samplePhotos[r.id]) || "",
@@ -99,6 +113,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, coverImg: c.cover_v ? `img/coll-${c.id}.jpg?v=${c.cover_v}` : "", ids };
   }).filter((c) => c.ids.length);
   const { samplePhotos, _samplePhotosNote, ...pub } = settings;
+  pub.shipping = await liveShipping(D, settings.shipping);
   return { ...pub, faqs: faqs(settings), banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
 }
 
@@ -115,4 +130,18 @@ export function bannerPhotos(b) {
   if (!b) return [];
   if (Array.isArray(b.photos)) return b.photos.filter((p) => p && p.k && p.v);
   return b.v ? [{ k: "banner", v: b.v }] : [];
+}
+
+/** Hide seasonal options (Singapore self-collect) unless switched on in Marketing; use its saved note */
+export async function liveShipping(D, shipping) {
+  let sg = null;
+  try { sg = JSON.parse((await getSetting(D, "sg_collect")) || "null"); } catch {}
+  const out = {};
+  for (const [k, s] of Object.entries(shipping || {})) {
+    if (s.seasonal) {
+      if (!sg || !sg.on) continue;
+      out[k] = { ...s, note: sg.note || s.note };
+    } else out[k] = s;
+  }
+  return out;
 }

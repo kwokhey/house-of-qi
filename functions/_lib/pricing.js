@@ -65,7 +65,9 @@ export function priceOrder(catalog, items, shipKey) {
   const ship = catalog.shipping[shipKey];
   if (!ship) return { error: "Please choose a delivery option." };
   // international orders are arranged with customer service, not paid online
-  if (ship.contact) return { error: "For delivery outside Malaysia, please contact our customer service on WhatsApp before ordering." };
+  if (ship.contact) return { error: "For delivery to other countries, please contact our customer service on WhatsApp before ordering." };
+  const grams = lines.reduce((t, l) => t + (Number(l.product.grams) || 0) * l.qty, 0);
+  if (ship.maxG && grams > ship.maxG) return { error: `This order is over ${ship.maxG} g, so the ${ship.label} DHL rate doesn't apply. Please WhatsApp us for a delivery quote.`, overweight: true };
 
   const subtotal = round2(lines.reduce((t, l) => t + l.unit * l.qty, 0));
   const fee = ship.fee;
