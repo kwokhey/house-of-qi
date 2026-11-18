@@ -6,6 +6,7 @@
 import { stripe, toOrder, json } from "../_lib/stripe.js";
 import { db, hasDB } from "../_lib/db.js";
 import { recordSession } from "../_lib/inventory.js";
+import { notifyOrder } from "../_lib/notify.js";
 
 export async function onRequestGet({ request, env }) {
   const id = new URL(request.url).searchParams.get("session_id") || "";
@@ -18,7 +19,12 @@ export async function onRequestGet({ request, env }) {
     p.append("expand[]", "payment_intent");
     const s = await stripe(env, `checkout/sessions/${id}`, { params: p });
     // deduct stock right away for this order (safe to repeat)
-    if (hasDB(env)) { try { await recordSession(await db(env), s); } catch (e) { console.error("stock", e.message); } }
+    if (hasDB(env)) {
+      const D = await db(env);
+      try { await recordSession(D, s); } catch (e) { console.error("stock", e.message); }
+      // team email (backup for the Stripe webhook; sent once per order)
+      try { await notifyOrder(env, D, s); } catch (e) { console.error("notify", e.message); }
+    }
     const o = toOrder(s);
     const key = s.metadata?.track_key || "";
     return json({

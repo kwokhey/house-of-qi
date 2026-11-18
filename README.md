@@ -170,3 +170,9 @@ In Marketing → Affiliates, open a seller and use **+ Give pieces**. The pieces
 - **Home (`functions/index.js`) and product pages (`functions/p/[id].js`):** page-specific title, description and canonical link; structured data (OnlineStore, WebSite, FAQPage, ItemList, and Product with price, MYR and stock); and a plain-HTML copy of the content (`#ssr`) for crawlers that don't run JavaScript. The shop script removes `#ssr` when it starts.
 - **`/sitemap.xml`, `/llms.txt` (a plain summary for AI assistants) and `/robots.txt`.**
 - **Questions & answers:** shown on the home page and sent to search engines. The text lives in `functions/_lib/seo.js` (`faqs`) and matches policies.html.
+
+## New-order email to the team
+- Each paid (live) order sends one "New order" email (items, Additional request, customer, address) to the team.
+- Recipients: default in `functions/_lib/notify.js` (jessie@, kongeu@, suzee@, naomi@soleiltrinity.com), or a comma-separated D1 setting `order_emails`.
+- Sent through Resend: Cloudflare secret `RESEND_API_KEY`; sender `orders@houseofqi.shop` (domain verified in Resend).
+- Triggered by the Stripe webhook `/api/stripe-webhook` (events checkout.session.completed and checkout.session.async_payment_succeeded) and, as a backup, by the thank-you page. Never sent twice (D1 table `notified`).
