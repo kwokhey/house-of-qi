@@ -48,7 +48,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 .f-rt.rtc .head{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:1.2mm;padding:0 .8mm 0 1.6mm}
 .f-rt.rtc .lf{min-width:0;flex:1;display:flex;flex-direction:column;gap:.1mm}
 .f-rt.rtc .head>.pr{flex:none;align-self:flex-start;margin-top:1.5mm}
-.f-rt.rtc .nm{font:600 3.1mm/1.05 Jost,Arial,sans-serif;-webkit-line-clamp:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.f-rt.rtc .nm{font:600 3.1mm/1.05 Jost,Arial,sans-serif;height:3.3mm;line-height:3.3mm;-webkit-line-clamp:1;white-space:nowrap;overflow:hidden;text-overflow:clip;display:block}
 .f-rt.rtc .row{align-items:center;justify-content:space-between}
 .f-rt.rtc .dt{font:600 2.5mm/1.1 Jost,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .f-rt.rtc .pr{font:700 3.4mm/1 Jost,Arial,sans-serif}
@@ -174,6 +174,14 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
       <div class="bottom">${price}<div class="id">${esc(i.id)}</div></div></div>${qr}</div>`;
   }
 
+  /* long names (and size · ID) shrink to fit their space instead of being cut off; price stays the same size */
+  function fitText() {
+    document.querySelectorAll(".f-rt.rtc .nm, .f-rt.rtc .dt").forEach((el) => {
+      el.style.fontSize = "";
+      let size = parseFloat(getComputedStyle(el).fontSize), min = size * 0.55;
+      while (el.scrollWidth > el.clientWidth + 0.5 && size > min) { size *= 0.95; el.style.fontSize = size + "px"; }
+    });
+  }
   function render() {
     const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && f !== "zd104" && f !== "rtzd" && !FMT[f].rt, pr: $("#prOn").checked };
     const num = (k, d, a, b) => Math.min(b, Math.max(a, +$(k).value || d));
@@ -195,6 +203,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
     $("#sum").textContent = `${list.length} tag${list.length === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}`;
     $("#sheet").innerHTML = list.length ? list.map((i) => tagHTML(i, f, o)).join("") : `<p class="msg">No tags to print. ${$("#qty").value === "stock" ? "These items have no stock." : ""}</p>`;
+    fitText(); if (document.fonts) document.fonts.ready.then(fitText);
     keep();
   }
 
