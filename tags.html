@@ -45,11 +45,11 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 .f-rt{width:calc(var(--w) + var(--t));height:var(--h);display:flex;align-items:center;background:transparent;box-shadow:none}
 .f-rt .head>*{transform:translate(var(--dx,0),var(--dy,0))}
 /* compact 2-line layout for the ZD421 wrap-around tag: name, then size · ID with the price on the right */
-.f-rt.rtc .head{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:1.2mm;padding:0 .8mm 0 1.6mm}
-.f-rt.rtc .lf{min-width:0;flex:1;display:flex;flex-direction:column;gap:.1mm}
+.f-rt.rtc .head{flex-direction:row;align-items:flex-start;justify-content:flex-start;gap:3mm;padding:0 .8mm 0 1.6mm}
+.f-rt.rtc .lf{min-width:0;flex:none;width:calc(var(--w) - 2.4mm - 3mm - 14mm);display:flex;flex-direction:column;gap:.1mm}
 .f-rt.rtc.two .nm{white-space:normal;font-size:2.3mm;line-height:2.35mm;height:4.75mm;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .f-rt.rtc.two .dt{font-size:2.1mm;line-height:2.2mm}
-.f-rt.rtc .head>.pr{flex:none;align-self:flex-start;margin-top:1.5mm}
+.f-rt.rtc .head>.pr{width:14mm;text-align:left;flex:none;align-self:flex-start;margin-top:1.5mm}
 .f-rt.rtc .nm{font:600 3.1mm/1.05 Jost,Arial,sans-serif;height:3.3mm;line-height:3.3mm;-webkit-line-clamp:1;white-space:nowrap;overflow:hidden;text-overflow:clip;display:block}
 .f-rt.rtc .row{align-items:center;justify-content:space-between}
 .f-rt.rtc .dt{font:600 2.5mm/1.1 Jost,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
