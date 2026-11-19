@@ -7,7 +7,8 @@
 <title>Print tags · House of Qi</title>
 <link rel="icon" href="/assets/img/favicon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600&display=swap">
-<style id="pageSize"></style>
+<style id="pageSize">.tag .pr.oos{font-size:2.3mm!important;line-height:1.05!important;font-weight:700;letter-spacing:.1mm;margin-top:.6mm!important}
+</style>
 <style>
 :root{--paper:#EFE0D4;--card:#F7EDE6;--ink:#2E221C;--ink-2:#6E5A4E;--ink-3:#9A8578;--line:rgba(59,44,35,.14)}
 *{box-sizing:border-box}
@@ -135,6 +136,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   <label>&nbsp;<span class="chk"><input type="checkbox" id="prOn" checked> Price</span></label>
   <label>Tags from<input type="number" id="rFrom" min="1" value="1" style="width:60px"></label>
   <label>to<input type="number" id="rTo" min="1" placeholder="all" style="width:60px"></label>
+  <label>&nbsp;<span class="chk"><input type="checkbox" id="oosOn"> "Out of stock" instead of price</span></label>
   <span class="sum" id="sum"></span>
   <button id="print">Print</button>
   <button id="markPr" type="button">Mark as printed</button>
@@ -168,7 +170,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   function tagHTML(i, f, o) {
     const size = i.size_mm ? `${+i.size_mm} mm` : "";
     const dt = [size, i.variant].filter(Boolean).join(" · ");
-    const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
+    const price = o.oos ? `<div class="pr oos">OUT OF<br>STOCK</div>` : o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
     if (f === "rtzd" || FMT[f].rt) { const F = f === "rtzd" ? { w: o.E, h: o.H, tail: o.L - o.E, small: o.H < 12, dx: o.X, dy: o.Y } : FMT[f];
       if (f === "rtzd") return `<div class="tag f-rt rtc" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm;--dx:${F.dx || 0}mm;--dy:${F.dy || 0}mm"><div class="head">
         <div class="lf"><div class="nm">${esc(name(i))}</div><span class="dt">${esc([size || i.variant, i.id].filter(Boolean).join(" · "))}</span></div>${price}</div><div class="tl"></div></div>`;
@@ -204,7 +206,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     });
   }
   function render() {
-    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && f !== "zd104" && f !== "rtzd" && !FMT[f].rt, pr: $("#prOn").checked };
+    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && f !== "zd104" && f !== "rtzd" && !FMT[f].rt, pr: $("#prOn").checked, oos: $("#oosOn").checked };
     const num = (k, d, a, b) => Math.min(b, Math.max(a, +$(k).value || d));
     if (f === "rtzd" && render.last !== "rtzd" && $("#dbL").value === "72" && $("#dbE").value === "25") { $("#dbL").value = 95; $("#dbH").value = 12; $("#dbE").value = 50; }
     render.last = f;
@@ -244,7 +246,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     if (s.qr === false) $("#qrOn").checked = false; if (s.pr === false) $("#prOn").checked = false;
     render();
   }
-  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY", "#rFrom", "#rTo"].forEach((k) => $(k).addEventListener("change", render));
+  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY", "#rFrom", "#rTo", "#oosOn"].forEach((k) => $(k).addEventListener("change", render));
   $("#print").onclick = () => window.print();
   $("#find").addEventListener("input", () => { $("#rFrom").value = 1; $("#rTo").value = ""; render(); });
   $("#markPr").addEventListener("click", async () => {
