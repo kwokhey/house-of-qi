@@ -31,6 +31,7 @@ export async function onRequestGet({ request, env }) {
       COALESCE((SELECT -SUM(qty) FROM movements m WHERE m.item_id = i.id AND m.kind = 'sale'), 0) AS sold,
       COALESCE((SELECT SUM(-qty * (COALESCE(unit_price,0) - COALESCE(unit_cost, i.cost))) FROM movements m WHERE m.item_id = i.id AND m.kind = 'sale'), 0) AS profit,
       COALESCE((SELECT MAX(created_at) FROM movements m WHERE m.item_id = i.id AND m.kind = 'sale'), 0) AS last_sale,
+      COALESCE((SELECT qty FROM printed p WHERE p.item_id = i.id), 0) AS printed,
       COALESCE((SELECT SUM(CASE c.kind WHEN 'give' THEN c.qty ELSE -c.qty END) FROM consign c WHERE c.item_id = i.id), 0) AS with_sellers
     FROM items i ORDER BY i.sort, i.id`).all();
   const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);

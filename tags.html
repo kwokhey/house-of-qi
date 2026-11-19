@@ -129,13 +129,14 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     <label class="rtOnly">Move right (mm)<input type="number" id="offX" min="-5" max="8" step="0.5" value="1.5"></label>
     <label><span id="dbELbl">Each end (mm)</span><input type="number" id="dbE" min="10" max="50" step="1" value="25"></label>
   </span>
-  <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option></select></label>
+  <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option><option value="new">Only pieces not printed yet</option></select></label>
   <label>&nbsp;<span class="chk"><input type="checkbox" id="qrOn" checked> QR code</span></label>
   <label>&nbsp;<span class="chk"><input type="checkbox" id="prOn" checked> Price</span></label>
   <label>Tags from<input type="number" id="rFrom" min="1" value="1" style="width:60px"></label>
   <label>to<input type="number" id="rTo" min="1" placeholder="all" style="width:60px"></label>
   <span class="sum" id="sum"></span>
   <button id="print">Print</button>
+  <button id="markPr" type="button">Mark as printed</button>
 </div>
 <p class="tip" id="tip"></p>
 <div id="sheet"><p class="msg">Loading…</p></div>
@@ -218,7 +219,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     $("#pageSize").textContent = f === "rtzd" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
-    for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
+    for (const i of ITEMS) { const q = $("#qty").value, n = q === "stock" ? Math.max(0, i.stock) : q === "new" ? Math.max(0, i.stock - (i.printed || 0)) : 1; for (let k = 0; k < n; k++) list.push(i); }
     const total = list.length, a = Math.max(1, +$("#rFrom").value || 1), b = Math.min(total, +$("#rTo").value || total);
     list.splice(0, total, ...list.slice(a - 1, b).map((x, j) => ({ ...x, _n: a + j })));
     $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
@@ -241,6 +242,14 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   }
   ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY", "#rFrom", "#rTo"].forEach((k) => $(k).addEventListener("change", render));
   $("#print").onclick = () => window.print();
+  $("#markPr").addEventListener("click", async () => {
+    const marks = ITEMS.filter((i) => i.stock > 0).map((i) => ({ id: i.id, qty: i.stock }));
+    if (!marks.length || !confirm(`Mark the tags for ${marks.length} item${marks.length === 1 ? "" : "s"} (${marks.reduce((a, m) => a + m.qty, 0)} pieces) as printed?`)) return;
+    const r = await fetch("/api/admin/printed", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ marks }) });
+    if (!r.ok) return alert("Couldn't save. Please try again.");
+    ITEMS.forEach((i) => { if (i.stock > 0) i.printed = i.stock; });
+    $("#markPr").textContent = "Marked as printed ✓"; render();
+  });
   load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
 })();
 </script>
