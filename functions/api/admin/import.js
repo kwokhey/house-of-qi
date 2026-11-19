@@ -31,7 +31,7 @@ export async function onRequestPost({ request, env }) {
     if (!ID_RE.test(id) || !r.stone) { skipped++; continue; }
     const f = [String(r.stone).slice(0, 80), String(r.type || "Bracelet").slice(0, 40), String(r.variant || "").slice(0, 120),
       Number.isFinite(+r.size_mm) && r.size_mm !== null && r.size_mm !== "" ? +r.size_mm : null, String(r.supplier || "").slice(0, 80),
-      String(r.collection || "bracelets").slice(0, 40), Math.max(0, +r.cost || 0), Math.max(0, +r.price || 0)];
+      String(r.collection || ({ Earrings: "earrings", Ring: "rings", Pendant: "pendants", Necklace: "pendants" })[r.type] || "bracelets").slice(0, 40), Math.max(0, +r.cost || 0), Math.max(0, +r.price || 0)];
     const stockIn = Math.max(0, Math.floor(+r.stock_in || 0));
     const stockLeft = Math.max(0, Math.floor(r.stock != null ? +r.stock : stockIn));
     const ex = existing.get(id);

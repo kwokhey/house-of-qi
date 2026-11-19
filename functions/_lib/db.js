@@ -162,16 +162,16 @@ const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT 
  * Returns null when the name has no kind in it.
  */
 export function splitType(stone) {
-  const KIND = (w) => (/^ring/i.test(w) ? "Ring" : "Pendant");
+  const KIND = (w) => (/^earring/i.test(w) ? "Earrings" : /^ring/i.test(w) ? "Ring" : "Pendant");
   let s = String(stone || "").trim(), m;
-  if ((m = s.match(/^(.*?)\s*\(\s*(rings?|pendants?|necklaces?)\b\s*(.*)\)$/i))) {
+  if ((m = s.match(/^(.*?)\s*\(\s*(earrings?|rings?|pendants?|necklaces?)\b\s*(.*)\)$/i))) {
     const extra = m[3].replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
     return { stone: m[1].trim(), type: KIND(m[2]), extra: extra ? extra[0].toUpperCase() + extra.slice(1) : "" };
   }
-  if ((m = s.match(/^(.*?)\s*\b(rings?|pendants?|necklaces?)$/i))) return { stone: m[1].trim(), type: KIND(m[2]), extra: "" };
+  if ((m = s.match(/^(.*?)\s*\b(earrings?|rings?|pendants?|necklaces?)$/i))) return { stone: m[1].trim(), type: KIND(m[2]), extra: "" };
   return null;
 }
-const DEFAULT_COLL = { Ring: "rings", Pendant: "pendants", Bracelet: "bracelets" };
+const DEFAULT_COLL = { Earrings: "earrings", Ring: "rings", Pendant: "pendants", Bracelet: "bracelets" };
 
 /** One-time tidy of items imported before the kind was read from the name. Safe to run again. */
 export async function fixTypes(D) {

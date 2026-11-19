@@ -19,6 +19,7 @@ export async function loadSettings(env, origin) {
 export function gramsOf(r) {
   if (Number(r.weight_g) > 0) return Number(r.weight_g);
   const t = String(r.type || "");
+  if (/earring/i.test(t)) return 10;
   if (/ring/i.test(t)) return 10;
   if (/pendant|necklace/i.test(t)) return 25;
   if (/bracelet/i.test(t)) {
@@ -30,7 +31,7 @@ export function gramsOf(r) {
 
 /** Turn an inventory row into a shop product. */
 export function rowToProduct(r, settings) {
-  const pendant = /pendant|necklace/i.test(r.type), ring = /^ring/i.test(r.type);
+  const pendant = /pendant|necklace/i.test(r.type), ring = /^ring/i.test(r.type), earring = /^earring/i.test(r.type);
   const name = itemName(r);
   const details = itemDetails(r);
   let intentions = [];
@@ -41,7 +42,7 @@ export function rowToProduct(r, settings) {
     name,
     zh: r.zh || "",
     details,
-    collection: r.collection || (ring ? "rings" : pendant ? "pendants" : "bracelets"),
+    collection: r.collection || (earring ? "earrings" : ring ? "rings" : pendant ? "pendants" : "bracelets"),
     price: r.price,
     stock: r.stock,
     grams: gramsOf(r),

@@ -13,6 +13,8 @@ export const CATS = {
     intro: "Natural crystal pendants and necklaces, each one chosen by hand for its colour and character, and delivered across Malaysia." },
   rings: { name: "Rings", title: "Natural Crystal & Gemstone Rings in Malaysia", match: (p) => p.collection === "rings" || /\bring\b/i.test(p.name),
     intro: "Natural crystal and gemstone rings, chosen by hand and delivered across Malaysia." },
+  earrings: { name: "Earrings", title: "Natural Crystal & Gemstone Earrings in Malaysia", match: (p) => p.collection === "earrings" || /earring/i.test(p.name),
+    intro: "Natural crystal and gemstone earrings, chosen by hand and delivered across Malaysia." },
 };
 
 const img = (p) => (p.image ? abs(p.image) : p._og ? abs(`/assets/img/og/${encodeURIComponent(p.id)}.jpg`) : abs("/assets/img/logo-mark.png"));
@@ -90,7 +92,7 @@ ${schema.map(ld).join("\n")}
   <main>
   <h1>${esc(h1)}</h1>
   ${body}
-  <nav aria-label="More from House of Qi"><p><a href="/crystals">Crystal meanings A–Z</a> · <a href="/bracelets">Bracelets</a> · <a href="/pendants">Pendants</a> · <a href="/rings">Rings</a> · <a href="/policies">Shipping, returns &amp; care</a></p></nav>
+  <nav aria-label="More from House of Qi"><p><a href="/crystals">Crystal meanings A–Z</a> · <a href="/bracelets">Bracelets</a> · <a href="/pendants">Pendants</a> · <a href="/rings">Rings</a> · <a href="/earrings">Earrings</a> · <a href="/policies">Shipping, returns &amp; care</a></p></nav>
   <p class="note">Natural gemstones vary in colour, clarity and pattern, so each piece is unique. Crystal meanings describe traditional and spiritual beliefs and are not medical advice.</p>
   </main>
   <script src="/assets/js/art.js?v=30"></script>
@@ -107,7 +109,7 @@ const qa = (list) => list.map(([q, a]) => `<details><summary>${esc(q)}</summary>
 export function stonePage(cat, s) {
   const info = stoneInfo(s.stone, cat, s.pieces);
   const name = s.stone.replace(/\s*\(.*?\)/, "");
-  const types = [...new Set(s.pieces.map((p) => (/pendant|necklace/i.test(p.name) ? "pendants" : /\bring\b/i.test(p.name) ? "rings" : "bracelets")))];
+  const types = [...new Set(s.pieces.map((p) => (/pendant|necklace/i.test(p.name) ? "pendants" : /earring/i.test(p.name) ? "earrings" : /\bring\b/i.test(p.name) ? "rings" : "bracelets")))];
   const typeWords = list(types.map((t) => t));
   const inStock = s.pieces.filter((p) => !p.soldOut);
   const prices = inStock.map((p) => +p.price).filter((n) => n > 0);
