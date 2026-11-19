@@ -99,6 +99,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
 <div class="bar">
   <h1>Print tags</h1>
   <label>Tag size<select id="fmt">
+    <option value="rtzd">Wrap-around tag · Zebra ZD421 (panel + tail, adjustable size)</option>
     <option value="zd104">Jewellery tag 104 × 13 mm · Zebra ZD421 (two 32 mm panels + tail)</option>
     <option value="db">Dumbbell tag (folds around the bracelet)</option>
     <option value="rt3015">Bracelet tag, wrap-around (30 × 15 mm + tail)</option>
@@ -110,7 +111,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   <span id="dbSize" class="dbs" hidden>
     <label>Total length (mm)<input type="number" id="dbL" min="30" max="120" step="1" value="72"></label>
     <label>Height (mm)<input type="number" id="dbH" min="8" max="30" step="0.5" value="13"></label>
-    <label>Each end (mm)<input type="number" id="dbE" min="10" max="50" step="1" value="25"></label>
+    <label><span id="dbELbl">Each end (mm)</span><input type="number" id="dbE" min="10" max="50" step="1" value="25"></label>
   </span>
   <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option></select></label>
   <label>&nbsp;<span class="chk"><input type="checkbox" id="qrOn" checked> QR code</span></label>
@@ -134,6 +135,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     "5030": { w: 50, h: 30, qr: 17, tip: "In your printer settings choose paper size 50 × 30 mm, margins None, scale 100%. One tag prints on each label." },
     "4030": { w: 40, h: 30, qr: 13, small: 1, tip: "In your printer settings choose paper size 40 × 30 mm, margins None, scale 100%. One tag prints on each label." },
     db: { tip: "Enter your roll's sizes (they're on the listing or the box). One end shows the stone and bead size, the other the price and item ID; fold the middle around the bracelet so the two ends stick back to back. In the print window choose that paper size, margins None, scale 100%." },
+    rtzd: { tip: "Wrap-around jewellery tags on the Zebra ZD421 (panel on the left, thin tail on the right). Measure one label and set Total length, Height and Panel length; the starting values (95 × 12 mm, 50 mm panel) are an estimate. In the print window: printer ZD421, paper size = total length × height (create it once in the Zebra driver), margins None, scale 100%. Print 1 tag first to check." },
     zd104: { zd: 1, tip: "Zebra ZD421 with 104 × 13 mm tags (two 32 mm panels + 40 mm tail). In the print window: printer ZD421, paper size 104 × 13 mm (create it once in the Zebra driver as 4.09 × 0.51 in), margins None, scale 100%, no headers/footers. Front panel: name and bead size. Back panel: price and item ID. Wrap the tail round the bracelet and stick it behind the panels." },
     a4: { tip: "Prints 27 tags (63 × 30 mm) on A4 with dashed cut lines. Use thick paper (200–300 gsm card) or A4 sticker paper, margins None, scale 100%." },
   };
@@ -145,7 +147,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     const size = i.size_mm ? `${+i.size_mm} mm` : "";
     const dt = [size, i.variant].filter(Boolean).join(" · ");
     const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
-    if (FMT[f].rt) { const F = FMT[f];
+    if (f === "rtzd" || FMT[f].rt) { const F = f === "rtzd" ? { w: o.E, h: o.H, tail: o.L - o.E, small: o.H < 12 } : FMT[f];
       return `<div class="tag f-rt${F.small ? " small" : ""}" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm"><div class="head">
         <div class="nm">${esc(name(i))}</div><div class="row"><span class="dt">${esc(size || i.variant || "\u00a0")}</span>${price}</div><div class="id">${esc(i.id)}</div></div><div class="tl"></div></div>`; }
     if (f === "zd104") return `<div class="tag f-zd${o.pr && i.price > 0 ? "" : " nopr"}"><div class="p"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt || "\u00a0")}</div></div>
@@ -160,15 +162,19 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   }
 
   function render() {
-    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && f !== "zd104" && !FMT[f].rt, pr: $("#prOn").checked };
+    const f = $("#fmt").value, o = { qr: $("#qrOn").checked && f !== "db" && f !== "zd104" && f !== "rtzd" && !FMT[f].rt, pr: $("#prOn").checked };
     const num = (k, d, a, b) => Math.min(b, Math.max(a, +$(k).value || d));
-    o.L = num("#dbL", 72, 30, 120); o.H = num("#dbH", 13, 8, 30); o.E = Math.min(num("#dbE", 25, 10, 50), (o.L - 6) / 2);
-    $("#dbSize").hidden = f !== "db";
-    const noQR = f === "db" || f === "zd104" || !!FMT[f].rt;
+    if (f === "rtzd" && render.last !== "rtzd" && $("#dbL").value === "72" && $("#dbE").value === "25") { $("#dbL").value = 95; $("#dbH").value = 12; $("#dbE").value = 50; }
+    render.last = f;
+    o.L = num("#dbL", 72, 30, 120); o.H = num("#dbH", 13, 8, 30);
+    o.E = f === "rtzd" ? Math.min(num("#dbE", 50, 15, 90), o.L - 10) : Math.min(num("#dbE", 25, 10, 50), (o.L - 6) / 2);
+    $("#dbSize").hidden = f !== "db" && f !== "rtzd";
+    $("#dbELbl").textContent = f === "rtzd" ? "Panel length (mm)" : "Each end (mm)";
+    const noQR = f === "db" || f === "zd104" || f === "rtzd" || !!FMT[f].rt;
     $("#qrOn").disabled = noQR;
     document.body.className = f === "a4" ? "a4" : "roll";
     const F = FMT[f];
-    $("#pageSize").textContent = F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
+    $("#pageSize").textContent = f === "rtzd" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
     for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
