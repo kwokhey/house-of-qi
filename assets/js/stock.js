@@ -114,7 +114,7 @@
           <span class="ang-t"><button type="button" data-amv="${esc(p.k)}" data-d="-1" ${n ? "" : "disabled"} aria-label="Move earlier">‹</button><button type="button" data-amv="${esc(p.k)}" data-d="1" ${n < g.length - 1 ? "" : "disabled"} aria-label="Move later">›</button><button type="button" data-aadj="${esc(p.k)}" aria-label="Adjust">✎</button><button type="button" data-adel="${esc(p.k)}" aria-label="Remove">✕</button></span></span>`).join("")}
           ${g.length < 5 ? `<label class="ang ang-add"><input type="file" id="edAngFile" accept="image/*" hidden><em>+ Add angle</em></label>` : ""}</div></div>`; })()}
       <div class="ed-stock"><div><span>In stock</span><b id="edStock" class="${i.stock <= 0 ? "zero" : ""}">${i.stock}</b><small>${i.sold || 0} sold · ${i.stock_in} received</small></div>
-        <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button></div>
+        <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button><button type="button" class="btn ghost sm" data-oos${i.stock <= 0 ? " disabled" : ""}>${i.stock <= 0 ? "Out of stock" : "Mark out of stock"}</button></div>
         <div id="mvForm"></div></div>`}
       <div class="grid-f">
         ${field("eId", "Item ID", i.id, 'placeholder="e.g. LRM-1060" autocapitalize="characters" required')}
@@ -180,6 +180,12 @@
         if ($("#edDel").dataset.sure !== "1") { $("#edDel").dataset.sure = "1"; $("#edDel").textContent = "Tap again to delete for good"; return; }
         try { await api(`/api/admin/items?id=${encodeURIComponent(i.id)}`, { method: "DELETE" }); toast(`${i.id} deleted`); d.close(); load(); } catch (x) { toast(x.message); }
       };
+      d.querySelectorAll("[data-oos]").forEach((b) => (b.onclick = async () => {
+        if (!confirm(`Mark ${i.id} as out of stock?\n\nStock goes from ${i.stock} to 0. The shop shows it as out of stock and nobody can buy it. Use "Add stock" to bring it back.`)) return;
+        b.disabled = true;
+        try { await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind: "adjust", qty: 0, note: "Marked out of stock" }) }); toast("Marked out of stock"); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); }
+        catch (x) { toast(x.message); b.disabled = false; }
+      }));
       d.querySelectorAll("[data-mv]").forEach((b) => (b.onclick = () => movementForm(i, b.dataset.mv)));
       history(i);
     }
