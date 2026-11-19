@@ -111,6 +111,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
 </head>
 <body class="roll">
 <div class="bar">
+  <label>Search<input type="search" id="find" placeholder="ID or name, e.g. AME-1-8 or amethyst" style="width:220px"></label>
   <h1>Print tags</h1>
   <label>Tag size<select id="fmt">
     <option value="rtzd">Wrap-around tag · Zebra ZD421 (panel + tail, adjustable size)</option>
@@ -158,7 +159,9 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     zd104: { zd: 1, tip: "Zebra ZD421 with 104 × 13 mm tags (two 32 mm panels + 40 mm tail). In the print window: printer ZD421, paper size 104 × 13 mm (create it once in the Zebra driver as 4.09 × 0.51 in), margins None, scale 100%, no headers/footers. Front panel: name and bead size. Back panel: price and item ID. Wrap the tail round the bracelet and stick it behind the panels." },
     a4: { tip: "Prints 27 tags (63 × 30 mm) on A4 with dashed cut lines. Use thick paper (200–300 gsm card) or A4 sticker paper, margins None, scale 100%." },
   };
-  let ITEMS = [];
+  let ITEMS = [], ALL = [];
+  const shown = () => { const q = ($("#find").value || "").trim().toLowerCase(); if (!q) return ITEMS;
+    const w = q.split(/\s+/); return ALL.filter((i) => { const t = [i.id, i.stone, i.variant, i.type, i.size_mm && i.size_mm + "mm", i.collection].join(" ").toLowerCase(); return w.every((x) => t.includes(x)); }); };
   const settings = () => { try { return JSON.parse(localStorage.getItem("hq-tags") || "{}"); } catch { return {}; } };
   const keep = () => { try { localStorage.setItem("hq-tags", JSON.stringify({ fmt: $("#fmt").value, qty: $("#qty").value, qr: $("#qrOn").checked, pr: $("#prOn").checked, L: $("#dbL").value, X: $("#offX").value, Y: $("#offY").value, H: $("#dbH").value, E: $("#dbE").value })); } catch {} };
 
@@ -219,10 +222,10 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     $("#pageSize").textContent = f === "rtzd" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
-    for (const i of ITEMS) { const q = $("#qty").value, n = q === "stock" ? Math.max(0, i.stock) : q === "new" ? Math.max(0, i.stock - (i.printed || 0)) : 1; for (let k = 0; k < n; k++) list.push(i); }
+    for (const i of shown()) { const q = $("#qty").value, n = q === "stock" ? Math.max(0, i.stock) : q === "new" ? Math.max(0, i.stock - (i.printed || 0)) : 1; for (let k = 0; k < n; k++) list.push(i); }
     const total = list.length, a = Math.max(1, +$("#rFrom").value || 1), b = Math.min(total, +$("#rTo").value || total);
     list.splice(0, total, ...list.slice(a - 1, b).map((x, j) => ({ ...x, _n: a + j })));
-    $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
+    $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${shown().length} item${shown().length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
     $("#sheet").innerHTML = list.length ? list.map((i) => tagHTML(i, f, o)).join("") : `<p class="msg">No tags to print. ${$("#qty").value === "stock" ? "These items have no stock." : ""}</p>`;
     fitText(); if (document.fonts) document.fonts.ready.then(fitText);
     keep();
@@ -232,6 +235,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     const r = await fetch("/api/admin/items", { credentials: "same-origin" });
     if (r.status === 401) { $("#sheet").innerHTML = `<p class="msg">Please <a href="/admin">log in to admin</a> first, then open Print tags again.</p>`; return; }
     const d = await r.json();
+    ALL = d.items;
     const by = Object.fromEntries(d.items.map((i) => [i.id, i]));
     ITEMS = want.length ? want.map((id) => by[id]).filter(Boolean) : d.items.filter((i) => i.published && i.stock > 0);
     const s = settings();
@@ -242,12 +246,13 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   }
   ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY", "#rFrom", "#rTo"].forEach((k) => $(k).addEventListener("change", render));
   $("#print").onclick = () => window.print();
+  $("#find").addEventListener("input", () => { $("#rFrom").value = 1; $("#rTo").value = ""; render(); });
   $("#markPr").addEventListener("click", async () => {
-    const marks = ITEMS.filter((i) => i.stock > 0).map((i) => ({ id: i.id, qty: i.stock }));
+    const marks = shown().filter((i) => i.stock > 0).map((i) => ({ id: i.id, qty: i.stock }));
     if (!marks.length || !confirm(`Mark the tags for ${marks.length} item${marks.length === 1 ? "" : "s"} (${marks.reduce((a, m) => a + m.qty, 0)} pieces) as printed?`)) return;
     const r = await fetch("/api/admin/printed", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ marks }) });
     if (!r.ok) return alert("Couldn't save. Please try again.");
-    ITEMS.forEach((i) => { if (i.stock > 0) i.printed = i.stock; });
+    shown().forEach((i) => { if (i.stock > 0) i.printed = i.stock; });
     $("#markPr").textContent = "Marked as printed ✓"; render();
   });
   load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
