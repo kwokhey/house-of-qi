@@ -132,6 +132,8 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option></select></label>
   <label>&nbsp;<span class="chk"><input type="checkbox" id="qrOn" checked> QR code</span></label>
   <label>&nbsp;<span class="chk"><input type="checkbox" id="prOn" checked> Price</span></label>
+  <label>Tags from<input type="number" id="rFrom" min="1" value="1" style="width:60px"></label>
+  <label>to<input type="number" id="rTo" min="1" placeholder="all" style="width:60px"></label>
   <span class="sum" id="sum"></span>
   <button id="print">Print</button>
 </div>
@@ -217,7 +219,9 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     $("#tip").textContent = F.tip;
     const list = [];
     for (const i of ITEMS) { const n = $("#qty").value === "stock" ? Math.max(0, i.stock) : 1; for (let k = 0; k < n; k++) list.push(i); }
-    $("#sum").textContent = `${list.length} tag${list.length === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}`;
+    const total = list.length, a = Math.max(1, +$("#rFrom").value || 1), b = Math.min(total, +$("#rTo").value || total);
+    list.splice(0, total, ...list.slice(a - 1, b).map((x, j) => ({ ...x, _n: a + j })));
+    $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${ITEMS.length} item${ITEMS.length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
     $("#sheet").innerHTML = list.length ? list.map((i) => tagHTML(i, f, o)).join("") : `<p class="msg">No tags to print. ${$("#qty").value === "stock" ? "These items have no stock." : ""}</p>`;
     fitText(); if (document.fonts) document.fonts.ready.then(fitText);
     keep();
@@ -235,7 +239,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     if (s.qr === false) $("#qrOn").checked = false; if (s.pr === false) $("#prOn").checked = false;
     render();
   }
-  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY"].forEach((k) => $(k).addEventListener("change", render));
+  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY", "#rFrom", "#rTo"].forEach((k) => $(k).addEventListener("change", render));
   $("#print").onclick = () => window.print();
   load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
 })();
