@@ -132,7 +132,7 @@
       </div>
       <p class="margin" id="eMargin"></p>
       <label class="f full"><span>Description (shown in the shop)</span><textarea id="eDesc" rows="2" placeholder="Leave empty for an automatic line">${esc(i.description)}</textarea></label>
-      <label class="f full"><span>Meaning</span><textarea id="eMean" rows="2" placeholder="e.g. The stone of calm, traditionally used for…">${esc(i.meaning)}</textarea></label>
+      <label class="f full"><span>Meaning</span><textarea id="eMean" rows="5" placeholder="e.g. The stone of calm, traditionally used for…">${esc(i.meaning || i.auto_meaning || "")}</textarea></label>
       <div class="toggles"><label><input type="checkbox" id="ePub"${i.published ? " checked" : ""}> Show on website</label><label><input type="checkbox" id="eFeat"${i.featured ? " checked" : ""}> Featured on home page</label></div>
       <p class="err" id="edErr" hidden></p>
       <div class="ed-f"><button class="btn" type="submit" id="edSave">${isNew ? "Add item" : "Save changes"}</button>${!isNew && !i.sold ? '<button type="button" class="link danger" id="edDel">Delete item</button>' : ""}</div>

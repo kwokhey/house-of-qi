@@ -11,6 +11,7 @@ import { setSetting, db, hasDB } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { json } from "../../_lib/stripe.js";
 import { COLOURS, autoColour, isColour } from "../../_lib/colours.js";
+import { stoneMeaning } from "../../_lib/stones.js";
 
 const ID_RE = /^[A-Z0-9][A-Z0-9-]{0,39}$/;
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
@@ -37,7 +38,7 @@ export async function onRequestGet({ request, env }) {
   const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
   const m = await D.prepare(`SELECT COALESCE(-SUM(qty),0) AS pcs, COALESCE(SUM(-qty*COALESCE(unit_price,0)),0) AS revenue,
       COALESCE(SUM(-qty*(COALESCE(unit_price,0)-COALESCE(unit_cost,0))),0) AS profit FROM movements WHERE kind='sale' AND created_at >= ?`).bind(month.getTime()).first();
-  return json({ items: results.map((r) => ({ ...r, auto_colour: autoColour(r) })), month: m, colours: COLOURS.map(([id, name, hex]) => ({ id, name, hex })) });
+  return json({ items: results.map((r) => ({ ...r, auto_colour: autoColour(r), auto_meaning: r.meaning ? "" : stoneMeaning(r.stone) || "" })), month: m, colours: COLOURS.map(([id, name, hex]) => ({ id, name, hex })) });
 }
 
 export async function onRequestPost({ request, env }) {
