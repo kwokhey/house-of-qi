@@ -53,7 +53,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 .f-rt.rtc .head>.pr{width:14mm;text-align:left;flex:none;align-self:flex-start;margin-top:1.5mm}
 .f-rt.rtc .nm{font:600 2.7mm/1.05 Jost,Arial,sans-serif;height:3mm;line-height:3mm;-webkit-line-clamp:1;white-space:nowrap;overflow:hidden;text-overflow:clip;display:block}
 .f-rt.rtc .row{align-items:center;justify-content:space-between}
-.f-rt.rtc .dt{font:600 2.3mm/1.1 Jost,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.f-rt.rtc .dt{font:600 2.3mm/1.1 Jost,Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:clip;min-width:0}
 .f-rt.rtc .pr{font:700 3.4mm/1 Jost,Arial,sans-serif}
 .f-rt .head{width:var(--w);height:var(--h);background:#fff;border-radius:1.6mm;padding:1.3mm 1.8mm 1.1mm;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative}
 .f-rt .head::before{content:"";position:absolute;left:1.1mm;top:50%;width:1.3mm;height:1.3mm;margin-top:-.65mm;border-radius:50%;background:transparent}
@@ -171,7 +171,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
     if (f === "rtzd" || FMT[f].rt) { const F = f === "rtzd" ? { w: o.E, h: o.H, tail: o.L - o.E, small: o.H < 12, dx: o.X, dy: o.Y } : FMT[f];
       if (f === "rtzd") return `<div class="tag f-rt rtc" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm;--dx:${F.dx || 0}mm;--dy:${F.dy || 0}mm"><div class="head">
-        <div class="lf"><div class="nm">${esc(name(i))}</div><span class="dt" data-p="${esc(JSON.stringify(size ? [size] : String(i.variant || "").replace(/adjustable size/i, "Adj. size").replace(/\s*>\s*/g, "+").split(/\s*,\s*/).filter(Boolean)))}" data-id="${esc(i.id)}"></span></div>${price}</div><div class="tl"></div></div>`;
+        <div class="lf"><div class="nm">${esc(name(i))}</div><span class="dt" data-p="${esc(JSON.stringify(size ? [size] : String(i.variant || "").replace(/adjustable size/i, "Adj.").replace(/\s*>\s*/g, "+").split(/\s*,\s*/).filter(Boolean)))}" data-id="${esc(i.id)}"></span></div>${price}</div><div class="tl"></div></div>`;
       return `<div class="tag f-rt${F.small ? " small" : ""}" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm;--dx:${F.dx || 0}mm;--dy:${F.dy || 0}mm"><div class="head">
         <div class="nm">${esc(name(i))}</div><div class="row"><span class="dt">${esc(size || i.variant || "\u00a0")}</span>${price}</div><div class="id">${esc(i.id)}</div></div><div class="tl"></div></div>`; }
     if (f === "zd104") return `<div class="tag f-zd${o.pr && i.price > 0 ? "" : " nopr"}"><div class="p"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt || "\u00a0")}</div></div>
@@ -235,7 +235,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     list.splice(0, total, ...list.slice(a - 1, b).map((x, j) => ({ ...x, _n: a + j })));
     $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${shown().length} item${shown().length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
     $("#sheet").innerHTML = list.length ? list.map((i) => tagHTML(i, f, o)).join("") : `<p class="msg">No tags to print. ${$("#qty").value === "stock" ? "These items have no stock." : ""}</p>`;
-    fitText(); if (document.fonts) document.fonts.ready.then(fitText);
+    fitText(); if (document.fonts) document.fonts.ready.then(fitText); setTimeout(fitText, 600); setTimeout(fitText, 2000);
     keep();
   }
 
@@ -263,6 +263,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     shown().forEach((i) => { if (i.stock > 0) i.printed = i.stock; });
     $("#markPr").textContent = "Marked as printed ✓"; render();
   });
+  window.addEventListener("beforeprint", fitText); window.addEventListener("load", fitText);
   load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
 })();
 </script>
