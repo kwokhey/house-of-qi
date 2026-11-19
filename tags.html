@@ -201,7 +201,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
       // keep size + code; drop the extra words (colour, shape, rim) from the end until it fits
       let p = []; try { p = JSON.parse(el.dataset.p); } catch {}
       const sz = p.findIndex((x) => /size|mm/i.test(x)); const keep = sz >= 0 ? [p[sz]] : p.slice(0, 1); let rest = p.filter((x, k) => k !== (sz >= 0 ? sz : 0));
-      const put = () => (el.textContent = [[...keep, ...rest].join(", "), el.dataset.id].filter(Boolean).join(" · "));
+      const put = () => (el.textContent = [[...keep, ...rest].join(", ").replace(/^./, (c) => c.toUpperCase()), el.dataset.id].filter(Boolean).join(" · "));
       put(); el.style.fontSize = "";
       while (rest.length && el.scrollWidth > el.clientWidth + 0.5) { rest = rest.slice(0, -1); put(); }
     });
