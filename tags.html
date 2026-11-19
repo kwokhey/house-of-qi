@@ -222,7 +222,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     $("#pageSize").textContent = f === "rtzd" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
-    for (const i of shown()) { const q = $("#qty").value, n = q === "stock" ? Math.max(0, i.stock) : q === "new" ? Math.max(0, i.stock - (i.printed || 0)) : 1; for (let k = 0; k < n; k++) list.push(i); }
+    for (const i of shown()) { const q = $("#qty").value, n = q === "stock" ? Math.max(0, i.stock) : q === "new" ? Math.max(0, i.stock - (i.printed || 0)) : 1; const n2 = q !== "new" && !n && $("#find").value.trim() ? 1 : n; for (let k = 0; k < n2; k++) list.push(i); }
     const total = list.length, a = Math.max(1, +$("#rFrom").value || 1), b = Math.min(total, +$("#rTo").value || total);
     list.splice(0, total, ...list.slice(a - 1, b).map((x, j) => ({ ...x, _n: a + j })));
     $("#sum").textContent = `${list.length} of ${total} tag${total === 1 ? "" : "s"} · ${shown().length} item${shown().length === 1 ? "" : "s"}` + (list.length ? ` (tags ${a}–${b})` : "");
