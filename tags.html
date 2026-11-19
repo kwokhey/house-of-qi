@@ -97,8 +97,10 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   .bar,.tip,.msg{display:none!important}
   #sheet{padding:0!important;gap:0!important;display:block}
   .tag{box-shadow:none!important;break-inside:avoid;page-break-inside:avoid}
-  body.roll .tag{page-break-after:always;break-after:page}
-  body.roll .tag:last-child{page-break-after:auto;break-after:auto}
+  /* one tag per label: every tag after the first starts a new page, and is a hair shorter than the page so rounding can't merge or split pages */
+  html,body{margin:0!important;padding:0!important}
+  body.roll .tag{break-before:page;page-break-before:always;break-after:auto;page-break-after:auto;max-height:calc(var(--page-h, 100vh) - .15mm);overflow:hidden}
+  body.roll .tag:first-child{break-before:auto;page-break-before:auto}
   body.a4 #sheet{display:grid!important;padding:0!important}
   body.a4 .tag{outline:.2mm dashed #999}
   .f-db .half,.f-db .tail,.f-zd .p,.f-zd .tail{box-shadow:none!important}
@@ -210,6 +212,7 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     $("#qrOn").disabled = noQR;
     document.body.className = f === "a4" ? "a4" : "roll";
     const F = FMT[f];
+    document.documentElement.style.setProperty("--page-h", f === "rtzd" ? o.H + "mm" : "100vh");
     $("#pageSize").textContent = f === "rtzd" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : F.rt ? `@page{size:${F.w + F.tail}mm ${F.h}mm;margin:0}` : f === "a4" ? "@page{size:A4;margin:0}" : f === "zd104" ? "@page{size:104mm 13mm;margin:0}" : f === "db" ? `@page{size:${o.L}mm ${o.H}mm;margin:0}` : `@page{size:${F.w}mm ${F.h}mm;margin:0}`;
     $("#tip").textContent = F.tip;
     const list = [];
