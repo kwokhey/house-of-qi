@@ -61,6 +61,7 @@ export async function onRequestPost({ request, env }) {
     zh: str(b.zh, 80), description: str(b.description, 1200), meaning: str(b.meaning, 1200),
     intentions: JSON.stringify(Array.isArray(b.intentions) ? b.intentions.map((x) => str(x, 30)).slice(0, 8) : []),
     colour: isColour(b.colour) ? b.colour : "",
+    dims: str(b.dims, 120),
   };
   // changing the ID of an existing item: move everything linked to it, then save as usual
   const oldId = b.isNew ? "" : str(b.oldId, 40);
@@ -76,14 +77,14 @@ export async function onRequestPost({ request, env }) {
   if (!exists) {
     const qty = Math.max(0, Math.floor(num(b.stock)));
     await D.batch([
-      D.prepare(`INSERT INTO items (id, stone, type, variant, size_mm, supplier, collection, cost, price, stock_in, stock, published, featured, zh, description, meaning, intentions, colour, sort, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort),0)+1 FROM items), ?, ?)`)
-        .bind(id, f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, qty, qty, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, now, now),
+      D.prepare(`INSERT INTO items (id, stone, type, variant, size_mm, supplier, collection, cost, price, stock_in, stock, published, featured, zh, description, meaning, intentions, colour, dims, sort, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort),0)+1 FROM items), ?, ?)`)
+        .bind(id, f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, qty, qty, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, f.dims, now, now),
       ...(qty ? [D.prepare("INSERT INTO movements (item_id, kind, qty, unit_cost, channel, note, created_at) VALUES (?, 'restock', ?, ?, '', 'Opening stock', ?)").bind(id, qty, f.cost, now)] : []),
     ]);
   } else {
-    await D.prepare(`UPDATE items SET stone=?, type=?, variant=?, size_mm=?, supplier=?, collection=?, cost=?, price=?, published=?, featured=?, zh=?, description=?, meaning=?, intentions=?, colour=?, updated_at=? WHERE id=?`)
-      .bind(f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, now, id).run();
+    await D.prepare(`UPDATE items SET stone=?, type=?, variant=?, size_mm=?, supplier=?, collection=?, cost=?, price=?, published=?, featured=?, zh=?, description=?, meaning=?, intentions=?, colour=?, dims=?, updated_at=? WHERE id=?`)
+      .bind(f.stone, f.type, f.variant, f.size_mm, f.supplier, f.collection, f.cost, f.price, f.published, f.featured, f.zh, f.description, f.meaning, f.intentions, f.colour, f.dims, now, id).run();
   }
   const item = await D.prepare("SELECT * FROM items WHERE id = ?").bind(id).first();
   return json({ ok: true, item });

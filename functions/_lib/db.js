@@ -154,7 +154,7 @@ const SCHEMA = [
   )`,
 ];
 // columns added after the first release (ignored if they already exist)
-const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN gallery TEXT NOT NULL DEFAULT '[]'`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
+const ADD_COLUMNS = [`ALTER TABLE items ADD COLUMN dims TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN gallery TEXT NOT NULL DEFAULT '[]'`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
 
 /**
  * The sheet sometimes puts the kind of piece in the product name:

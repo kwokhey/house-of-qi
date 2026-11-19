@@ -127,7 +127,7 @@
         ${field("ePrice", "Selling price (RM)", i.price, 'inputmode="decimal" required')}
         ${isNew ? field("eQty", "Stock now", i.stock, 'inputmode="numeric"') : ""}
         ${field("eSup", "Supplier", i.supplier)}
-        ${field("eZh", "Chinese name", i.zh, 'placeholder="optional"')}
+        ${field("eZh", "Chinese name", i.zh, 'placeholder="optional"')}${field("eDims", "Measurements", i.dims || "", 'placeholder="e.g. H 32 mm × W 23 mm × D 10 mm"')}
         ${selectF("eColour", "Bead colour (Shop by colour)", [["", `Automatic · ${(COLS.find((c) => c.id === (i.auto_colour || "")) || { name: "set from stone" }).name}`], ...COLS.map((c) => [c.id, c.name])], i.colour || "")}
       </div>
       <p class="margin" id="eMargin"></p>
@@ -148,7 +148,7 @@
       e.preventDefault();
       const body = {
         id: $("#eId").value, oldId: isNew ? undefined : i.id, stone: $("#eStone").value, type: $("#eType").value, variant: $("#eVar").value, size_mm: $("#eSize").value,
-        collection: $("#eCol").value, cost: $("#eCost").value, price: $("#ePrice").value, supplier: $("#eSup").value, zh: $("#eZh").value,
+        collection: $("#eCol").value, cost: $("#eCost").value, price: $("#ePrice").value, supplier: $("#eSup").value, zh: $("#eZh").value, dims: $("#eDims").value,
         description: $("#eDesc").value, meaning: $("#eMean").value, colour: $("#eColour").value, published: $("#ePub").checked, featured: $("#eFeat").checked ? (i.featured || 1) : 0,
         intentions: (() => { try { return JSON.parse(i.intentions || "[]"); } catch { return []; } })(), isNew, stock: isNew ? $("#eQty").value : undefined,
       };

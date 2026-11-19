@@ -938,3 +938,4 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .res-head span{flex-basis:100%;max-width:640px;line-height:1.5}
 /* longer stone meanings */
 .meaning p{font-size:17px;line-height:1.5}
+.specs>div:nth-child(3){grid-column:1/-1}

@@ -60,6 +60,7 @@ export function rowToProduct(r, settings) {
     meaning: r.meaning || stoneMeaning(r.stone),
     blurb: stoneBelief(r.stone),
     size: r.size_mm ? +r.size_mm : null,
+    dims: r.dims || "",
     colour: colourOf(r),
     art: { stone: r.stone, variant: r.variant, type: r.type, size: r.size_mm || 8 },
     groups: settings.addons ? [settings.addons] : [],
