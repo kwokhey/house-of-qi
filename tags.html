@@ -43,6 +43,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 
 /* wrap-around (rat-tail) bracelet tag: printed head + long blank tail */
 .f-rt{width:calc(var(--w) + var(--t));height:var(--h);display:flex;align-items:center;background:transparent;box-shadow:none}
+.f-rt .head>*{transform:translate(var(--dx,0),var(--dy,0))}
 .f-rt .head{width:var(--w);height:var(--h);background:#fff;border-radius:1.6mm;padding:1.3mm 1.8mm 1.1mm;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative}
 .f-rt .head::before{content:"";position:absolute;left:1.1mm;top:50%;width:1.3mm;height:1.3mm;margin-top:-.65mm;border-radius:50%;background:transparent}
 .f-rt .tl{flex:1;height:calc(var(--h) * .3);background:#fff;border-radius:0 2mm 2mm 0;box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -74,7 +75,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 Jost,system
 .f-zd .pr{font:700 4.2mm/1 Jost,Arial,sans-serif}
 .f-zd .id{font:600 1.9mm/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em;margin-top:1mm}
 .f-zd.nopr .id{font-size:2.6mm;margin:0}
-.dbs{display:flex;gap:10px}.dbs[hidden]{display:none}.dbs input{width:84px}
+.dbs{display:flex;gap:10px}.dbs[hidden],.rtOnly[hidden]{display:none}.dbs input{width:84px}
 
 /* A4: cut-out cards on a normal printer */
 body.a4 #sheet{display:grid;grid-template-columns:repeat(3,63mm);gap:0;width:max-content;background:#fff;padding:10mm 10.5mm}
@@ -111,6 +112,8 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   <span id="dbSize" class="dbs" hidden>
     <label>Total length (mm)<input type="number" id="dbL" min="30" max="120" step="1" value="72"></label>
     <label>Height (mm)<input type="number" id="dbH" min="8" max="30" step="0.5" value="13"></label>
+    <label class="rtOnly">Move down (mm)<input type="number" id="offY" min="-5" max="8" step="0.5" value="2.5"></label>
+    <label class="rtOnly">Move right (mm)<input type="number" id="offX" min="-5" max="8" step="0.5" value="1.5"></label>
     <label><span id="dbELbl">Each end (mm)</span><input type="number" id="dbE" min="10" max="50" step="1" value="25"></label>
   </span>
   <label>How many<select id="qty"><option value="1">1 per item</option><option value="stock">1 per piece in stock</option></select></label>
@@ -141,14 +144,14 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
   };
   let ITEMS = [];
   const settings = () => { try { return JSON.parse(localStorage.getItem("hq-tags") || "{}"); } catch { return {}; } };
-  const keep = () => { try { localStorage.setItem("hq-tags", JSON.stringify({ fmt: $("#fmt").value, qty: $("#qty").value, qr: $("#qrOn").checked, pr: $("#prOn").checked, L: $("#dbL").value, H: $("#dbH").value, E: $("#dbE").value })); } catch {} };
+  const keep = () => { try { localStorage.setItem("hq-tags", JSON.stringify({ fmt: $("#fmt").value, qty: $("#qty").value, qr: $("#qrOn").checked, pr: $("#prOn").checked, L: $("#dbL").value, X: $("#offX").value, Y: $("#offY").value, H: $("#dbH").value, E: $("#dbE").value })); } catch {} };
 
   function tagHTML(i, f, o) {
     const size = i.size_mm ? `${+i.size_mm} mm` : "";
     const dt = [size, i.variant].filter(Boolean).join(" · ");
     const price = o.pr && i.price > 0 ? `<div class="pr">${RM(i.price)}</div>` : "";
-    if (f === "rtzd" || FMT[f].rt) { const F = f === "rtzd" ? { w: o.E, h: o.H, tail: o.L - o.E, small: o.H < 12 } : FMT[f];
-      return `<div class="tag f-rt${F.small ? " small" : ""}" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm"><div class="head">
+    if (f === "rtzd" || FMT[f].rt) { const F = f === "rtzd" ? { w: o.E, h: o.H, tail: o.L - o.E, small: o.H < 12, dx: o.X, dy: o.Y } : FMT[f];
+      return `<div class="tag f-rt${F.small ? " small" : ""}" style="--w:${F.w}mm;--h:${F.h}mm;--t:${F.tail}mm;--dx:${F.dx || 0}mm;--dy:${F.dy || 0}mm"><div class="head">
         <div class="nm">${esc(name(i))}</div><div class="row"><span class="dt">${esc(size || i.variant || "\u00a0")}</span>${price}</div><div class="id">${esc(i.id)}</div></div><div class="tl"></div></div>`; }
     if (f === "zd104") return `<div class="tag f-zd${o.pr && i.price > 0 ? "" : " nopr"}"><div class="p"><div class="brand">HOUSE OF QI</div><div class="nm">${esc(name(i))}</div><div class="dt">${esc(dt || "\u00a0")}</div></div>
       <div class="p p2">${price}<div class="id">${esc(i.id)}</div></div><div class="tail"></div></div>`;
@@ -169,6 +172,8 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     o.L = num("#dbL", 72, 30, 120); o.H = num("#dbH", 13, 8, 30);
     o.E = f === "rtzd" ? Math.min(num("#dbE", 50, 15, 90), o.L - 10) : Math.min(num("#dbE", 25, 10, 50), (o.L - 6) / 2);
     $("#dbSize").hidden = f !== "db" && f !== "rtzd";
+    document.querySelectorAll(".rtOnly").forEach((x) => (x.hidden = f !== "rtzd"));
+    const off = (k, d) => { const v = parseFloat($(k).value); return Math.min(8, Math.max(-5, isNaN(v) ? d : v)); }; o.Y = off("#offY", 2.5); o.X = off("#offX", 1.5);
     $("#dbELbl").textContent = f === "rtzd" ? "Panel length (mm)" : "Each end (mm)";
     const noQR = f === "db" || f === "zd104" || f === "rtzd" || !!FMT[f].rt;
     $("#qrOn").disabled = noQR;
@@ -191,11 +196,11 @@ body.a4 .tag{box-shadow:none;outline:.2mm dashed #bbb;outline-offset:-.1mm}
     ITEMS = want.length ? want.map((id) => by[id]).filter(Boolean) : d.items.filter((i) => i.published && i.stock > 0);
     const s = settings();
     if (s.fmt) $("#fmt").value = s.fmt; if (s.qty) $("#qty").value = s.qty;
-    if (s.L) $("#dbL").value = s.L; if (s.H) $("#dbH").value = s.H; if (s.E) $("#dbE").value = s.E;
+    if (s.X != null) $("#offX").value = s.X; if (s.Y != null) $("#offY").value = s.Y; if (s.L) $("#dbL").value = s.L; if (s.H) $("#dbH").value = s.H; if (s.E) $("#dbE").value = s.E;
     if (s.qr === false) $("#qrOn").checked = false; if (s.pr === false) $("#prOn").checked = false;
     render();
   }
-  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE"].forEach((k) => $(k).addEventListener("change", render));
+  ["#fmt", "#qty", "#qrOn", "#prOn", "#dbL", "#dbH", "#dbE", "#offX", "#offY"].forEach((k) => $(k).addEventListener("change", render));
   $("#print").onclick = () => window.print();
   load().catch(() => ($("#sheet").innerHTML = `<p class="msg">Couldn't load the stock list. Please refresh.</p>`));
 })();
