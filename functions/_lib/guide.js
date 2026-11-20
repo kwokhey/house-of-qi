@@ -15,6 +15,8 @@ export const CATS = {
     intro: "Natural crystal and gemstone rings, chosen by hand and delivered across Malaysia." },
   earrings: { name: "Earrings", title: "Natural Crystal & Gemstone Earrings in Malaysia", match: (p) => p.collection === "earrings" || /earring/i.test(p.name),
     intro: "Natural crystal and gemstone earrings, chosen by hand and delivered across Malaysia." },
+  decor: { name: "Home & Décor", title: "Crystal Spheres, Statues & Home Décor in Malaysia", match: (p) => p.collection === "decor",
+    intro: "Natural crystal spheres, carved statues and pieces for the home, each one chosen by hand and delivered across Malaysia." },
 };
 
 const img = (p) => (p.image ? abs(p.image) : p._og ? abs(`/assets/img/og/${encodeURIComponent(p.id)}.jpg`) : abs("/assets/img/logo-mark.png"));
@@ -92,7 +94,7 @@ ${schema.map(ld).join("\n")}
   <main>
   <h1>${esc(h1)}</h1>
   ${body}
-  <nav aria-label="More from House of Qi"><p><a href="/crystals">Crystal meanings A–Z</a> · <a href="/bracelets">Bracelets</a> · <a href="/pendants">Pendants</a> · <a href="/rings">Rings</a> · <a href="/earrings">Earrings</a> · <a href="/policies">Shipping, returns &amp; care</a></p></nav>
+  <nav aria-label="More from House of Qi"><p><a href="/crystals">Crystal meanings A–Z</a> · <a href="/bracelets">Bracelets</a> · <a href="/pendants">Pendants</a> · <a href="/rings">Rings</a> · <a href="/earrings">Earrings</a> · <a href="/decor">Home &amp; Décor</a> · <a href="/policies">Shipping, returns &amp; care</a></p></nav>
   <p class="note">Natural gemstones vary in colour, clarity and pattern, so each piece is unique. Crystal meanings describe traditional and spiritual beliefs and are not medical advice.</p>
   </main>
   <script src="/assets/js/art.js?v=30"></script>

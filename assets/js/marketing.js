@@ -7,7 +7,7 @@
   const MYT = 8 * 3600 * 1000;
   const ymd = (ts) => (ts ? new Date(ts + MYT).toISOString().slice(0, 10) : "");
   const nice = (ts) => (ts ? new Date(ts).toLocaleDateString("en-MY", { day: "numeric", month: "short", timeZone: "Asia/Kuala_Lumpur" }) : "");
-  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["decor", "Spheres & Décor"], ["sets", "Gift Sets"]];
+  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["decor", "Home & Décor"], ["sets", "Gift Sets"]];
   const SCOPES = [["all", "Whole shop"], ["collection", "A shop section"], ["stones", "Chosen stones"], ["items", "Chosen pieces"]];
 
   let D = { coupons: [], sales: [], stones: [], items: [], announce: null, now: Date.now() };

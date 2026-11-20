@@ -7,8 +7,8 @@
   const day = (ts) => new Date(ts).toLocaleString("en-MY", { day: "numeric", month: "short", year: "2-digit", hour: "numeric", minute: "2-digit" }).replace(",", "");
   const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); };
   const CHANNELS = ["Instagram", "WhatsApp", "Facebook", "Bazaar / event", "In person", "Other"];
-  const TYPES = ["Bracelet", "Pendant", "Necklace", "Ring", "Earrings", "Sphere", "Cluster", "Tumbled", "Other"];
-  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["rings", "Rings"], ["earrings", "Earrings"], ["decor", "Spheres & Décor"], ["sets", "Gift Sets"]];
+  const TYPES = ["Bracelet", "Pendant", "Necklace", "Ring", "Earrings", "Sphere", "Statue", "Cluster", "Tumbled", "Other"];
+  const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["rings", "Rings"], ["earrings", "Earrings"], ["decor", "Home & Décor"], ["sets", "Gift Sets"]];
   const KIND = { sale: "Sold", restock: "Stock in", adjust: "Adjusted", consign: "Seller" };
 
   let ITEMS = [], MONTH = {}, FILTER = "all", Q = "", loaded = false, COLS = [];
