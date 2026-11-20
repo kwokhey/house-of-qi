@@ -35,7 +35,7 @@
       "label": "Singapore",
       "note": "DHL",
       "fee": 88,
-      "extra": 15,
+      "extra": 0,
       "perItems": 3,
       "country": "SG"
     },
