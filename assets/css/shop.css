@@ -941,3 +941,4 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .specs>div:nth-child(3){grid-column:1/-1}
 
 .wt-note{margin:14px 0 4px;padding:12px 14px;border:1px solid rgba(160,120,70,.35);background:rgba(200,160,100,.10);border-radius:8px;font-size:13.5px;line-height:1.5;color:inherit}
+.mto-note{margin:14px 0;padding:12px 14px;border:1px solid rgba(160,120,70,.35);background:rgba(200,160,100,.10);border-radius:8px;font-size:14px;line-height:1.5}.mto-note b{display:block;margin-bottom:3px}.mto-note p{margin:0}.mto-note a{text-decoration:underline}
