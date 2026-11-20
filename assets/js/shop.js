@@ -16,7 +16,7 @@ async function loadCatalog(){
     groups:(p.groups||[]).map(g=>({...g,def:g.default,opts:g.opts.map(o=>[o.id,o.label,o.price||0,o.note,o.short])}))}));
   BY=Object.fromEntries(CAT.map(m=>[m.id,m]));
   /* one card per stone + type: the sheet lets the customer choose the exact piece (size, tone…) */
-  FAM={};CAT.forEach(m=>{const k=[m.stone||m.name,(m.art&&m.art.type)||'',m.cat].join('|').toLowerCase();m.fam=k;(FAM[k]=FAM[k]||[]).push(m)});
+  FAM={};CAT.forEach(m=>{const k=[m.stone||m.name,(m.art&&m.art.type)||'',m.cat,String((m.art&&m.art.variant)||'').trim().replace(/\s+/g,' ')].join('|').toLowerCase(); /* same name + same description → one family; only bead size differs */m.fam=k;(FAM[k]=FAM[k]||[]).push(m)});
   Object.values(FAM).forEach(f=>{f.sort((a,b)=>(a.size||0)-(b.size||0)||a.price-b.price);const n={},k={};f.forEach(m=>{m.optLabel=m.details||m.grade||'Standard';n[m.optLabel]=(n[m.optLabel]||0)+1});
     f.forEach(m=>{if(n[m.optLabel]>1){k[m.optLabel]=(k[m.optLabel]||0)+1;m.optLabel+=` · No.${k[m.optLabel]}`}})})}
 let FAM={},SZSEL='';
