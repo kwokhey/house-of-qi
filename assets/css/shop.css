@@ -939,3 +939,5 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 /* longer stone meanings */
 .meaning p{font-size:17px;line-height:1.5}
 .specs>div:nth-child(3){grid-column:1/-1}
+
+.wt-note{margin:14px 0 4px;padding:12px 14px;border:1px solid rgba(160,120,70,.35);background:rgba(200,160,100,.10);border-radius:8px;font-size:13.5px;line-height:1.5;color:inherit}

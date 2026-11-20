@@ -11,7 +11,7 @@
       "label": "West Malaysia (Peninsular)",
       "note": "DHL · 3–5 working days",
       "fee": 10,
-      "extra": 2,
+      "extra": 0,
       "perItems": 3,
       "days": [
         3,
@@ -23,7 +23,7 @@
       "label": "East Malaysia",
       "note": "Sabah, Sarawak & Labuan · DHL · 5–7 working days",
       "fee": 20,
-      "extra": 5,
+      "extra": 0,
       "perItems": 3,
       "days": [
         5,

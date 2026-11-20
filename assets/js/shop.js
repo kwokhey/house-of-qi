@@ -64,7 +64,7 @@ const lineTotal=l=>R2(unit(BY[l.id],l.sel)*l.qty);
 /* delivery: 1–3 pieces = base rate (up to 500 g); each further block of 3 pieces adds the option's extra */
 const pieces=(lines=S.cart)=>lines.reduce((t,l)=>t+l.qty,0);
 const shipFee=(s,n)=>!s||s.pickup||s.contact?0:R2(s.fee+(Math.max(1,Math.ceil((n||1)/(s.perItems||3)))-1)*(s.extra||0));
-const wNote=(s,n=pieces())=>!s||s.pickup||s.contact?'':(n||1)>(s.perItems||3)?'estimated over 500 g':'up to 500 g';
+const wNote=(s,n=pieces())=>!s||s.pickup||s.contact?'':s.extra&&(n||1)>(s.perItems||3)?'estimated over 500 g':'up to 500 g';
 const quoteShip=(k)=>!!(SHIP[k]&&SHIP[k].contact);
 function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||Object.values(SHIP)[0];let fee=shipFee(s,pieces(lines));
   const p=lines===S.cart&&ship===S.ship&&promoOK()?S.promo:null;if(p&&p.freeShip)fee=0;const disc=p?p.discount:0;
@@ -407,19 +407,21 @@ function recheckCode(){if(S.code&&!promoOK())applyCode(S.code)}
 const feeTxt=(k,f)=>quoteShip(k)?'Quote':SHIP[k].pickup?'No charge':RM(f);
 const isIntl=()=>quoteShip(S.ship);
 const noteHTML=()=>`<div class="intl-note"><b>Other countries</b><p>Online payment covers Malaysia and Singapore. For other countries, contact our customer service on WhatsApp before ordering: we will confirm availability, the delivery cost, delivery time and how to pay. Import duties, taxes and customs charges are paid by the customer.</p></div>`;
+const wtHide=()=>{const s=SHIP[S.ship];return !s||s.pickup||s.contact};
 const payText=()=>`Next, you’ll enter your ${SHIP[S.ship].pickup?'contact details':'delivery address'} and pay on Stripe’s secure page with a card, FPX online banking or the other methods shown there.`;
 function renderCheckout(){
   $('#coBody').innerHTML=`<div class="cols"><div class="col-main"><h1 class="disp page-h">Checkout</h1>
   <div class="fs"><div class="fs-h"><b>Delivery</b></div>${Object.entries(SHIP).map(([k,s])=>{const fee=totals(S.cart,k).fee;return`<button class="radio${S.ship===k?' on':''}" data-act="ship" data-k="${k}" role="radio" aria-checked="${S.ship===k}"><span class="dot"></span><span><b>${esc(s.label)}</b><small data-wn="${k}">${esc([s.note,wNote(s)].filter(Boolean).join(' · '))}</small></span><span class="rp" data-fee="${k}">${feeTxt(k,fee)}</span></button>`}).join('')}
   ${noteHTML()}</div>
   ${codeHTML()}
+  <p class="wt-note" id="wtNote"${wtHide()?' hidden':''}>Shipping fee covers parcels up to 500 g only. If your order is over 500 g, our team will contact you about any extra charges.</p>
   <div class="fs" id="payFs"><div class="fs-h"><b>Payment</b></div><div class="pay-box">${IC.lock}<div><b>Secure payment by Stripe</b><p id="payText">${payText()}</p><div class="pay-marks"><span class="pay-ic">VISA</span><span class="pay-ic">MASTERCARD</span><span class="pay-ic">FPX</span></div></div></div></div>
   <div class="co-mob" id="coTot">${totHTML()}</div>
   <p class="co-err" id="coErr" hidden></p></div>
   <aside class="col-side co-sum" id="coSum">${coSum()}</aside></div>`;
   $('#placeAmt').textContent=RM(totals().total);resetPlaceBtn();bindCode();recheckCode()}
 function setShip(k){if(!SHIP[k])return;S.ship=k;save();vib(6);document.querySelectorAll('[data-act=ship]').forEach(b=>{const on=b.dataset.k===k;b.classList.toggle('on',on);b.setAttribute('aria-checked',on)});
-  $('#payText').textContent=payText();const n=document.querySelector('.intl-note');if(n)n.outerHTML=noteHTML();refreshCo();recheckCode()}
+  $('#payText').textContent=payText();{const w=$('#wtNote');if(w)w.hidden=wtHide()}const n=document.querySelector('.intl-note');if(n)n.outerHTML=noteHTML();refreshCo();recheckCode()}
 
 /* =====================================================================
    PAYMENT → STRIPE → THANK YOU

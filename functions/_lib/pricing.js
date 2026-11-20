@@ -101,4 +101,4 @@ export function shipFee(ship, count) {
   const per = ship.perItems || 3, blocks = Math.max(1, Math.ceil((count || 1) / per));
   return round2(ship.fee + (blocks - 1) * (ship.extra || 0));
 }
-export const weightNote = (ship, count) => (ship && !ship.pickup && !ship.contact ? ((count || 1) > (ship.perItems || 3) ? "estimated over 500 g" : "up to 500 g") : "");
+export const weightNote = (ship, count) => (ship && !ship.pickup && !ship.contact ? (ship.extra && (count || 1) > (ship.perItems || 3) ? "estimated over 500 g" : "up to 500 g") : "");
