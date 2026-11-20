@@ -192,7 +192,7 @@ function initBan(){const r=$('#ban');clearTimeout(BAN.t);if(!r)return;BAN.i=0;co
 
 /* questions & answers (same answers search engines and AI assistants read) */
 function faqHTML(){const Q=CFG.faqs||[];if(!Q.length)return'';
-  return`<section class="faq gx" id="faq" aria-labelledby="faqH"><div class="faq-in"><span class="eyebrow">Good to know</span><h2 class="disp" id="faqH">Questions &amp; <em>answers</em></h2>
+  return`<section class="faq gx" id="faq" aria-labelledby="faqH"><div class="faq-in"><span class="eyebrow">Good to know</span><h2 class="disp" id="faqH">Questions &amp; <em>Answers</em></h2>
   <div class="faq-list">${Q.map(([q,a])=>`<details class="faq-i"><summary>${esc(q)}<i aria-hidden="true"></i></summary><p>${esc(a)}</p></details>`).join('')}</div></div></section>`}
 let spyLock=0;
 let SPY=[];
