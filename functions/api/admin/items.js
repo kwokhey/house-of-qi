@@ -7,13 +7,12 @@
  *   DELETE /api/admin/items?id=...   → remove an item (and its photo)
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { setSetting, db, hasDB } from "../../_lib/db.js";
+import { setSetting, db, hasDB, cleanId, idOk, idKey } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { json } from "../../_lib/stripe.js";
 import { COLOURS, autoColour, isColour } from "../../_lib/colours.js";
 import { stoneMeaning } from "../../_lib/stones.js";
 
-const ID_RE = /^[A-Z0-9][A-Z0-9-]{0,39}$/;
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const str = (v, max = 200) => String(v ?? "").trim().slice(0, max);
 
@@ -47,8 +46,8 @@ export async function onRequestPost({ request, env }) {
   let b = {};
   try { b = await request.json(); } catch {}
   if (b.action === "clearAll") return clearAll(D, b);
-  const id = str(b.id, 40).toUpperCase().replace(/\s+/g, "");
-  if (!ID_RE.test(id)) return json({ error: "Item ID can use letters, numbers and dashes only (e.g. LRM-1001)." }, 400);
+  const id = cleanId(b.id);
+  if (!idOk(id)) return json({ error: "Please enter an item ID (up to 60 characters, without / \\ ? % < > or quotes)." }, 400);
   const stone = str(b.stone, 80);
   if (!stone) return json({ error: "Please enter the stone name." }, 400);
   const now = Date.now();
@@ -64,7 +63,7 @@ export async function onRequestPost({ request, env }) {
     dims: str(b.dims, 120),
   };
   // changing the ID of an existing item: move everything linked to it, then save as usual
-  const oldId = b.isNew ? "" : str(b.oldId, 40);
+  const oldId = b.isNew ? "" : str(b.oldId, 60);
   if (oldId && oldId !== id) {
     if (await D.prepare("SELECT 1 FROM items WHERE id = ?").bind(id).first()) return json({ error: `${id} is already used by another item. Please choose a different ID.` }, 409);
     const was = await D.prepare("SELECT id, gallery FROM items WHERE id = ?").bind(oldId).first();
@@ -73,6 +72,10 @@ export async function onRequestPost({ request, env }) {
   }
   const exists = await D.prepare("SELECT id FROM items WHERE id = ?").bind(id).first();
   if (b.isNew && exists) return json({ error: `${id} already exists. Use a different item ID.` }, 409);
+  if (!exists) {
+    const same = (await D.prepare("SELECT id FROM items").all()).results.find((r) => r.id !== oldId && idKey(r.id) === idKey(id));
+    if (same) return json({ error: `${same.id} is already in stock. Please use a different item ID.` }, 409);
+  }
 
   if (!exists) {
     const qty = Math.max(0, Math.floor(num(b.stock)));
@@ -93,7 +96,7 @@ export async function onRequestPost({ request, env }) {
 export async function onRequestDelete({ request, env }) {
   const g = await guard(request, env); if (g) return g;
   const D = await db(env);
-  const id = str(new URL(request.url).searchParams.get("id"), 40);
+  const id = str(new URL(request.url).searchParams.get("id"), 60);
   const sold = await D.prepare("SELECT COUNT(*) AS n FROM movements WHERE item_id = ? AND kind = 'sale'").bind(id).first();
   if (sold.n) return json({ error: "This item has sales recorded, so it can't be deleted. Hide it from the website instead." }, 409);
   await D.batch([

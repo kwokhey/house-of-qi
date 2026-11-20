@@ -121,7 +121,7 @@
         if (d.variant) d.variant = d.variant[0].toUpperCase() + d.variant.slice(1);
       }
       // only the Item IDs written in the sheet are used; nothing is made up
-      const id = get("id").toUpperCase().replace(/\s+/g, "");
+      const id = get("id").replace(/[\u0000-\u001f]+/g, " ").trim(); // kept exactly as written in the sheet
       if (!id) { noId.push(`row ${r + 1} (${stone}${details ? ", " + String(details).trim() : ""})`); continue; }
       if (ids.has(id)) { dups.push(`row ${r + 1}: ${id}`); continue; }
       ids.add(id);

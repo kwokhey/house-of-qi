@@ -4,10 +4,9 @@
  *   POST /api/admin/printed { clear: [id, ...] }      → unmark
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { db, hasDB } from "../../_lib/db.js";
+import { db, hasDB, idOk } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
 
-const ID_RE = /^[A-Z0-9][A-Z0-9-]{0,39}$/;
 
 export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -17,10 +16,10 @@ export async function onRequestPost({ request, env }) {
   const now = Date.now(), st = [];
   for (const m of (Array.isArray(b.marks) ? b.marks : []).slice(0, 2000)) {
     const id = String(m?.id || ""), q = Math.max(0, Math.min(100000, Math.floor(Number(m?.qty) || 0)));
-    if (!ID_RE.test(id)) continue;
+    if (!idOk(id)) continue;
     st.push(D.prepare(`INSERT INTO printed (item_id, qty, at) VALUES (?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET qty = excluded.qty, at = excluded.at`).bind(id, q, now));
   }
-  for (const id of (Array.isArray(b.clear) ? b.clear : []).slice(0, 2000)) if (ID_RE.test(String(id))) st.push(D.prepare(`DELETE FROM printed WHERE item_id = ?`).bind(String(id)));
+  for (const id of (Array.isArray(b.clear) ? b.clear : []).slice(0, 2000)) if (idOk(String(id))) st.push(D.prepare(`DELETE FROM printed WHERE item_id = ?`).bind(String(id)));
   if (st.length) await D.batch(st);
   return json({ ok: true, count: st.length });
 }

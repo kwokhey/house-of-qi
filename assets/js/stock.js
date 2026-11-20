@@ -117,7 +117,7 @@
         <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button><button type="button" class="btn ghost sm" data-oos${i.stock <= 0 ? " disabled" : ""}>${i.stock <= 0 ? "Out of stock" : "Mark out of stock"}</button></div>
         <div id="mvForm"></div></div>`}
       <div class="grid-f">
-        ${field("eId", "Item ID", i.id, 'placeholder="e.g. LRM-1060" autocapitalize="characters" required')}
+        ${field("eId", "Item ID", i.id, 'placeholder="e.g. LRM-1060" autocapitalize="off" required')}
         ${field("eStone", "Stone", i.stone, 'required placeholder="e.g. Larimar"')}
         ${selectF("eType", "Type", TYPES, i.type)}
         ${field("eSize", "Bead size (mm)", i.size_mm ?? "", 'inputmode="decimal" placeholder="e.g. 10"')}
@@ -153,7 +153,7 @@
         intentions: (() => { try { return JSON.parse(i.intentions || "[]"); } catch { return []; } })(), isNew, stock: isNew ? $("#eQty").value : undefined,
       };
       $("#edSave").disabled = true;
-      const newId = $("#eId").value.trim().toUpperCase().replace(/\s+/g, "");
+      const newId = $("#eId").value.trim();
       if (!isNew && newId !== i.id && !confirm(`Change the item ID from ${i.id} to ${newId}?\n\nPhotos, stock history and sales move with it. Printed tags and shared links that use ${i.id} will no longer match, and the next import should use ${newId}.`)) { $("#edSave").disabled = false; return; }
       try { const r = await api("/api/admin/items", { method: "POST", body: JSON.stringify(body) }); toast(isNew ? `${r.item.id} added` : newId !== i.id ? `Item ID changed to ${r.item.id}` : "Saved"); await load(); if (isNew) openEditor(ITEMS.find((x) => x.id === r.item.id)); else d.close(); }
       catch (x) { $("#edErr").textContent = x.message; $("#edErr").hidden = false; }

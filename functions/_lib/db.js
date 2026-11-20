@@ -211,3 +211,10 @@ export async function setSetting(D, k, v) {
 export const itemName = (r) => `${r.stone} ${r.type}`.trim();
 /** Secondary line, e.g. "Bright blue · 10 mm" */
 export const itemDetails = (r) => [r.variant, r.size_mm ? `${+r.size_mm} mm` : ""].filter(Boolean).join(" · ");
+
+/** Item IDs are kept exactly as written in the inventory sheet (spaces, brackets, # and Chinese are fine).
+ *  Only characters that break links or pages are refused: / \ ? % < > " ' ` and control characters. */
+export const cleanId = (s) => String(s ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 60);
+export const idOk = (id) => typeof id === "string" && id.length > 0 && id.length <= 60 && id === id.trim() && !/[\/\\?%<>"'`\u0000-\u001f\u007f]/.test(id);
+/** For spotting the same ID written differently (case, spaces): "lrm-1001" and "LRM - 1001" → "LRM-1001" */
+export const idKey = (s) => String(s ?? "").toUpperCase().replace(/\s+/g, "");

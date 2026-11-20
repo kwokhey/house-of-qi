@@ -2,15 +2,14 @@
  * Bulk import (login required). The browser reads the Excel file or Google Sheet,
  * shows a preview, then sends the cleaned rows here.
  *   POST /api/admin/import  { items: [...], stockMode: "keep" | "replace" }
- *     new item IDs are added with their stock;
+ *     new item IDs are added with their stock (IDs are kept exactly as written in the sheet);
  *     existing IDs get their names and prices updated; stock is only changed with "replace".
  *   GET /api/admin/import?url=<Google Sheets link>  → the sheet as CSV text
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { db, hasDB } from "../../_lib/db.js";
+import { db, hasDB, cleanId, idOk, idKey } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
 
-const ID_RE = /^[A-Z0-9][A-Z0-9-]{0,39}$/;
 
 export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -23,12 +22,15 @@ export async function onRequestPost({ request, env }) {
   const replace = b.stockMode === "replace";
   const now = Date.now();
   const existing = new Map((await D.prepare("SELECT id, stock FROM items").all()).results.map((r) => [r.id, r]));
+  // an ID written with different capitals or spaces still matches the item already in stock
+  const byKey = new Map([...existing.keys()].map((k) => [idKey(k), k]));
   let sort = (await D.prepare("SELECT COALESCE(MAX(sort),0) AS s FROM items").first()).s;
   const stmts = [];
   let added = 0, updated = 0, skipped = 0;
   for (const r of rows) {
-    const id = String(r.id || "").toUpperCase().replace(/\s+/g, "");
-    if (!ID_RE.test(id) || !r.stone) { skipped++; continue; }
+    let id = cleanId(r.id);
+    if (!idOk(id) || !r.stone) { skipped++; continue; }
+    if (!existing.has(id) && byKey.has(idKey(id))) id = byKey.get(idKey(id));
     const f = [String(r.stone).slice(0, 80), String(r.type || "Bracelet").slice(0, 40), String(r.variant || "").slice(0, 120),
       Number.isFinite(+r.size_mm) && r.size_mm !== null && r.size_mm !== "" ? +r.size_mm : null, String(r.supplier || "").slice(0, 80),
       String(r.collection || ({ Earrings: "earrings", Ring: "rings", Pendant: "pendants", Necklace: "pendants" })[r.type] || "bracelets").slice(0, 40), Math.max(0, +r.cost || 0), Math.max(0, +r.price || 0)];
@@ -40,7 +42,7 @@ export async function onRequestPost({ request, env }) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`).bind(id, ...f, stockIn, stockLeft, ++sort, now, now));
       if (stockIn) stmts.push(D.prepare("INSERT INTO movements (item_id, kind, qty, unit_cost, note, created_at) VALUES (?, 'restock', ?, ?, 'Imported', ?)").bind(id, stockIn, f[6], now));
       if (stockIn > stockLeft) stmts.push(D.prepare("INSERT INTO movements (item_id, kind, qty, note, created_at) VALUES (?, 'adjust', ?, 'Imported: already sold', ?)").bind(id, stockLeft - stockIn, now));
-      existing.set(id, { id, stock: stockLeft });
+      existing.set(id, { id, stock: stockLeft }); byKey.set(idKey(id), id);
       added++;
     } else {
       stmts.push(D.prepare("UPDATE items SET stone=?, type=?, variant=?, size_mm=?, supplier=?, collection=?, cost=?, price=?, updated_at=? WHERE id=?").bind(...f, now, id));
