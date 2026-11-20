@@ -88,6 +88,14 @@ export const STONES = {
 
 export const slug = (s) => String(s || "").toLowerCase().replace(/\(.*?\)/g, " ").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 export const stoneKey = (s) => String(s || "").trim().toLowerCase();
+/** Key for the stone texts: the exact name, or else the longest known stone inside it ("Rainbow Black Obsidian" → "obsidian") */
+const textKey = (s) => {
+  const k = stoneKey(s).replace(/\s*\((big|small|large|premium)\)\s*/g, " ").trim();
+  if (STONES[k] || MEANINGS[k]) return k;
+  let best = "";
+  for (const n of Object.keys(STONES)) if (n.length > best.length && new RegExp(`(^|[^a-z])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`).test(k)) best = n;
+  return best || k;
+};
 
 /** Everything known about a stone, from the guide text and the shop's chakra / birthstone / intention data */
 export function stoneInfo(stone, cat, pieces = []) {
@@ -116,12 +124,12 @@ export const list = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", "
 
 /** "Amethyst is traditionally known as a stone of calm…" (one sentence, for lists and the Meaning box) */
 export function stoneBelief(stone) {
-  const e = STONES[stoneKey(stone)];
+  const e = STONES[textKey(stone)];
   if (!e) return "";
   const name = String(stone).replace(/\s*\(.*?\)/, "").trim();
   return e[1].replace(/^(It|They) (is|are) /, `${name} ${/s$/.test(name) && /^They/.test(e[1]) ? "are" : "is"} `).replace(/^(Often called|Known as|Prized since|Linked to|Celebrated as)([^,]*), it /, `$1$2, ${name.toLowerCase()} `).replace(/^([a-z])/, (c) => c.toUpperCase());
 }
-export const stoneAbout = (stone) => (STONES[stoneKey(stone)] || [""])[0];
+export const stoneAbout = (stone) => (STONES[textKey(stone)] || [""])[0];
 
 /**
  * Longer meaning shown in the product's Meaning box (traditional and spiritual beliefs, not medical claims).
@@ -199,4 +207,4 @@ export const MEANINGS = {
 };
 
 /** The meaning shown on a product: the long meaning if written, otherwise the one-line belief */
-export const stoneMeaning = (stone) => MEANINGS[stoneKey(stone)] || stoneBelief(stone);
+export const stoneMeaning = (stone) => MEANINGS[textKey(stone)] || stoneBelief(stone);

@@ -131,7 +131,7 @@
         ${selectF("eColour", "Bead colour (Shop by colour)", [["", `Automatic · ${(COLS.find((c) => c.id === (i.auto_colour || "")) || { name: "set from stone" }).name}`], ...COLS.map((c) => [c.id, c.name])], i.colour || "")}
       </div>
       <p class="margin" id="eMargin"></p>
-      <label class="f full"><span>Description (shown in the shop)</span><textarea id="eDesc" rows="2" placeholder="Leave empty for an automatic line">${esc(i.description)}</textarea></label>
+      <label class="f full"><span>Description (shown in the shop)</span><textarea id="eDesc" rows="3" placeholder="${esc(i.auto_description ? "Automatic (shown in the shop now): " + i.auto_description : "Leave empty for an automatic line")}">${esc(i.description)}</textarea></label>
       <label class="f full"><span>Meaning</span><textarea id="eMean" rows="5" placeholder="e.g. The stone of calm, traditionally used for…">${esc(i.meaning || i.auto_meaning || "")}</textarea></label>
       <div class="toggles"><label><input type="checkbox" id="ePub"${i.published ? " checked" : ""}> Show on website</label><label><input type="checkbox" id="eFeat"${i.featured ? " checked" : ""}> Featured on home page</label></div>
       <p class="err" id="edErr" hidden></p>

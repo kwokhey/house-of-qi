@@ -67,7 +67,7 @@ export function rowToProduct(r, settings) {
   };
 }
 
-function defaultDescription(r, details) {
+export function defaultDescription(r, details) {
   const one = r.stock === 1 ? " One piece only." : "";
   // keep place names capitalised: Baltic amber, Libyan glass, Tanzania sunstone
   const stone = r.stone.toLowerCase().replace(/\b(baltic|libyan|tanzania|tanzanian|brazil|brazilian|madagascar|african|tibetan|himalayan|russian|mexican|peruvian|dominican)\b/g, (w) => w[0].toUpperCase() + w.slice(1));
