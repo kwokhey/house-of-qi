@@ -31,7 +31,8 @@ function famCard(m){const f=FAM[m.fam]||[m];if(f.length<2)return m;const live=f.
   return{...rep,price:min.price,was:min.was,sale:(f.find(x=>x.sale)||{}).sale||null,fromP:pool.some(x=>x.price!==min.price),multi:f.length,stock:undefined,soldOut:!live.length,
     details:`${f.length} options${mm.length>1?` · ${mm[0]}–${mm[mm.length-1]} mm`:mm.length?` · ${mm[0]} mm`:''}`,mms:mm.join(' '),
     desc:rep.blurb?rep.blurb:f.every(x=>x.stock===1)?`${f.length} one-of-a-kind pieces to choose from.`:`Choose from ${f.length} ${mm.length>1?'sizes and tones':'pieces'}.`}}
-const famList=items=>{const seen=new Set();const L=items.filter(m=>!seen.has(m.fam)&&seen.add(m.fam)).map(famCard);return L.filter(m=>!m.soldOut).concat(L.filter(m=>m.soldOut))};
+/* lists show every single piece (no grouping); the product page still offers the other sizes */
+const famList=items=>{const L=items.slice();return L.filter(m=>!m.soldOut).concat(L.filter(m=>m.soldOut))};
 /* Real photos: set "image" on a product in catalog.json (e.g. "assets/img/products/star-rose-12mm.jpg").
    Products without a photo use the drawn artwork from art.js. */
 const img=(id,v='sq')=>(BY[id]&&BY[id].image)?'/'+BY[id].image.replace(/^\//,''):ART.get(id,v,BY[id]&&BY[id].art);
