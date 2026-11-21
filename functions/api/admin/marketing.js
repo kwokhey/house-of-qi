@@ -15,6 +15,7 @@ import { db, hasDB, getSetting, setSetting } from "../../_lib/db.js";
 import { syncSales } from "../../_lib/inventory.js";
 import { cleanCode } from "../../_lib/promo.js";
 import { bannerPhotos } from "../../_lib/catalog.js";
+import { photoStmt } from "../../_lib/photos.js";
 import { json } from "../../_lib/stripe.js";
 
 const MYT = 8 * 3600 * 1000;
@@ -128,7 +129,7 @@ export async function onRequestPost({ request, env }) {
     if (bin.length > 1_500_000) return json({ error: "That photo is too large. Please try another." }, 413);
     if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
     await D.batch([
-      D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(`coll-${id}`, m[1], bin, now),
+      await photoStmt(env, D, `coll-${id}`, m[1], bin, now),
       D.prepare("UPDATE collections SET cover_v = ?, updated_at = ? WHERE id = ?").bind(now, now, id),
     ]);
     return json({ ok: true, cover_v: now });
@@ -148,7 +149,7 @@ export async function onRequestPost({ request, env }) {
       if (bin.length > 1_800_000) return json({ error: "That photo is too large. Please try another." }, 413);
       if (!realImage(bin, m[1])) return json({ error: "That file is not a real JPG, PNG or WebP photo." }, 400);
       const k = `banner-${now}`;
-      await D.prepare("INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at").bind(k, m[1], bin, now).run();
+      await (await photoStmt(env, D, k, m[1], bin, now)).run();
       photos.push({ k, v: now });
     }
     if (b.type === "bannerDel") {

@@ -12,6 +12,7 @@ import { realImage, b64 } from "../../_lib/upload.js";
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
+import { photoStmt, readPhoto } from "../../_lib/photos.js";
 
 export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -28,7 +29,6 @@ export async function onRequestPost({ request, env }) {
   const item = await D.prepare("SELECT id, gallery FROM items WHERE id = ?").bind(String(b.id || "")).first();
   if (!item) return json({ error: "Item not found." }, 404);
   const now = Date.now();
-  const UPSERT = "INSERT INTO images (item_id, mime, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(item_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at";
   // main photo, or one of up to 5 extra angles (kept in items.gallery as [{k, v}])
   let key = item.id, st;
   if (b.slot) {
@@ -41,9 +41,9 @@ export async function onRequestPost({ request, env }) {
       if (!x) return json({ error: "That photo was removed. Please add it again." }, 404);
       key = x.k; x.v = now;
     }
-    st = [D.prepare(UPSERT).bind(key, m[1], bin, now), D.prepare("UPDATE items SET gallery = ?, updated_at = ? WHERE id = ?").bind(JSON.stringify(g), now, item.id)];
+    st = [await photoStmt(env, D, key, m[1], bin, now), D.prepare("UPDATE items SET gallery = ?, updated_at = ? WHERE id = ?").bind(JSON.stringify(g), now, item.id)];
   } else {
-    st = [D.prepare(UPSERT).bind(item.id, m[1], bin, now), D.prepare("UPDATE items SET image_v = ?, updated_at = ? WHERE id = ?").bind(now, now, item.id)];
+    st = [await photoStmt(env, D, item.id, m[1], bin, now), D.prepare("UPDATE items SET image_v = ?, updated_at = ? WHERE id = ?").bind(now, now, item.id)];
   }
   try { await D.batch(st); }
   catch (e) { console.error("photo save", e && e.message); return json({ error: "Couldn't save the photo. Please try a smaller photo.", detail: String(e && e.message || e).slice(0, 200) }, 500); }
@@ -52,7 +52,7 @@ export async function onRequestPost({ request, env }) {
   if (o) {
     try {
       const ob = b64(o[2]);
-      if (ob.length <= 1_900_000 && realImage(ob, o[1])) await D.prepare(UPSERT).bind(`orig-${key}`, o[1], ob, now).run();
+      if (ob.length <= 1_900_000 && realImage(ob, o[1])) await (await photoStmt(env, D, `orig-${key}`, o[1], ob, now)).run();
     } catch (e) { console.error("photo original", e && e.message); }
   }
   return json({ ok: true, image_v: now, key });
@@ -75,9 +75,9 @@ export async function onRequestGet({ request, env }) {
   const D = await db(env);
   const id = new URL(request.url).searchParams.get("id") || "";
   const k = new URL(request.url).searchParams.get("k");
-  const r = await D.prepare("SELECT mime, data FROM images WHERE item_id = ?").bind(`orig-${k && k.startsWith(`g-${id}-`) ? k : id}`).first();
+  const r = await readPhoto(env, D, `orig-${k && k.startsWith(`g-${id}-`) ? k : id}`);
   if (!r) return json({ error: "No original kept." }, 404);
-  return new Response(r.data instanceof ArrayBuffer || ArrayBuffer.isView(r.data) ? r.data : new Uint8Array(r.data), { headers: { "Content-Type": r.mime, "Cache-Control": "no-store" } });
+  return new Response(r.body, { headers: { "Content-Type": r.mime, "Cache-Control": "no-store" } });
 }
 
 export async function onRequestDelete({ request, env }) {
