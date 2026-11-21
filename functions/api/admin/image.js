@@ -46,7 +46,7 @@ export async function onRequestPost({ request, env }) {
     st = [D.prepare(UPSERT).bind(item.id, m[1], bin, now), D.prepare("UPDATE items SET image_v = ?, updated_at = ? WHERE id = ?").bind(now, now, item.id)];
   }
   try { await D.batch(st); }
-  catch (e) { console.error("photo save", e && e.message); return json({ error: "Couldn't save the photo. Please try a smaller photo." }, 500); }
+  catch (e) { console.error("photo save", e && e.message); return json({ error: "Couldn't save the photo. Please try a smaller photo.", detail: String(e && e.message || e).slice(0, 200) }, 500); }
   // the kept original goes in its own write (one big batch can exceed the database's size limit); the photo is already saved
   const o = b.orig ? String(b.orig).match(/^data:(image\/(?:jpeg|webp|png));base64,([A-Za-z0-9+/=]+)$/) : null;
   if (o) {
