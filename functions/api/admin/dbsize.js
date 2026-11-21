@@ -9,6 +9,7 @@ export async function onRequestGet({ request, env }) {
   const { results } = await D.prepare(`SELECT CASE WHEN item_id LIKE 'orig-%' THEN 'originals' WHEN item_id LIKE 'g-%' THEN 'extra angles' ELSE 'main photos' END AS kind,
     COUNT(*) AS n FROM images GROUP BY kind`).all();
   const orphans = await D.prepare(`SELECT COUNT(*) AS n FROM images i WHERE item_id NOT LIKE 'orig-%' AND item_id NOT LIKE 'g-%' AND NOT EXISTS (SELECT 1 FROM items t WHERE t.id = i.item_id)`).first();
+  const sample = (await D.prepare(`SELECT item_id, updated_at FROM images i WHERE item_id NOT LIKE 'orig-%' AND item_id NOT LIKE 'g-%' AND NOT EXISTS (SELECT 1 FROM items t WHERE t.id = i.item_id) ORDER BY updated_at DESC`).all()).results;
   let size = null; try { size = (await D.prepare("SELECT 1").run()).meta; } catch {}
-  return json({ results, orphans, size });
+  return json({ results, orphans, size, sample });
 }
