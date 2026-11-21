@@ -38,10 +38,10 @@ export async function readPhoto(env, D, key) {
  * Moves up to `limit` photos from D1 into R2 (call repeatedly until left = 0).
  * Biggest space users first: originals, then extra angles and main photos.
  */
-export async function movePhotosToR2(env, D, limit = 12) {
+export async function movePhotosToR2(env, D, limit = 12, only = null) {
   if (!hasR2(env)) return { error: "The PHOTOS bucket isn't connected yet." };
   // one row at a time keeps memory and CPU low
-  const { results: keys } = await D.prepare("SELECT item_id FROM images WHERE r2 = '' ORDER BY (item_id LIKE 'orig-%') DESC LIMIT ?").bind(limit).all();
+  const keys = only ? [{ item_id: only }] : (await D.prepare("SELECT item_id FROM images WHERE r2 = '' ORDER BY (item_id LIKE 'orig-%') DESC LIMIT ?").bind(limit).all()).results;
   let moved = 0;
   for (const k of keys) {
     const r = await D.prepare("SELECT item_id, mime, data FROM images WHERE item_id = ? AND r2 = ''").bind(k.item_id).first();

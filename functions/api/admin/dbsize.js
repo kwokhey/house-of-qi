@@ -23,6 +23,7 @@ export async function onRequestPost({ request, env }) {
   if (!hasDB(env)) return json({ error: "No database" }, 503);
   const D = await db(env);
   let b = {}; try { b = await request.json(); } catch {}
-  try { return json(await movePhotosToR2(env, D, Math.max(1, Math.min(10, Number(b.n) || 2)))); }
+  if (b.list) return json({ keys: (await D.prepare("SELECT item_id FROM images WHERE r2 = '' ORDER BY item_id").all()).results.map((r) => r.item_id) });
+  try { return json(await movePhotosToR2(env, D, Math.max(1, Math.min(10, Number(b.n) || 2)), b.key ? String(b.key) : null)); }
   catch (e) { return json({ error: "Move failed", detail: String(e && e.message || e).slice(0, 200) }, 500); }
 }
