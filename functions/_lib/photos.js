@@ -40,9 +40,12 @@ export async function readPhoto(env, D, key) {
  */
 export async function movePhotosToR2(env, D, limit = 12) {
   if (!hasR2(env)) return { error: "The PHOTOS bucket isn't connected yet." };
-  const { results } = await D.prepare("SELECT item_id, mime, data FROM images WHERE r2 = '' ORDER BY (item_id LIKE 'orig-%') DESC LIMIT ?").bind(limit).all();
+  // one row at a time keeps memory and CPU low
+  const { results: keys } = await D.prepare("SELECT item_id FROM images WHERE r2 = '' ORDER BY (item_id LIKE 'orig-%') DESC LIMIT ?").bind(limit).all();
   let moved = 0;
-  for (const r of results) {
+  for (const k of keys) {
+    const r = await D.prepare("SELECT item_id, mime, data FROM images WHERE item_id = ? AND r2 = ''").bind(k.item_id).first();
+    if (!r) continue;
     const bin = r.data instanceof ArrayBuffer || ArrayBuffer.isView(r.data) ? r.data : new Uint8Array(r.data);
     const name = objName(r.item_id);
     await env.PHOTOS.put(name, bin, { httpMetadata: { contentType: r.mime || "image/jpeg" } });

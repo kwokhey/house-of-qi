@@ -22,6 +22,7 @@ export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
   if (!hasDB(env)) return json({ error: "No database" }, 503);
   const D = await db(env);
-  try { return json(await movePhotosToR2(env, D, 10)); }
+  let b = {}; try { b = await request.json(); } catch {}
+  try { return json(await movePhotosToR2(env, D, Math.max(1, Math.min(10, Number(b.n) || 2)))); }
   catch (e) { return json({ error: "Move failed", detail: String(e && e.message || e).slice(0, 200) }, 500); }
 }
