@@ -19,14 +19,15 @@ let ORDERS = [], NEXT = null, FILTER = "todo";
 
 function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
 function show(id) {
-  ["loginView", "setupView", "ordersView", "stockView", "marketingView"].forEach((v) => ($("#" + v).hidden = v !== id));
-  const inside = ["ordersView", "stockView", "marketingView"].includes(id);
+  ["loginView", "setupView", "ordersView", "stockView", "marketingView", "invoicesView"].forEach((v) => ($("#" + v).hidden = v !== id));
+  const inside = ["ordersView", "stockView", "marketingView", "invoicesView"].includes(id);
   $("#logout").hidden = !inside; $("#tabs").hidden = !inside;
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", (b.dataset.tab + "View") === id));
 }
 function openTab(tab) {
   try { localStorage.setItem("hq-admin-tab", tab); } catch {}
   if (tab === "stock" && window.Stock) { show("stockView"); window.Stock.load(); }
+  else if (tab === "invoices" && window.Invoices) { show("invoicesView"); window.Invoices.load(); }
   else if (tab === "marketing" && window.Marketing) { show("marketingView"); window.Marketing.load(); }
   else { show("ordersView"); render(); load(); }
 }

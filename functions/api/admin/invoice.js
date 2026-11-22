@@ -24,8 +24,13 @@ export async function onRequestGet({ request, env }) {
     if (!r) return json({ error: "Invoice not found." }, 404);
     return json({ invoice: { number: r.number, void: !!r.void, ...JSON.parse(r.data) } });
   }
-  const { results } = await D.prepare("SELECT number, void, data, created_at FROM invoices ORDER BY seq DESC LIMIT 200").all();
-  return json({ invoices: results.map((r) => { const d = JSON.parse(r.data); return { number: r.number, void: !!r.void, date: d.date, to: d.to && d.to.name, total: d.total }; }) });
+  const { results } = await D.prepare("SELECT number, void, data, created_at FROM invoices ORDER BY seq DESC LIMIT 1000").all();
+  return json({ invoices: results.map((r) => {
+    const d = JSON.parse(r.data); const t = d.to || {};
+    const lines = (d.lines || []).map((l) => ({ name: String(l.description || "").split("\n")[0], code: (String(l.description || "").match(/Item code: (.*)$/m) || [])[1] || "", qty: l.qty }));
+    return { number: r.number, void: !!r.void, date: d.date, to: t.name, company: t.company || "", phone: t.phone || "", email: t.email || "",
+      terms: d.terms || "", paid: /paid/i.test(d.terms || ""), channel: d.channel || "", total: d.total, pieces: lines.reduce((a, l) => a + (Number(l.qty) || 0), 0), lines, created_at: r.created_at };
+  }) });
 }
 
 export async function onRequestPost({ request, env }) {

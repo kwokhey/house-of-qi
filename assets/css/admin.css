@@ -297,3 +297,12 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .ang-t button:disabled{opacity:.35}.ang-t button[data-adel]{color:#A33A2B}
 .notes li.warn{color:#A33A2B;font-weight:500}
 .inv-f{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.inv-f small{font-weight:400}
+.inv-row{display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;padding:14px 6px;border-bottom:1px solid var(--line);cursor:pointer}
+.inv-row:hover{background:rgba(180,138,82,.07)}
+.inv-row small{display:block;margin-top:2px}
+.inv-a b{display:block;font-size:15px}.inv-a span{font-size:13px;color:var(--muted,#8b7766)}
+.inv-c{text-align:right}.inv-c b{display:block;font-size:16px}
+.inv-tag{display:inline-block;margin-top:4px;font-style:normal;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.inv-tag.paid{background:#e4f0e1;color:#3d6b35}.inv-tag.due{background:#f8ead2;color:#8c6634}.inv-tag.void{background:#f3dcdc;color:#9a3a3a}
+.inv-row.is-void b{text-decoration:line-through;opacity:.6}
+@media (max-width:640px){.inv-row{grid-template-columns:1fr auto}.inv-a{grid-column:1/-1;display:flex;gap:10px;align-items:baseline}}
