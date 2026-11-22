@@ -3,7 +3,7 @@
  * Sends one clearly marked sample "New order" email to the team, to check email delivery.
  */
 import { isAdmin } from "../../_lib/auth.js";
-import { db, hasDB } from "../../_lib/db.js";
+import { db, hasDB, setSetting } from "../../_lib/db.js";
 import { json } from "../../_lib/stripe.js";
 import { sendTeam, sampleEmail, sampleSession, itemImages, sampleCustomerEmail } from "../../_lib/notify.js";
 
@@ -14,6 +14,12 @@ export async function onRequestPost({ request, env }) {
   let images = [];
   try { images = await itemImages(env, D, sampleSession()); } catch {}
   let b = {}; try { b = await request.json(); } catch {}
+  // switch who gets the team alert, e.g. { teamTo: "team@houseofqi.shop" }; teamTo: "" goes back to the 4 direct addresses
+  if (typeof b.teamTo === "string" && D) {
+    const v = b.teamTo.split(/[,\s]+/).filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)).join(",");
+    await setSetting(D, "order_emails", v);
+    return json({ ok: true, order_emails: v || "(default: 4 addresses)" });
+  }
   if (b.customer) {
     const to = String(b.to || "").trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return json({ error: "Enter the email address to send the sample to." }, 400);
