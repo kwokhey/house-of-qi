@@ -307,3 +307,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .inv-row.is-void b{text-decoration:line-through;opacity:.6}
 @media (max-width:640px){.inv-row{grid-template-columns:1fr auto}.inv-a{grid-column:1/-1;display:flex;gap:10px;align-items:baseline}}
 .h-k.gift{background:#F3E1EA;color:#8A3D63}
+.s-flags em.gf{background:#F3E1EA;color:#8A3D63}

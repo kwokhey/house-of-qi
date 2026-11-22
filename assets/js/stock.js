@@ -26,7 +26,7 @@
   const thumb = (i, v = "sq") => (i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : ART.get(i.id, v, { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }));
   const isLow = (i) => i.stock > 0 && i.stock <= 2 && i.stock_in > 2;
   const GROUPS = {
-    all: () => true, in: (i) => i.stock > 0, low: isLow, sold: (i) => (i.sold || 0) > 0, out: (i) => i.stock <= 0,
+    all: () => true, in: (i) => i.stock > 0, low: isLow, sold: (i) => (i.sold || 0) > 0, gift: (i) => (i.gifted || 0) > 0, out: (i) => i.stock <= 0,
     nophoto: (i) => !i.image_v, hidden: (i) => !i.published,
   };
 
@@ -53,14 +53,15 @@
     const list = ITEMS.filter(GROUPS[FILTER]).filter((i) => !q || `${i.id} ${name(i)} ${details(i)} ${i.supplier}`.toLowerCase().includes(q));
     SHOWN = list;
     if (FILTER === "sold") list.sort((a, b) => (b.sold || 0) - (a.sold || 0)); // best sellers first
+    if (FILTER === "gift") list.sort((a, b) => (b.last_gift || 0) - (a.last_gift || 0)); // latest gifts first
     $("#sList").innerHTML = list.length
       ? list.map((i) => `<button class="s-row${i.stock <= 0 ? " out" : ""}" data-sid="${esc(i.id)}">
           <img src="${thumb(i)}" alt="" loading="lazy">
           <span class="s-main"><b>${esc(name(i))}</b><small>${esc([i.id, details(i)].filter(Boolean).join(" · "))}</small>
-            <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.printed > 0 ? `<em class="g">${i.stock > 0 && i.printed >= i.stock ? "Tags printed" : `${i.printed} tag${i.printed === 1 ? "" : "s"} printed`}</em>` : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}${i.with_sellers > 0 ? `<em>${i.with_sellers} with sellers</em>` : ""}${!(i.price > 0) ? `<em class="w">No price · not in shop</em>` : ""}</span></span>
+            <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.printed > 0 ? `<em class="g">${i.stock > 0 && i.printed >= i.stock ? "Tags printed" : `${i.printed} tag${i.printed === 1 ? "" : "s"} printed`}</em>` : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}${i.gifted ? `<em class="gf">${i.gifted} gifted</em>` : ""}${i.with_sellers > 0 ? `<em>${i.with_sellers} with sellers</em>` : ""}${!(i.price > 0) ? `<em class="w">No price · not in shop</em>` : ""}</span></span>
           <span class="s-num"><b class="${i.stock <= 0 ? "zero" : isLow(i) ? "low" : ""}">${i.stock}</b><small>${RM0(i.price)}</small></span>
         </button>`).join("")
-      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
+      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", gift: "Nothing has been gifted yet. Use the Gift button on an item.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
   }
 
   /* Link previews: for pieces without a photo, save the drawn picture as a JPG so
