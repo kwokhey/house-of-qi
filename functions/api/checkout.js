@@ -17,6 +17,19 @@ function trackKey() {
   return [...crypto.getRandomValues(new Uint8Array(18))].map((b) => abc[b % abc.length]).join("");
 }
 
+const HOLD_MIN = 10; // minutes a piece stays "Reserved" for the customer who is paying
+
+/** Holds that ran out: close their Stripe payment page so nobody can pay late for a piece someone else is now buying */
+async function endStaleHolds(env, D, ids) {
+  if (!ids.length) return;
+  const q = `SELECT DISTINCT sid FROM holds WHERE expires <= ? AND sid != '' AND item_id IN (${ids.map(() => "?").join(",")})`;
+  const { results } = await D.prepare(q).bind(Date.now(), ...ids).all();
+  for (const r of results) {
+    try { await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(r.sid)}/expire`, { method: "POST", headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } }); } catch {}
+    await D.prepare("DELETE FROM holds WHERE sid = ?").bind(r.sid).run();
+  }
+}
+
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: "Payments are not switched on yet. Please try again later." }, 503);
 
@@ -27,6 +40,9 @@ export async function onRequestPost({ request, env }) {
   // the customer's own earlier unfinished checkout (back button, changed bag) no longer holds pieces
   if (body?.prev && hasDB(env)) {
     try { await (await db(env)).prepare("DELETE FROM holds WHERE order_no = ? AND sid NOT IN (SELECT sid FROM notified)").bind(String(body.prev).slice(0, 40)).run(); } catch (e) { console.error("release", e.message); }
+  }
+  if (hasDB(env) && Array.isArray(body?.items)) {
+    try { await endStaleHolds(env, await db(env), [...new Set(body.items.map((x) => String(x?.id || "")).filter(Boolean))].slice(0, 20)); } catch (e) { console.error("stale holds", e.message); }
   }
   let catalog;
   try { catalog = await loadCatalog(env, origin); } catch { return json({ error: "Our catalogue is unavailable. Please try again." }, 500); }
@@ -66,10 +82,10 @@ export async function onRequestPost({ request, env }) {
     console.error("Stripe error", session?.error?.type || "", session?.error?.code || "", session?.error?.param || "");
     return json({ error: "We couldn't open the payment page. Please try again in a moment." }, 502);
   }
-  // hold the pieces for this customer while they pay (released on payment, cancel, or after 30 minutes)
+  // hold the pieces for this customer while they pay (released on payment, cancel, or after HOLD_MIN minutes)
   if (hasDB(env)) {
     try {
-      const D = await db(env), exp = Date.now() + 30 * 60 * 1000, per = {};
+      const D = await db(env), exp = Date.now() + HOLD_MIN * 60 * 1000, per = {};
       for (const l of order.lines) per[l.product.id] = (per[l.product.id] || 0) + l.qty;
       await D.batch([
         D.prepare("DELETE FROM holds WHERE expires < ?").bind(Date.now() - 3600e3),
