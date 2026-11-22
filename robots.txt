@@ -6,5 +6,6 @@ Disallow: /api/
 Disallow: /a/
 Disallow: /track
 Disallow: /tags.html
+Disallow: /invoice
 
 Sitemap: https://houseofqi.shop/sitemap.xml

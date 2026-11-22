@@ -193,6 +193,17 @@
     d.scrollTop = 0;
   }
 
+  /* invoice details for an offline sale ("sold to"); leave Sold to empty for no invoice */
+  const today = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  const invFields = (date) => `<div class="inv-f"><b>Invoice details</b> <small class="muted">Fill in "Sold to" to make an invoice. Leave it empty for no invoice.</small>
+      <div class="grid-f">${field("iName", "Sold to (customer name) *", "", 'placeholder="e.g. Tan Mei Ling"')}${field("iCo", "Company (optional)", "")}
+      ${field("iPhone", "Phone", "", 'inputmode="tel"')}${field("iEmail", "Email", "", 'inputmode="email"')}
+      ${field("iAttn", "Attn / PIC (optional)", "")}${field("iDate", "Sale date", date || today(), 'type="date"')}
+      ${field("iTerms", "Payment terms", "Paid in full")}
+      <label class="f" style="grid-column:1/-1"><span>Address</span><textarea id="iAddr" rows="2" placeholder="Street, postcode, city, state"></textarea></label></div></div>`;
+  const invData = () => ({ to: { name: $("#iName").value, company: $("#iCo").value, phone: $("#iPhone").value, email: $("#iEmail").value, attn: $("#iAttn").value, address: $("#iAddr").value }, saleDate: $("#iDate").value, terms: $("#iTerms").value });
+  const openInvoice = (no, w) => { const u = `/invoice.html?no=${encodeURIComponent(no)}`; if (w) w.location = u; else window.open(u, "_blank"); };
+
   const sellers = async () => { try { return (await api("/api/admin/affiliates")).affiliates; } catch { return []; } };
   function movementForm(i, kind) {
     const box = $("#mvForm");
@@ -201,6 +212,7 @@
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mPrice", "Price paid per piece (RM)", i.price, 'inputmode="decimal"')}
           ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
           <label class="f" id="mAffF" hidden><span>Sold by (affiliate)</span><select id="mAff"></select></label></div>
+          ${invFields()}
           <button type="button" class="btn gold sm" id="mGo">Record sale</button></div>`,
       restock: `<div class="mv"><b>New stock arrived</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mCost", "Cost per piece (RM)", i.cost, 'inputmode="decimal"')}
@@ -220,11 +232,14 @@
     $("#mQty").focus(); $("#mQty").select();
     $("#mGo").onclick = async () => {
       $("#mGo").disabled = true;
+      const inv = kind === "sale" ? invData() : null;
+      const w = inv && inv.to.name.trim() ? window.open("", "_blank") : null; // opened now so the browser doesn't block it
       try {
-        await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined }) });
-        toast({ sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
+        const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
+        if (r.invoice) openInvoice(r.invoice, w); else if (w) w.close();
+        toast(r.invoice ? `Sale recorded · invoice ${r.invoice}` : { sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
         await load(); openEditor(ITEMS.find((x) => x.id === i.id));
-      } catch (x) { toast(x.message); $("#mGo").disabled = false; }
+      } catch (x) { if (w) w.close(); toast(x.message); $("#mGo").disabled = false; }
     };
   }
 
@@ -234,7 +249,19 @@
       $("#edHist").innerHTML = movements.length ? movements.map((m) => `<li><span class="h-k ${m.kind}">${KIND[m.kind] || m.kind}</span>
           <span class="h-d">${m.qty > 0 ? "+" : ""}${m.qty} ${m.kind === "sale" && m.unit_price != null ? `@ ${RM(m.unit_price)}` : ""}
           <small>${esc([m.channel, m.note].filter(Boolean).join(" · "))} · ${day(m.created_at)}</small></span>
+          ${m.kind === "sale" && !m.ref ? (m.invoice ? `<button type="button" class="link" data-inv="${esc(m.invoice)}">Invoice ${esc(m.invoice)}</button>` : `<button type="button" class="link" data-mkinv="${m.id}" data-d="${new Date(m.created_at + 8 * 3600e3).toISOString().slice(0, 10)}">Make invoice</button>`) : ""}
           ${m.ref ? "" : `<button type="button" class="link" data-undo="${m.id}">Undo</button>`}</li>`).join("") : '<li class="muted">No changes yet.</li>';
+      $("#edHist").querySelectorAll("[data-inv]").forEach((b) => (b.onclick = () => openInvoice(b.dataset.inv)));
+      $("#edHist").querySelectorAll("[data-mkinv]").forEach((b) => (b.onclick = () => {
+        $("#mvForm").innerHTML = `<div class="mv"><b>Invoice for this offline sale</b>${invFields(b.dataset.d)}<button type="button" class="btn gold sm" id="iGo">Make invoice</button></div>`;
+        $("#mvForm").scrollIntoView({ block: "center" }); $("#iName").focus();
+        $("#iGo").onclick = async () => {
+          const d = invData(); if (!d.to.name.trim()) { toast("Please enter who it was sold to."); return; }
+          const w = window.open("", "_blank"); $("#iGo").disabled = true;
+          try { const r = await api("/api/admin/invoice", { method: "POST", body: JSON.stringify({ mid: b.dataset.mkinv, to: d.to, date: d.saleDate, terms: d.terms }) }); openInvoice(r.number, w); toast(`Invoice ${r.number} made`); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); }
+          catch (x) { if (w) w.close(); toast(x.message); $("#iGo").disabled = false; }
+        };
+      }));
       $("#edHist").querySelectorAll("[data-undo]").forEach((b) => (b.onclick = async () => {
         try { await api(`/api/admin/movement?mid=${b.dataset.undo}`, { method: "DELETE" }); toast("Undone"); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); } catch (x) { toast(x.message); }
       }));

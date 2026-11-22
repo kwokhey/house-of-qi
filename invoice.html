@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Invoice · House of Qi</title>
+<style>
+  @page { size: A4; margin: 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef1f4; font: 13px/1.45 Arial, Helvetica, sans-serif; color: #222; }
+  .bar { position: sticky; top: 0; display: flex; gap: 10px; align-items: center; justify-content: center; padding: 10px; background: #2a201c; color: #f3e9dc; font-size: 14px; z-index: 2; }
+  .bar button { font: 600 14px Arial; padding: 8px 18px; border-radius: 999px; border: 0; background: #c9a46a; color: #2a201c; cursor: pointer; }
+  .page { width: 210mm; min-height: 297mm; margin: 18px auto; background: #fff; padding: 16mm 14mm; box-shadow: 0 2px 14px rgba(0,0,0,.12); position: relative; }
+  .co b { font-size: 15px; letter-spacing: .2px; }
+  .co div { font-size: 11px; color: #333; line-height: 1.6; }
+  h1 { font-weight: 400; color: #3d84b8; font-size: 22px; margin: 34px 0 12px; }
+  .top { display: flex; justify-content: space-between; gap: 24px; }
+  .lab { color: #8a8f94; font-size: 12px; }
+  .bill { flex: 1; font-size: 13px; }
+  .bill .lab { display: block; margin-bottom: 2px; }
+  .meta { display: grid; grid-template-columns: auto auto; column-gap: 36px; row-gap: 2px; font-size: 13px; align-self: flex-start; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 22px; }
+  table.items th { background: #dfe9f2; color: #3d84b8; font-weight: 400; text-align: left; padding: 8px 6px; font-size: 13px; }
+  table.items td { padding: 12px 6px; vertical-align: top; font-size: 13px; }
+  .r { text-align: right !important; }
+  .c { text-align: center !important; }
+  .desc { white-space: pre-line; }
+  .dash { border-top: 1px dashed #b9c2ca; margin: 6px 0 0; }
+  .tot { margin-left: auto; width: 62%; font-size: 13px; }
+  .tot div { display: flex; justify-content: space-between; padding: 7px 0; }
+  .tot .lab { font-size: 13px; }
+  .tot .due { border-top: 1px dashed #b9c2ca; margin-top: 6px; padding-top: 14px; }
+  .tot .due b { font-size: 19px; }
+  .pay { background: #e8eef3; padding: 10px 12px; margin-top: 26px; font-size: 12px; line-height: 1.5; }
+  .note { margin-top: 14px; font-size: 12px; color: #555; }
+  .foot { position: absolute; bottom: 10mm; left: 0; right: 0; text-align: center; font-size: 10px; color: #999; }
+  .void { position: absolute; top: 40%; left: 0; right: 0; text-align: center; font: 700 110px Arial; color: rgba(200,40,40,.18); transform: rotate(-20deg); pointer-events: none; }
+  .msg { text-align: center; padding: 80px 20px; font-size: 15px; }
+  @media print {
+    body { background: #fff; }
+    .bar { display: none; }
+    .page { margin: 0; box-shadow: none; width: auto; min-height: 0; padding: 0; }
+    .foot { position: fixed; bottom: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="bar"><span id="barT">Invoice</span><button type="button" onclick="window.print()">Print / Save as PDF</button></div>
+<div id="out"><p class="msg">Loading…</p></div>
+<script>
+(async () => {
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const money = (n) => (Math.round(Number(n || 0) * 100) / 100).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const dmy = (d) => { const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}.${m[2]}.${m[1]}` : esc(d); };
+  const no = new URLSearchParams(location.search).get("no") || "";
+  const out = document.getElementById("out");
+  let inv;
+  try {
+    const r = await fetch(`/api/admin/invoice?no=${encodeURIComponent(no)}`, { credentials: "same-origin" });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "Couldn't load the invoice.");
+    inv = j.invoice;
+  } catch (e) {
+    out.innerHTML = `<p class="msg">${esc(e.message)}<br><br>Please log in to the shop admin first, then open this invoice again.</p>`;
+    return;
+  }
+  document.title = `Invoice ${inv.number} · House of Qi`;
+  document.getElementById("barT").textContent = `Invoice ${inv.number}${inv.void ? " (VOID)" : ""}`;
+  const t = inv.to || {};
+  const bill = [t.company && t.name ? `${esc(t.company)}` : "", esc(t.name), t.address ? esc(t.address).replace(/\n/g, "<br>") : "", t.phone ? `Tel: ${esc(t.phone)}` : "", t.email ? esc(t.email) : "", t.attn ? `Attn to: ${esc(t.attn)}` : ""].filter(Boolean).join("<br>");
+  const rows = (inv.lines || []).map((l) => `<tr><td>${dmy(l.date)}</td><td>${esc(l.activity || "Sale")}</td><td class="desc">${esc(l.description)}</td><td class="c">${esc(l.qty)}</td><td class="r">${money(l.rate)}</td><td class="r">${money(l.qty * l.rate)}</td></tr>`).join("");
+  out.innerHTML = `<div class="page">
+    ${inv.void ? '<div class="void">VOID</div>' : ""}
+    <div class="co"><b>SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.</b>
+      <div>B3-05, Casa Utama, Lorong Lebuh Bandar Utama,<br>PETALING JAYA, Selangor 47400<br>+6079222388<br>naomi@soleiltrinity.com<br>House of Qi Crystals · houseofqi.shop</div></div>
+    <h1>Invoice</h1>
+    <div class="top">
+      <div class="bill"><span class="lab">BILL TO</span>${bill}</div>
+      <div class="meta"><span class="lab">INVOICE</span><span>${esc(inv.number)}</span><span class="lab">DATE</span><span>${dmy(inv.date)}</span>
+        <span class="lab">TERMS</span><span>${esc(inv.terms || "Paid in full")}</span><span class="lab">DUE DATE</span><span>${dmy(inv.due || inv.date)}</span></div>
+    </div>
+    <table class="items"><thead><tr><th style="width:14%">DATE</th><th style="width:13%">ACTIVITY</th><th>DESCRIPTION</th><th class="c" style="width:7%">QTY</th><th class="r" style="width:12%">RATE</th><th class="r" style="width:13%">AMOUNT</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <div class="dash"></div>
+    <div class="tot"><div><span class="lab">SUBTOTAL</span><span>${money(inv.subtotal)}</span></div>
+      <div><span class="lab">TOTAL</span><span>${money(inv.total)}</span></div>
+      <div class="due"><span class="lab">BALANCE DUE</span><b>MYR ${money(/paid/i.test(inv.terms || "") ? 0 : inv.total)}</b></div></div>
+    ${/paid/i.test(inv.terms || "") ? `<p class="note">Payment of MYR ${money(inv.total)} received with thanks.</p>` : ""}
+    <div class="pay">Kindly make your payment to the bank details below:<br>Account Name: SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.<br>Account No: 5141 9676 4088<br>Bank: MALAYAN BANKING BERHAD (MAYBANK)</div>
+    <div class="foot">Page 1 of 1</div>
+  </div>`;
+})();
+</script>
+</body>
+</html>

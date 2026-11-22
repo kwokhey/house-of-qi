@@ -51,6 +51,14 @@ const SCHEMA = [
     note TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS invoices (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    number TEXT NOT NULL UNIQUE,
+    movement_id INTEGER,
+    void INTEGER NOT NULL DEFAULT 0,
+    data TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS movements_ref ON movements(ref, item_id) WHERE ref <> ''`,
   `CREATE INDEX IF NOT EXISTS movements_item ON movements(item_id, created_at)`,
   `CREATE TABLE IF NOT EXISTS images (
@@ -154,7 +162,7 @@ const SCHEMA = [
   )`,
 ];
 // columns added after the first release (ignored if they already exist)
-const ADD_COLUMNS = [`ALTER TABLE images ADD COLUMN r2 TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN dims TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN gallery TEXT NOT NULL DEFAULT '[]'`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
+const ADD_COLUMNS = [`ALTER TABLE movements ADD COLUMN invoice TEXT NOT NULL DEFAULT ''`, `ALTER TABLE images ADD COLUMN r2 TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN dims TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN colour TEXT NOT NULL DEFAULT ''`, `ALTER TABLE items ADD COLUMN gallery TEXT NOT NULL DEFAULT '[]'`, `ALTER TABLE collections ADD COLUMN cover_v INTEGER NOT NULL DEFAULT 0`];
 
 /**
  * The sheet sometimes puts the kind of piece in the product name:

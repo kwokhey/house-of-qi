@@ -13,6 +13,7 @@ import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, itemName, itemDetails } from "../../_lib/db.js";
 import { creditSale } from "../../_lib/affiliates.js";
 import { json } from "../../_lib/stripe.js";
+import { billTo, createInvoice } from "../../_lib/invoice.js";
 
 async function guard(request, env) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -42,6 +43,12 @@ export async function onRequestPost({ request, env }) {
       D.prepare("INSERT INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, note, created_at) VALUES (?, 'sale', ?, ?, ?, ?, ?, ?)").bind(item.id, -qty, price, item.cost, channel || "Offline", aff ? [note, `Sold by ${aff.name}`].filter(Boolean).join(" · ").slice(0, 200) : note, now),
       D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(qty, now, item.id),
     ]);
+    // invoice: made when "sold to" details were filled in
+    const to = billTo(b.to);
+    if (to) {
+      const number = await createInvoice(D, { to, date: b.saleDate, terms: b.terms, item, qty, price, movementId: res[0].meta.last_row_id, channel: channel || "Offline", note });
+      b.__invoice = number;
+    }
     if (aff) await creditSale(D, aff, { ref: `mv-${res[0].meta.last_row_id}`, channel: channel || "Offline", detail: `${qty}× ${itemName(item)}${itemDetails(item) ? " · " + itemDetails(item) : ""}`, pieces: qty, amount: price * qty, created_at: now });
   } else if (b.kind === "restock") {
     if (!(qty >= 1)) return json({ error: "Enter how many arrived." }, 400);
@@ -61,7 +68,7 @@ export async function onRequestPost({ request, env }) {
   } else {
     return json({ error: "Unknown change." }, 400);
   }
-  return json({ ok: true, item: await D.prepare("SELECT * FROM items WHERE id = ?").bind(item.id).first() });
+  return json({ ok: true, invoice: b.__invoice || null, item: await D.prepare("SELECT * FROM items WHERE id = ?").bind(item.id).first() });
 }
 
 export async function onRequestGet({ request, env }) {
@@ -85,6 +92,7 @@ export async function onRequestDelete({ request, env }) {
   const vals = m.kind === "restock" ? [m.qty, m.qty] : [m.qty];
   await D.batch([
     D.prepare("DELETE FROM movements WHERE id = ?").bind(mid),
+    D.prepare("UPDATE invoices SET void = 1 WHERE movement_id = ?").bind(mid), // undone sale → its invoice is marked VOID
     D.prepare("DELETE FROM aff_sales WHERE ref = ?").bind(`mv-${mid}`),
     D.prepare(`UPDATE items SET ${back}, updated_at = ? WHERE id = ?`).bind(...vals, now, m.item_id),
   ]);
