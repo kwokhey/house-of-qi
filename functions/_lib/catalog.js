@@ -93,6 +93,18 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
     }
   }
   const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
+  // pieces someone is paying for right now are held for them (checkout reservation, up to 30 min)
+  if (!includeHidden) {
+    try {
+      const { results: H } = await D.prepare("SELECT item_id, SUM(qty) AS q FROM holds WHERE expires > ? GROUP BY item_id").bind(Date.now()).all();
+      const held = Object.fromEntries(H.map((h) => [h.item_id, h.q]));
+      for (const p of products) {
+        const q = held[p.id]; if (!q || p.soldOut) continue;
+        const left = (p.stock || 0) - q;
+        if (left <= 0) { p.reserved = true; p.soldOut = true; p.stock = 0; } else p.stock = left;
+      }
+    } catch (e) { console.error("holds", e && e.message); }
+  }
   const inStock = products.filter((p) => !p.soldOut);
   const hero = inStock.find((p) => p.bestseller) || [...inStock].sort((a, b) => b.price - a.price)[0];
   const heroCfg = hero

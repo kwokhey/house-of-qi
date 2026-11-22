@@ -10,6 +10,7 @@ const round2 = (n) => Math.round(n * 100 + 1e-9) / 100;
 export function priceLine(catalog, raw) {
   const product = catalog.products.find((p) => p.id === raw?.id);
   if (!product) return { error: "One of the pieces in your bag is no longer available. Please remove it and try again." };
+  if (product.reserved) return { error: `${product.name} is being checked out by another customer right now. If they don't complete payment it will be available again within 30 minutes.` };
   if (product.soldOut) return { error: `${product.name} has just sold out. Please remove it from your bag.` };
 
   const qty = Math.floor(Number(raw.qty));

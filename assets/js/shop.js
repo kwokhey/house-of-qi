@@ -70,7 +70,7 @@ const quoteShip=(k)=>!!(SHIP[k]&&SHIP[k].contact);
 function totals(lines=S.cart,ship=S.ship){const sub=R2(lines.reduce((t,l)=>t+lineTotal(l),0));const s=SHIP[ship]||Object.values(SHIP)[0];let fee=shipFee(s,pieces(lines));
   const p=lines===S.cart&&ship===S.ship&&promoOK()?S.promo:null;if(p&&p.freeShip)fee=0;const disc=p?p.discount:0;
   return{sub,fee,disc,code:p?p.code:'',freeCode:!!(p&&p.freeShip),total:R2(sub-disc+fee),count:lines.reduce((t,l)=>t+l.qty,0)}}
-function pruneCart(){S.cart=S.cart.filter(l=>{const m=BY[l.id];if(!m||m.soldOut||!l.sel)return false;for(const g of m.groups){const v=l.sel[g.id];if(g.type==='many'){if(!Array.isArray(v))return false}else if(!g.opts.some(o=>o[0]===v))return false}return true});if(!SHIP[S.ship])S.ship=Object.keys(SHIP)[0];save()}
+function pruneCart(){S.cart=S.cart.filter(l=>{const m=BY[l.id];if(!m||(m.soldOut&&!m.reserved)||!l.sel)return false;for(const g of m.groups){const v=l.sel[g.id];if(g.type==='many'){if(!Array.isArray(v))return false}else if(!g.opts.some(o=>o[0]===v))return false}return true});if(!SHIP[S.ship])S.ship=Object.keys(SHIP)[0];save()}
 
 const IC={
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
@@ -85,7 +85,7 @@ const IC={
    SHOP
    ===================================================================== */
 const priceHTML=m=>`${hasFrom(m)||m.fromP?'<span class="from">From</span>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}`;
-const intTag=m=>m.soldOut?'<span class="tag out">Sold out</span>':`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
+const intTag=m=>m.soldOut?`<span class="tag out">${m.reserved?'Reserved':'Sold out'}</span>`:`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
 const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
 const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span></button>`;
@@ -243,7 +243,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   im.alt=m.name;const hero=im.closest('.sheet-hero');if(hero)hero.classList.toggle('sample',isSample(m));
   galPaint(m);
   const fam=FAM[m.fam]||[m];
-  const tags=[m.soldOut?'<span class="out">Sold out</span>':'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
+  const tags=[m.soldOut?`<span class="out">${m.reserved?'Reserved':'Sold out'}</span>`:'',m.sig?'<span>Signature</span>':'',m.sale?`<span class="sale">${esc(m.sale.name)}</span>`:'',stockTag(m)?`<span>${stockTag(m)}</span>`:'',m.best?`<span>Bestseller · No.${m.best}</span>`:'',m.nov&&CFG.spotlight?`<span>${esc(CFG.spotlight.title)}</span>`:''].join('');
   const sub=[m.details,m.zh&&`<span class="zh">${m.zh}</span>`].filter(Boolean).join(' · ');
   const pick=fam.length<2?'':`<div class="og vp" role="radiogroup" aria-label="Choose your piece"><div class="og-h"><b>Choose your piece</b><em class="req">${fam.length} options</em></div>
     <div class="vp-row">${fam.map(x=>`<button class="vopt${x.id===m.id?' on':''}${x.soldOut?' out':''}" data-act="variant" data-id="${x.id}" role="radio" aria-checked="${x.id===m.id}"><span class="vimg"><img src="${img(x.id,'sq')}" alt="" loading="lazy"></span><span class="vl">${esc(x.optLabel)}</span><span class="vpz">${x.was?`<s>${RM(x.was)}</s> `:''}${RM(x.price)}</span>${x.soldOut?'<span class="v1">Sold out</span>':x.stock===1?'<span class="v1">One of a kind</span>':x.stock<=3?`<span class="v1">${x.stock} left</span>`:''}</button>`).join('')}</div>
@@ -269,7 +269,7 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   if(co){['#gTo','#gMsg','#gFrom'].forEach(s=>$(s).addEventListener('input',paintCard))}
   if(prev){$('#gTo')&&($('#gTo').value=prev.card.to,$('#gMsg').value=prev.card.msg,$('#gFrom').value=prev.card.from);$('#note').value=prev.card.note}
   if(co)paintCard();
-  const ab=$('#addBtn');ab.classList.remove('added','press');ab.disabled=!!m.soldOut;ab.innerHTML=m.soldOut?'Sold out <span class="p" id="addAmt" hidden></span>':'Add to bag <span>·</span> <span class="p" id="addAmt">RM0.00</span>';
+  const ab=$('#addBtn');ab.classList.remove('added','press');ab.disabled=!!m.soldOut;ab.innerHTML=m.soldOut?(m.reserved?'Reserved · someone is checking out':'Sold out')+' <span class="p" id="addAmt" hidden></span>':'Add to bag <span>·</span> <span class="p" id="addAmt">RM0.00</span>';
   updateDetail(false);DR_READY=true;
   const vr=$('.vp-row'),vo=$('.vopt.on');if(vr&&vo){const l=vo.offsetLeft-vr.offsetLeft-20;if(l>0&&vo.offsetLeft+vo.offsetWidth>vr.clientWidth+vr.scrollLeft)vr.scrollLeft=prev?Math.max(vr.scrollLeft,vo.offsetLeft+vo.offsetWidth-vr.clientWidth+20):l}
   if(prev)$('#sheetScroll').scrollTop=prev.y;
@@ -438,10 +438,11 @@ function intlEnquiry(){const t=totals();const lines=S.cart.map(l=>{const m=BY[l.
 async function startCheckout(){if(isIntl()){vib(10);intlEnquiry();return}if(placing||!S.cart.length)return;placing=true;const pb=$('#placeBtn'),err=$('#coErr');err.hidden=true;vib(15);
   pb.classList.add('press');await wait(120);pb.classList.remove('press');pb.classList.add('sending');
   try{
-    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ship:S.ship,coupon:promoOK()?S.promo.code:undefined,ref:getRef()||undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
+    const r=await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prev:(()=>{try{return localStorage.getItem('hq-pending')||undefined}catch(e){}})(),ship:S.ship,coupon:promoOK()?S.promo.code:undefined,ref:getRef()||undefined,items:S.cart.map(l=>({id:l.id,sel:l.sel,qty:l.qty,note:l.note||''}))})});
     const d=await r.json().catch(()=>({}));
     if(d.coupon===false){S.promo=null;refreshCo()}
     if(!r.ok||!d.url)throw new Error(d.error||'We couldn’t open the payment page. Please try again.');
+    try{if(d.order)localStorage.setItem('hq-pending',d.order)}catch(e){}
     location.href=d.url;
   }catch(e){resetPlaceBtn();err.textContent=e.message||'We couldn’t open the payment page. Please check your connection and try again.';err.hidden=false;err.scrollIntoView({behavior:'smooth',block:'center'})}}
 window.addEventListener('pageshow',e=>{if(e.persisted)resetPlaceBtn()});
@@ -550,7 +551,7 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
   if(CFG.whatsapp){const w=$('#wafab');w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about your crystals.')}`;w.hidden=false;
     w.addEventListener('click',()=>{if(DR&&$('#sheet').classList.contains('open'))w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+DR.m.name+' ('+DR.m.id+')')}`})}
   const q=new URLSearchParams(location.search),clean=()=>{try{history.replaceState(null,'',location.pathname)}catch(e){}};
-  if(q.get('session_id')){const id=q.get('session_id');clean();showConfirmation(id)}
-  else if(q.get('checkout')==='cancelled'){clean();if(S.cart.length){renderBag();go('bag')}toast('Payment cancelled. Your bag is saved.')}
+  if(q.get('session_id')){const id=q.get('session_id');try{localStorage.removeItem('hq-pending')}catch(e){}clean();showConfirmation(id)}
+  else if(q.get('checkout')==='cancelled'){const o=q.get('o');if(o){fetch('/api/release',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({o})}).catch(()=>{});try{localStorage.removeItem('hq-pending')}catch(e){}}clean();if(S.cart.length){renderBag();go('bag')}toast('Payment cancelled. Your bag is saved.')}
   document.fonts&&document.fonts.ready.then(()=>{if(![...document.fonts].some(x=>/Cormorant/.test(x.family)&&x.status==='loaded'))document.documentElement.classList.add('nofont');setTab(document.querySelector('.tab.on')?.dataset.cat||TABS[0][0],false)});
 })();

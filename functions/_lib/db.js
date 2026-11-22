@@ -51,6 +51,13 @@ const SCHEMA = [
     note TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS holds (
+    order_no TEXT NOT NULL,
+    sid TEXT NOT NULL DEFAULT '',
+    item_id TEXT NOT NULL,
+    qty INTEGER NOT NULL,
+    expires INTEGER NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS invoices (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
     number TEXT NOT NULL UNIQUE,

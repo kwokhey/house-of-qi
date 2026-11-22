@@ -24,6 +24,10 @@ export async function onRequestPost({ request, env }) {
   try { body = await request.json(); } catch { return json({ error: "Invalid request." }, 400); }
 
   const origin = new URL(request.url).origin;
+  // the customer's own earlier unfinished checkout (back button, changed bag) no longer holds pieces
+  if (body?.prev && hasDB(env)) {
+    try { await (await db(env)).prepare("DELETE FROM holds WHERE order_no = ? AND sid NOT IN (SELECT sid FROM notified)").bind(String(body.prev).slice(0, 40)).run(); } catch (e) { console.error("release", e.message); }
+  }
   let catalog;
   try { catalog = await loadCatalog(env, origin); } catch { return json({ error: "Our catalogue is unavailable. Please try again." }, 500); }
 
@@ -50,7 +54,8 @@ export async function onRequestPost({ request, env }) {
     try { const a = await affByCode(await db(env), body.ref); if (a) order.aff = { id: a.id, code: a.code }; } catch (e) { console.error("ref", e.message); }
   }
 
-  const params = buildSessionParams(catalog, order, origin, orderNumber());
+  const orderNo = orderNumber();
+  const params = buildSessionParams(catalog, order, origin, orderNo);
   const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
@@ -61,7 +66,18 @@ export async function onRequestPost({ request, env }) {
     console.error("Stripe error", session?.error?.type || "", session?.error?.code || "", session?.error?.param || "");
     return json({ error: "We couldn't open the payment page. Please try again in a moment." }, 502);
   }
-  return json({ url: session.url });
+  // hold the pieces for this customer while they pay (released on payment, cancel, or after 30 minutes)
+  if (hasDB(env)) {
+    try {
+      const D = await db(env), exp = Date.now() + 30 * 60 * 1000, per = {};
+      for (const l of order.lines) per[l.product.id] = (per[l.product.id] || 0) + l.qty;
+      await D.batch([
+        D.prepare("DELETE FROM holds WHERE expires < ?").bind(Date.now() - 3600e3),
+        ...Object.entries(per).map(([id, q]) => D.prepare("INSERT INTO holds (order_no, sid, item_id, qty, expires) VALUES (?, ?, ?, ?, ?)").bind(orderNo, session.id || "", id, q, exp)),
+      ]);
+    } catch (e) { console.error("hold", e.message); }
+  }
+  return json({ url: session.url, order: orderNo });
 }
 
 /**
@@ -143,7 +159,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   p.append("phone_number_collection[enabled]", "true");
   p.append("billing_address_collection", "auto");
   p.append("success_url", `${origin}/?session_id={CHECKOUT_SESSION_ID}`);
-  p.append("cancel_url", `${origin}/?checkout=cancelled`);
+  p.append("cancel_url", `${origin}/?checkout=cancelled&o=${encodeURIComponent(orderNo)}`);
   // Payment methods (cards, FPX, GrabPay…) follow what is switched on in the Stripe Dashboard.
   return p;
 }

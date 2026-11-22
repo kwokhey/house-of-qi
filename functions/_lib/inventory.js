@@ -23,6 +23,7 @@ export function stockLines(meta = {}) {
 /** Record one paid session against stock. Returns the number of lines recorded. */
 export async function recordSession(D, s) {
   if (!(s.payment_status === "paid" || s.payment_status === "no_payment_required")) return 0;
+  try { if (D && s && s.id) await D.prepare("DELETE FROM holds WHERE sid = ?").bind(s.id).run(); } catch {} // paid: the hold is replaced by the real stock change
   const lines = stockLines(s.metadata);
   if (!lines.length) return 0;
   const now = Date.now();
