@@ -9,7 +9,7 @@
   const CHANNELS = ["Instagram", "WhatsApp", "Facebook", "Bazaar / event", "In person", "Other"];
   const TYPES = ["Bracelet", "Pendant", "Necklace", "Ring", "Earrings", "Sphere", "Statue", "Stand", "Cluster", "Tumbled", "Other"];
   const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["rings", "Rings"], ["earrings", "Earrings"], ["decor", "Home & Décor"], ["sets", "Gift Sets"]];
-  const KIND = { sale: "Sold", restock: "Stock in", adjust: "Adjusted", consign: "Seller" };
+  const KIND = { sale: "Sold", gift: "Gift", restock: "Stock in", adjust: "Adjusted", consign: "Seller" };
 
   let ITEMS = [], MONTH = {}, FILTER = "all", Q = "", loaded = false, COLS = [];
 
@@ -114,7 +114,7 @@
           <span class="ang-t"><button type="button" data-amv="${esc(p.k)}" data-d="-1" ${n ? "" : "disabled"} aria-label="Move earlier">‹</button><button type="button" data-amv="${esc(p.k)}" data-d="1" ${n < g.length - 1 ? "" : "disabled"} aria-label="Move later">›</button><button type="button" data-aadj="${esc(p.k)}" aria-label="Adjust">✎</button><button type="button" data-adel="${esc(p.k)}" aria-label="Remove">✕</button></span></span>`).join("")}
           ${g.length < 5 ? `<label class="ang ang-add"><input type="file" id="edAngFile" accept="image/*" hidden><em>+ Add angle</em></label>` : ""}</div></div>`; })()}
       <div class="ed-stock"><div><span>In stock</span><b id="edStock" class="${i.stock <= 0 ? "zero" : ""}">${i.stock}</b><small>${i.sold || 0} sold · ${i.stock_in} received</small></div>
-        <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button><button type="button" class="btn ghost sm" data-oos${i.stock <= 0 ? " disabled" : ""}>${i.stock <= 0 ? "Out of stock" : "Mark out of stock"}</button></div>
+        <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="gift"${i.stock <= 0 ? " disabled" : ""}>Gift</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button><button type="button" class="btn ghost sm" data-oos${i.stock <= 0 ? " disabled" : ""}>${i.stock <= 0 ? "Out of stock" : "Mark out of stock"}</button></div>
         <div id="mvForm"></div></div>`}
       <div class="grid-f">
         ${field("eId", "Item ID", i.id, 'placeholder="e.g. LRM-1060" autocapitalize="off" required')}
@@ -224,6 +224,10 @@
           <label class="f" id="mAffF" hidden><span>Sold by (affiliate)</span><select id="mAff"></select></label></div>
           ${invFields()}
           <button type="button" class="btn gold sm" id="mGo">Record sale</button></div>`,
+      gift: `<div class="mv"><b>Give as a gift</b> <small class="muted">Stock goes down; it isn't counted as a sale.</small><div class="grid-f">
+          ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mTo", "Given to", "", 'placeholder="e.g. Ms Lee, influencer @name"')}
+          ${field("mNote", "Reason (optional)", "", 'placeholder="e.g. birthday, collaboration, giveaway"')}</div>
+          <button type="button" class="btn gold sm" id="mGo">Record gift</button></div>`,
       restock: `<div class="mv"><b>New stock arrived</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mCost", "Cost per piece (RM)", i.cost, 'inputmode="decimal"')}
           ${field("mNote", "Note", "", 'placeholder="e.g. supplier, invoice no."')}</div>
@@ -247,10 +251,10 @@
       const inv = kind === "sale" ? invData() : null;
       const w = inv && (inv.to.name.trim() || inv.addTo) ? window.open("", "_blank") : null; // opened now so the browser doesn't block it
       try {
-        const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value === "Other" && $("#mChO").value.trim() ? $("#mChO").value.trim() : $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
+        const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value === "Other" && $("#mChO").value.trim() ? $("#mChO").value.trim() : $("#mCh")?.value, note: $("#mNote").value, to_name: $("#mTo")?.value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
         if (r.invoice) openInvoice(r.invoice, w); else if (w) w.close();
         if (r.warning) toast(r.warning);
-        toast(r.invoice ? `Sale recorded · invoice ${r.invoice}` : { sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
+        toast(r.invoice ? `Sale recorded · invoice ${r.invoice}` : { sale: "Sale recorded", gift: "Gift recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
         await load(); openEditor(ITEMS.find((x) => x.id === i.id));
       } catch (x) { if (w) w.close(); toast(x.message); $("#mGo").disabled = false; }
     };

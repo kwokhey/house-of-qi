@@ -306,3 +306,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .inv-tag.paid{background:#e4f0e1;color:#3d6b35}.inv-tag.due{background:#f8ead2;color:#8c6634}.inv-tag.void{background:#f3dcdc;color:#9a3a3a}
 .inv-row.is-void b{text-decoration:line-through;opacity:.6}
 @media (max-width:640px){.inv-row{grid-template-columns:1fr auto}.inv-a{grid-column:1/-1;display:flex;gap:10px;align-items:baseline}}
+.h-k.gift{background:#F3E1EA;color:#8A3D63}

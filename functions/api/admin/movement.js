@@ -54,6 +54,15 @@ export async function onRequestPost({ request, env }) {
       b.__invoice = number;
     }
     if (aff) await creditSale(D, aff, { ref: `mv-${res[0].meta.last_row_id}`, channel: channel || "Offline", detail: `${qty}× ${itemName(item)}${itemDetails(item) ? " · " + itemDetails(item) : ""}`, pieces: qty, amount: price * qty, created_at: now });
+  } else if (b.kind === "gift") {
+    // given away: stock goes down, kept apart from sales (no revenue), cost is kept for the records
+    if (!(qty >= 1)) return json({ error: "Enter how many were given." }, 400);
+    if (qty > item.stock) return json({ error: `Only ${item.stock} in stock. Use Adjust if the count is wrong.` }, 400);
+    const who = String(b.to_name || "").trim().slice(0, 80);
+    await D.batch([
+      D.prepare("INSERT INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, note, created_at) VALUES (?, 'gift', ?, 0, ?, 'Gift', ?, ?)").bind(item.id, -qty, item.cost, [who && `To ${who}`, note].filter(Boolean).join(" · ").slice(0, 200), now),
+      D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(qty, now, item.id),
+    ]);
   } else if (b.kind === "restock") {
     if (!(qty >= 1)) return json({ error: "Enter how many arrived." }, 400);
     const cost = Number.isFinite(Number(b.cost)) && b.cost !== "" ? Number(b.cost) : item.cost;
