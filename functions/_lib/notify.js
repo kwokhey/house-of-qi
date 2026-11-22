@@ -7,7 +7,9 @@
 import { toOrder } from "./stripe.js";
 import { getSetting } from "./db.js";
 
-export const DEFAULT_TO = ["jessie@soleiltrinity.com", "kongeu@soleiltrinity.com", "suzee@soleiltrinity.com", "naomi@soleiltrinity.com"];
+// One address (Cloudflare Email Routing → worker "hoq-team-mail" forwards it to Jessie, Kong Eu, Suzee and Naomi),
+// so each order uses 1 Resend email instead of 4. The 4 people are listed in that worker.
+export const DEFAULT_TO = ["team@houseofqi.shop"];
 const FROM = "House of Qi Orders <orders@houseofqi.shop>";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
