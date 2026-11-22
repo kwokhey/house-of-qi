@@ -117,6 +117,142 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
   return { subject: `New order ${o.orderNo} · ${rm(o.total)} · ${items.map((i) => i.name).join(", ")}`.slice(0, 180), html, text, replyTo: o.email || undefined, paid: o.paid };
 }
 
+const REPLY_TO = "naomi@soleiltrinity.com";
+const WA = "60129089914";
+
+/** The customer's own "thank you" email for a paid order, in the House of Qi style. */
+export function customerEmail(s, { images = [], site = SITE } = {}) {
+  const o = toOrder(s, { full: true });
+  const first = String(o.name || "").trim().split(/\s+/)[0] || "there";
+  const when = new Date(o.created).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur", day: "numeric", month: "long", year: "numeric" });
+  const items = o.items.map((it, i) => {
+    const opt = (it.options || "").split(" · ").slice(1).filter((x) => !/^Note:/.test(x)).join(" · ");
+    return { name: it.name, qty: it.qty, amount: it.amount, opt, img: images[i] || `${site}/assets/img/logo-mark.png` };
+  });
+  const how = o.pickup ? "Self pick-up" : `Delivery · ${o.delivery || "Malaysia"}`;
+  const next = o.pickup
+    ? "We'll WhatsApp you to arrange a time to collect your piece."
+    : "We'll pack your piece with care and send it out. We'll WhatsApp you the tracking number once it's on its way.";
+  const itemRows = items.map((it) => `
+    <tr>
+      <td width="76" style="padding:14px 0;border-bottom:1px solid ${C.line};vertical-align:top">
+        <img src="${esc(it.img)}" width="64" height="64" alt="" style="display:block;width:64px;height:64px;border-radius:12px;object-fit:cover;background:${C.soft}">
+      </td>
+      <td style="padding:14px 10px 14px 0;border-bottom:1px solid ${C.line};vertical-align:top;font-family:${SANS}">
+        <div style="font-family:${SERIF};font-size:20px;line-height:1.15;color:${C.ink}">${esc(it.name)}</div>
+        ${it.opt ? `<div style="font-size:13px;color:${C.ink2};margin-top:3px">${esc(it.opt)}</div>` : ""}
+        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:${C.gold};margin-top:6px">Qty ${esc(it.qty)}</div>
+      </td>
+      <td align="right" style="padding:14px 0;border-bottom:1px solid ${C.line};vertical-align:top;font-family:${SANS};font-size:15px;color:${C.ink};white-space:nowrap">${rm(it.amount)}</td>
+    </tr>`).join("");
+  const sumRow = (k, v, strong) => `<tr><td style="padding:4px 0;font-family:${SANS};font-size:${strong ? 16 : 14}px;color:${strong ? C.ink : C.ink2};${strong ? "font-weight:600;" : ""}">${esc(k)}</td><td align="right" style="padding:4px 0;font-family:${SANS};font-size:${strong ? 16 : 14}px;color:${C.ink};${strong ? "font-weight:600;" : ""}">${v}</td></tr>`;
+  const sums = [
+    sumRow("Subtotal", rm(o.subtotal)),
+    o.discount ? sumRow(`Discount${o.coupon ? ` · ${o.coupon}` : ""}`, "−" + rm(o.discount)) : "",
+    sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.shipping ? rm(o.shipping) : "Free"),
+  ].join("");
+  const label = (t) => `<div style="font-family:${SANS};font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.gold};margin:0 0 8px">${t}</div>`;
+  const address = o.pickup ? "Self pick-up<br>We'll WhatsApp you to arrange a time" : [o.name, ...o.address.map((x) => (x === "MY" ? "Malaysia" : x === "SG" ? "Singapore" : x))].filter(Boolean).map(esc).join("<br>");
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
+<title>Thank you for your order ${esc(o.orderNo)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;padding:0;background:${C.paper}}
+  @media (max-width:520px){ .wrap{padding:24px 18px !important} .h1{font-size:32px !important} }
+</style></head>
+<body style="margin:0;padding:0;background:${C.paper}">
+<div style="display:none;max-height:0;overflow:hidden">Thank you, ${esc(first)}. Your House of Qi order ${esc(o.orderNo)} is confirmed.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.paper}">
+<tr><td align="center" style="padding:28px 12px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+    <tr><td align="center" style="padding:6px 0 20px">
+      <a href="${site}"><img src="${site}/assets/img/logo-full.png" width="104" alt="House of Qi" style="display:block;width:104px;height:auto;border:0"></a>
+    </td></tr>
+    <tr><td class="wrap" style="background:${C.card};border-radius:22px;padding:36px 34px 32px;border:1px solid ${C.line}">
+      <div style="height:2px;width:56px;background:${C.gold};background-image:linear-gradient(115deg,#8F6834,#C79E5F 28%,#F1DCAA 46%,#C49A5B 62%,#94703A);margin:0 0 18px"></div>
+      ${label("Order confirmed")}
+      <div class="h1" style="font-family:${SERIF};font-size:38px;line-height:1.05;color:${C.ink};font-weight:500">Thank you, <i>${esc(first)}</i></div>
+      <div style="font-family:${SANS};font-size:15px;line-height:1.7;color:${C.ink};margin-top:14px">
+        Your crystals have found their way to you. Every House of Qi piece is chosen with care, and the one you picked is now set aside just for you.
+        We hope it brings you calm, clarity and good energy every time you wear it.
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px"><tr>
+        <td style="background:${C.soft};border-radius:99px;padding:7px 14px;font-family:${SANS};font-size:13px;color:${C.ink}">Order ${esc(o.orderNo)}</td>
+        <td width="8"></td>
+        <td style="background:${C.ink};border-radius:99px;padding:7px 14px;font-family:${SANS};font-size:13px;color:#fff">${rm(o.total)} paid · ${esc(when)}</td>
+      </tr></table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;border-top:1px solid ${C.line}">${itemRows}</table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">${sums}
+        <tr><td colspan="2" style="padding:8px 0 0"><div style="height:1px;background:${C.line}"></div></td></tr>
+        ${sumRow("Total paid", rm(o.total), true)}
+      </table>
+
+      ${o.notes ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px"><tr><td style="background:${C.soft};border-left:3px solid ${C.gold};border-radius:4px 14px 14px 4px;padding:14px 16px">
+        ${label("Your request")}<div style="font-family:${SERIF};font-size:18px;font-style:italic;line-height:1.35;color:${C.ink}">${esc(o.notes).replace(/ \| /g, "<br>")}</div></td></tr></table>` : ""}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
+        <td valign="top" style="padding-right:10px">${label(o.pickup ? "Collection" : "Delivering to")}<div style="font-family:${SANS};font-size:14.5px;line-height:1.6;color:${C.ink}">${address}</div></td>
+      </tr></table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr><td style="background:${C.soft};border-radius:16px;padding:16px 18px">
+        ${label("What happens next")}<div style="font-family:${SANS};font-size:14.5px;line-height:1.6;color:${C.ink}">${esc(next)}</div>
+        ${o.pickup ? "" : `<div style="font-family:${SANS};font-size:12.5px;line-height:1.5;color:${C.ink2};margin-top:8px">Our delivery fee covers parcels up to 500 g. If your order is heavier, our team will contact you about any extra charges.</div>`}
+      </td></tr></table>
+
+      <div style="font-family:${SERIF};font-size:19px;font-style:italic;line-height:1.4;color:${C.ink};margin-top:26px">
+        A little ritual for your new crystal: hold it for a moment, set your intention, and let it work quietly with you.
+      </div>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
+        <td style="background:${C.ink};border-radius:99px"><a href="https://wa.me/${WA}?text=${encodeURIComponent(`Hi House of Qi, about my order ${o.orderNo}`)}" style="display:inline-block;padding:13px 22px;font-family:${SANS};font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#fff;text-decoration:none">WhatsApp us</a></td>
+        <td width="10"></td><td style="border:1px solid ${C.ink};border-radius:99px"><a href="${site}" style="display:inline-block;padding:12px 20px;font-family:${SANS};font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:${C.ink};text-decoration:none">Visit the shop</a></td>
+      </tr></table>
+      <div style="font-family:${SANS};font-size:13.5px;line-height:1.6;color:${C.ink2};margin-top:22px">With love and gratitude,<br><span style="font-family:${SERIF};font-size:20px;color:${C.ink}">The House of Qi family</span></div>
+    </td></tr>
+    <tr><td align="center" style="padding:20px 10px 4px;font-family:${SANS};font-size:12px;line-height:1.6;color:${C.ink2}">
+      <span style="font-family:${SERIF};font-size:15px;letter-spacing:.2em;color:${C.ink}">HOUSE OF QI</span><br>
+      Jewellery with frequencies · <a href="${site}" style="color:${C.ink2}">houseofqi.shop</a> · WhatsApp +60 12-908 9914<br>
+      Questions about your order? Simply reply to this email.<br>
+      <span style="font-size:11px">Soleil Trinity Infinite Resources Sdn. Bhd. · Your payment receipt from Stripe is sent separately.</span>
+    </td></tr>
+  </table>
+</td></tr></table>
+</body></html>`;
+  const text = [`Thank you, ${first}!`, `Your House of Qi order ${o.orderNo} is confirmed (${rm(o.total)} paid, ${when}).`, "",
+    ...items.map((it) => `${it.qty} × ${it.name}${it.opt ? ` (${it.opt})` : ""}  ${rm(it.amount)}`), "",
+    `Subtotal ${rm(o.subtotal)}`, ...(o.discount ? [`Discount${o.coupon ? ` (${o.coupon})` : ""} -${rm(o.discount)}`] : []), `${o.pickup ? "Self pick-up" : `Delivery (${o.delivery})`} ${o.shipping ? rm(o.shipping) : "Free"}`, `Total paid ${rm(o.total)}`, "",
+    o.pickup ? "Self pick-up: we'll WhatsApp you to arrange a time." : `Delivering to: ${[o.name, ...o.address].filter(Boolean).join(", ")}`, "", next, "",
+    `WhatsApp us: https://wa.me/${WA}`, "With love, the House of Qi family", site].join("\n");
+  return { subject: `Thank you for your order ${o.orderNo} · House of Qi`, html, text, to: o.email };
+}
+
+/** Send the customer's thank-you email once per order */
+async function notifyCustomer(env, D, s) {
+  let m;
+  try { let images = []; try { images = await itemImages(env, D, s); } catch {} m = customerEmail(s, { images }); } catch (e) { console.error("customer email build", e && e.message); return false; }
+  if (!m.to || !/@/.test(m.to)) return false;
+  const claim = await D.prepare("INSERT OR IGNORE INTO notified (sid, at) VALUES (?, ?)").bind("cust-" + s.id, Date.now()).run();
+  if (!claim.meta || !claim.meta.changes) return false;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: env.CUSTOMER_EMAIL_FROM || "House of Qi <orders@houseofqi.shop>", to: [m.to], reply_to: env.CUSTOMER_REPLY_TO || REPLY_TO, subject: m.subject, html: m.html, text: m.text }),
+  });
+  if (!res.ok) { console.error("customer email", res.status); await D.prepare("DELETE FROM notified WHERE sid = ?").bind("cust-" + s.id).run(); return false; }
+  return true;
+}
+
+/** Sample customer email (admin preview / test send) */
+export function sampleCustomerEmail(images = [], to = "") {
+  const s = sampleSession(); s.customer_details.email = to; s.customer_details.name = "Sample Customer";
+  const m = customerEmail(s, { images });
+  const note = `<div style="background:#3B2C23;color:#F8EEE7;text-align:center;padding:10px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Test email · sample only · no order was placed</div>`;
+  return { ...m, subject: "[TEST] " + m.subject, html: m.html.replace(/<body([^>]*)>/, (x) => x + note) };
+}
+
 /** Absolute photo URL for each line item (real photo, saved preview, or drawn preview); logo if none */
 export async function itemImages(env, D, s, site = SITE) {
   const ids = Object.keys(s.metadata || {}).filter((k) => /^s\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)).map((k) => String(s.metadata[k]).split(":")[0]);
@@ -139,6 +275,7 @@ export async function itemImages(env, D, s, site = SITE) {
 export async function notifyOrder(env, D, s) {
   if (!env.RESEND_API_KEY || !D || !s || s.payment_status !== "paid") return false;
   if (!String(s.id).startsWith("cs_live_") && !env.NOTIFY_TEST) return false; // only real orders
+  try { await notifyCustomer(env, D, s); } catch (e) { console.error("customer email", e && e.message); } // the customer's thank-you (once)
   const claim = await D.prepare("INSERT OR IGNORE INTO notified (sid, at) VALUES (?, ?)").bind(s.id, Date.now()).run();
   if (!claim.meta || !claim.meta.changes) return false; // already sent
   let images = [];
