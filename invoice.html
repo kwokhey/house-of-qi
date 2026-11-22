@@ -5,43 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Invoice · House of Qi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 14mm 12mm; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: #eef1f4; font: 13px/1.45 Arial, Helvetica, sans-serif; color: #222; }
-  .bar { position: sticky; top: 0; display: flex; gap: 10px; align-items: center; justify-content: center; padding: 10px; background: #2a201c; color: #f3e9dc; font-size: 14px; z-index: 2; }
-  .bar button { font: 600 14px Arial; padding: 8px 18px; border-radius: 999px; border: 0; background: #c9a46a; color: #2a201c; cursor: pointer; }
-  .page { width: 210mm; min-height: 297mm; margin: 18px auto; background: #fff; padding: 16mm 14mm; box-shadow: 0 2px 14px rgba(0,0,0,.12); position: relative; }
-  .co b { font-size: 15px; letter-spacing: .2px; }
-  .co div { font-size: 11px; color: #333; line-height: 1.6; }
-  h1 { font-weight: 400; color: #3d84b8; font-size: 22px; margin: 34px 0 12px; }
+  :root { --ink:#3B2C23; --espresso:#2E221C; --gold:#B48A52; --gold-deep:#8C6634; --gold-hi:#E3C48E; --paper:#F0E0D3; --card:#F8EEE7; --line:#E3D2C2; --muted:#8B7766; }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; background: var(--paper); font: 13px/1.5 Jost, Arial, sans-serif; color: var(--ink); }
+  .bar { position: sticky; top: 0; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 10px; background: var(--espresso); color: #F6EADF; font-size: 14px; z-index: 2; letter-spacing: .3px; }
+  .bar button { font: 500 13px Jost, Arial; letter-spacing: 1.5px; text-transform: uppercase; padding: 9px 20px; border-radius: 999px; border: 0; background: linear-gradient(135deg, var(--gold-hi), var(--gold)); color: var(--espresso); cursor: pointer; }
+  .page { width: 210mm; min-height: 297mm; margin: 18px auto; background: #FFFCF9; padding: 14mm 15mm 18mm; box-shadow: 0 6px 30px rgba(46,34,28,.12); position: relative; overflow: hidden; }
+  .page::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: linear-gradient(90deg, var(--gold-deep), var(--gold-hi), var(--gold)); }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .head img { height: 84px; width: auto; display: block; }
+  .co { text-align: right; font-size: 10.5px; color: var(--muted); line-height: 1.6; }
+  .co b { display: block; font: 600 12px Jost, Arial; letter-spacing: .6px; color: var(--ink); margin-bottom: 2px; }
+  h1 { font: 500 40px/1 "Cormorant Garamond", Georgia, serif; color: var(--espresso); margin: 26px 0 4px; letter-spacing: .5px; }
+  h1 i { color: var(--gold-deep); }
+  .sub { font-size: 10.5px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 20px; }
   .top { display: flex; justify-content: space-between; gap: 24px; }
-  .lab { color: #8a8f94; font-size: 12px; }
+  .lab { color: var(--gold-deep); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
   .bill { flex: 1; font-size: 13px; }
-  .bill .lab { display: block; margin-bottom: 2px; }
-  .meta { display: grid; grid-template-columns: auto auto; column-gap: 36px; row-gap: 2px; font-size: 13px; align-self: flex-start; }
-  table.items { width: 100%; border-collapse: collapse; margin-top: 22px; }
-  table.items th { background: #dfe9f2; color: #3d84b8; font-weight: 400; text-align: left; padding: 8px 6px; font-size: 13px; }
-  table.items td { padding: 12px 6px; vertical-align: top; font-size: 13px; }
+  .bill .lab { display: block; margin-bottom: 4px; }
+  .bill .nm { font: 600 18px "Cormorant Garamond", Georgia, serif; color: var(--espresso); }
+  .meta { display: grid; grid-template-columns: auto auto; column-gap: 26px; row-gap: 5px; font-size: 13px; align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+  .meta .lab { align-self: center; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 26px; }
+  table.items th { background: var(--espresso); color: #F6EADF; font: 500 10px Jost, Arial; letter-spacing: 1.8px; text-transform: uppercase; text-align: left; padding: 10px 8px; }
+  table.items th:first-child { border-radius: 8px 0 0 8px; } table.items th:last-child { border-radius: 0 8px 8px 0; }
+  table.items td { padding: 13px 8px; vertical-align: top; font-size: 13px; border-bottom: 1px solid var(--line); }
+  table.items tr:nth-child(even) td { background: #FBF4EE; }
   .r { text-align: right !important; }
   .c { text-align: center !important; }
   .desc { white-space: pre-line; }
-  .dash { border-top: 1px dashed #b9c2ca; margin: 6px 0 0; }
-  .tot { margin-left: auto; width: 62%; font-size: 13px; }
-  .tot div { display: flex; justify-content: space-between; padding: 7px 0; }
-  .tot .lab { font-size: 13px; }
-  .tot .due { border-top: 1px dashed #b9c2ca; margin-top: 6px; padding-top: 14px; }
-  .tot .due b { font-size: 19px; }
-  .pay { background: #e8eef3; padding: 10px 12px; margin-top: 26px; font-size: 12px; line-height: 1.5; }
-  .note { margin-top: 14px; font-size: 12px; color: #555; }
-  .foot { position: absolute; bottom: 10mm; left: 0; right: 0; text-align: center; font-size: 10px; color: #999; }
-  .void { position: absolute; top: 40%; left: 0; right: 0; text-align: center; font: 700 110px Arial; color: rgba(200,40,40,.18); transform: rotate(-20deg); pointer-events: none; }
+  .desc::first-line { font-weight: 600; }
+  .tot { margin: 18px 0 0 auto; width: 55%; font-size: 13px; }
+  .tot div { display: flex; justify-content: space-between; padding: 6px 4px; }
+  .tot .due { margin-top: 8px; padding: 12px 16px; background: var(--espresso); color: #F6EADF; border-radius: 10px; align-items: center; }
+  .tot .due .lab { color: var(--gold-hi); }
+  .tot .due b { font: 600 22px "Cormorant Garamond", Georgia, serif; color: var(--gold-hi); }
+  .note { margin-top: 14px; font: italic 500 16px "Cormorant Garamond", Georgia, serif; color: var(--gold-deep); text-align: right; }
+  .pay { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 8px; padding: 12px 16px; margin-top: 26px; font-size: 12px; line-height: 1.6; }
+  .pay b { font-weight: 600; }
+  .thanks { margin-top: 30px; text-align: center; font: italic 500 20px "Cormorant Garamond", Georgia, serif; color: var(--espresso); }
+  .thanks small { display: block; font: 400 10.5px Jost, Arial; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .foot { position: absolute; bottom: 8mm; left: 0; right: 0; text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  .void { position: absolute; top: 40%; left: 0; right: 0; text-align: center; font: 700 110px Jost, Arial; color: rgba(170,40,40,.16); transform: rotate(-20deg); pointer-events: none; }
   .msg { text-align: center; padding: 80px 20px; font-size: 15px; }
   @media print {
     body { background: #fff; }
     .bar { display: none; }
-    .page { margin: 0; box-shadow: none; width: auto; min-height: 0; padding: 0; }
-    .foot { position: fixed; bottom: 0; }
+    .page { margin: 0; box-shadow: none; width: 210mm; min-height: 296mm; }
   }
 </style>
 </head>
@@ -70,24 +84,25 @@
   const t = inv.to || {};
   const bill = [t.company && t.name ? `${esc(t.company)}` : "", esc(t.name), t.address ? esc(t.address).replace(/\n/g, "<br>") : "", t.phone ? `Tel: ${esc(t.phone)}` : "", t.email ? esc(t.email) : "", t.attn ? `Attn to: ${esc(t.attn)}` : ""].filter(Boolean).join("<br>");
   const rows = (inv.lines || []).map((l) => `<tr><td>${dmy(l.date)}</td><td>${esc(l.activity || "Sale")}</td><td class="desc">${esc(l.description)}</td><td class="c">${esc(l.qty)}</td><td class="r">${money(l.rate)}</td><td class="r">${money(l.qty * l.rate)}</td></tr>`).join("");
+  const paid = /paid/i.test(inv.terms || "");
   out.innerHTML = `<div class="page">
     ${inv.void ? '<div class="void">VOID</div>' : ""}
-    <div class="co"><b>SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.</b>
-      <div>B3-05, Casa Utama, Lorong Lebuh Bandar Utama,<br>PETALING JAYA, Selangor 47400<br>+6079222388<br>naomi@soleiltrinity.com<br>House of Qi Crystals · houseofqi.shop</div></div>
-    <h1>Invoice</h1>
+    <div class="head"><img src="/assets/img/logo-full.png" alt="House of Qi Crystals">
+      <div class="co"><b>SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.</b>B3-05, Casa Utama, Lorong Lebuh Bandar Utama,<br>Petaling Jaya, Selangor 47400<br>+6079222388 · naomi@soleiltrinity.com<br>houseofqi.shop</div></div>
+    <h1>Invoice</h1><div class="sub">House of Qi · Crystals</div>
     <div class="top">
-      <div class="bill"><span class="lab">BILL TO</span>${bill}</div>
-      <div class="meta"><span class="lab">INVOICE</span><span>${esc(inv.number)}</span><span class="lab">DATE</span><span>${dmy(inv.date)}</span>
-        <span class="lab">TERMS</span><span>${esc(inv.terms || "Paid in full")}</span><span class="lab">DUE DATE</span><span>${dmy(inv.due || inv.date)}</span></div>
+      <div class="bill"><span class="lab">Bill to</span>${bill.replace(esc(t.name), `<span class="nm">${esc(t.name)}</span>`)}</div>
+      <div class="meta"><span class="lab">Invoice</span><span>${esc(inv.number)}</span><span class="lab">Date</span><span>${dmy(inv.date)}</span>
+        <span class="lab">Terms</span><span>${esc(inv.terms || "Paid in full")}</span><span class="lab">Due date</span><span>${dmy(inv.due || inv.date)}</span></div>
     </div>
-    <table class="items"><thead><tr><th style="width:14%">DATE</th><th style="width:13%">ACTIVITY</th><th>DESCRIPTION</th><th class="c" style="width:7%">QTY</th><th class="r" style="width:12%">RATE</th><th class="r" style="width:13%">AMOUNT</th></tr></thead>
+    <table class="items"><thead><tr><th style="width:13%">Date</th><th style="width:11%">Activity</th><th>Description</th><th class="c" style="width:7%">Qty</th><th class="r" style="width:12%">Rate</th><th class="r" style="width:13%">Amount</th></tr></thead>
       <tbody>${rows}</tbody></table>
-    <div class="dash"></div>
-    <div class="tot"><div><span class="lab">SUBTOTAL</span><span>${money(inv.subtotal)}</span></div>
-      <div><span class="lab">TOTAL</span><span>${money(inv.total)}</span></div>
-      <div class="due"><span class="lab">BALANCE DUE</span><b>MYR ${money(/paid/i.test(inv.terms || "") ? 0 : inv.total)}</b></div></div>
-    ${/paid/i.test(inv.terms || "") ? `<p class="note">Payment of MYR ${money(inv.total)} received with thanks.</p>` : ""}
-    <div class="pay">Kindly make your payment to the bank details below:<br>Account Name: SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.<br>Account No: 5141 9676 4088<br>Bank: MALAYAN BANKING BERHAD (MAYBANK)</div>
+    <div class="tot"><div><span class="lab">Subtotal</span><span>${money(inv.subtotal)}</span></div>
+      <div><span class="lab">Total</span><span>${money(inv.total)}</span></div>
+      <div class="due"><span class="lab">Balance due</span><b>MYR ${money(paid ? 0 : inv.total)}</b></div></div>
+    ${paid ? `<p class="note">Payment of MYR ${money(inv.total)} received with thanks.</p>` : ""}
+    <div class="pay">Kindly make your payment to the bank details below:<br>Account Name: <b>SOLEIL TRINITY INFINITE RESOURCES SDN. BHD.</b><br>Account No: <b>5141 9676 4088</b><br>Bank: MALAYAN BANKING BERHAD (MAYBANK)</div>
+    <div class="thanks">Thank you for choosing House of Qi<small>Jewellery with frequencies</small></div>
     <div class="foot">Page 1 of 1</div>
   </div>`;
 })();
