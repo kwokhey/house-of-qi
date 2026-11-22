@@ -550,6 +550,22 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#sheet').clas
 WIDE.addEventListener('change',()=>{if(!CAT.length)return;const h=$('#home'),y=h.scrollTop;renderHome();h.scrollTop=y;spy()});
 window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelector('.tab.on')?.dataset.cat||TABS[0][0],false)});
 
+
+/* keep the customer's place when they refresh: same section, scroll, search, filters, open piece or bag */
+const VIEWK='hq-view';
+function saveView(){try{const f=[...document.querySelectorAll('#homeBody section[id^="sec-"]')].filter(x=>x.dataset.mm||x.dataset.pr).map(x=>[x.id,x.dataset.mm||'',x.dataset.pr||'']);
+  const srch=$('#home').classList.contains('is-search');
+  sessionStorage.setItem(VIEWK,JSON.stringify({y:$('#home').scrollTop,q:srch?$('#q').value:'',pre:srch?window.__pre:null,p:DR&&$('#sheet').classList.contains('open')?DR.m.id:'',v:stack[stack.length-1],f,at:Date.now()}))}catch(e){}}
+addEventListener('pagehide',saveView);addEventListener('beforeunload',saveView);document.addEventListener('visibilitychange',()=>{if(document.hidden)saveView()});
+function restoreView(){let nav='';try{nav=(performance.getEntriesByType('navigation')[0]||{}).type||''}catch(e){}if(nav!=='reload'&&nav!=='back_forward')return; /* only when refreshing (or coming back), not on a fresh visit */
+  let s=null;try{s=JSON.parse(sessionStorage.getItem(VIEWK)||'null')}catch(e){}if(!s||Date.now()-s.at>3600e3)return;
+  (s.f||[]).forEach(([id,mm,pr])=>{const sec=$('#'+id);if(!sec)return;if(mm){const b=sec.querySelector(`.chip-s:not(.chip-p)[data-mm="${mm}"]`);if(b)ACT.size(b)}if(pr){const b=sec.querySelector(`.chip-p[data-pr="${pr}"]`);if(b)ACT.price(b)}});
+  const to=()=>{$('#home').scrollTop=s.y||0};
+  if(s.q){$('#q').value=s.q;openSearch();window.__pre=s.pre;setTimeout(()=>$('#q').blur(),80)}
+  if(s.y){spyLock=Date.now()+1500;requestAnimationFrame(to);setTimeout(to,400);setTimeout(to,1200)}
+  if(s.p&&BY[s.p])setTimeout(()=>openDetail(s.p),300);
+  if((s.v==='bag'||s.v==='checkout')&&S.cart.length){renderBag();go('bag')}}
+
 /* boot */
 (async()=>{
   try{await loadCatalog()}catch(e){$('#homeBody').innerHTML='<p class="empty-q gx">The shop is unavailable right now. Please refresh in a moment.</p>';return}
@@ -557,7 +573,8 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
   $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
   { const q=new URLSearchParams(location.search).get('p');const want=window.OPEN_P||q;
-    if(want&&BY[want]){setTimeout(()=>openDetail(want),250);try{history.replaceState(null,'','/')}catch(e){}} }
+    if(want&&BY[want]){setTimeout(()=>openDetail(want),250);try{history.replaceState(null,'','/')}catch(e){}}
+    else if(!/[?&](session_id|checkout)=/.test(location.search))restoreView(); }
   if(CFG.whatsapp){const w=$('#wafab');w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about your crystals.')}`;w.hidden=false;
     w.addEventListener('click',()=>{if(DR&&$('#sheet').classList.contains('open'))w.href=`https://wa.me/${encodeURIComponent(CFG.whatsapp)}?text=${encodeURIComponent('Hi House of Qi, I have a question about the '+DR.m.name+' ('+DR.m.id+')')}`})}
   const q=new URLSearchParams(location.search),clean=()=>{try{history.replaceState(null,'',location.pathname)}catch(e){}};
