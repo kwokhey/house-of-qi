@@ -210,7 +210,7 @@
     const f = {
       sale: `<div class="mv"><b>Record an offline sale</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mPrice", "Price paid per piece (RM)", i.price, 'inputmode="decimal"')}
-          ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
+          ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}<label class="f" id="mChOF" hidden><span>Sold through (please specify)</span><input id="mChO" maxlength="40" placeholder="e.g. Shopee, Carousell, friend referral"></label>${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
           <label class="f" id="mAffF" hidden><span>Sold by (affiliate)</span><select id="mAff"></select></label></div>
           ${invFields()}
           <button type="button" class="btn gold sm" id="mGo">Record sale</button></div>`,
@@ -223,6 +223,7 @@
           <button type="button" class="btn gold sm" id="mGo">Save count</button></div>`,
     }[kind];
     box.innerHTML = f;
+    if (kind === "sale") $("#mCh").onchange = () => { const o = $("#mCh").value === "Other"; $("#mChOF").hidden = !o; if (o) $("#mChO").focus(); };
     if (kind === "sale") sellers().then((L) => {
       const act = L.filter((a) => a.active);
       if (!act.length || !$("#mAff")) return;
@@ -235,7 +236,7 @@
       const inv = kind === "sale" ? invData() : null;
       const w = inv && inv.to.name.trim() ? window.open("", "_blank") : null; // opened now so the browser doesn't block it
       try {
-        const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
+        const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value === "Other" && $("#mChO").value.trim() ? $("#mChO").value.trim() : $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
         if (r.invoice) openInvoice(r.invoice, w); else if (w) w.close();
         toast(r.invoice ? `Sale recorded · invoice ${r.invoice}` : { sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
         await load(); openEditor(ITEMS.find((x) => x.id === i.id));
