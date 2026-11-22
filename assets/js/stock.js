@@ -37,7 +37,7 @@
     const retail = ITEMS.reduce((t, i) => t + Math.max(0, i.stock) * i.price, 0);
     const mName = new Date().toLocaleString("en-MY", { month: "long" });
     $("#sTiles").innerHTML = `
-      <div><span>In stock</span><b>${pcs.toLocaleString()}</b><small>${ITEMS.filter((i) => i.stock > 0).length} lines</small></div>
+      <div><span>Pieces in stock</span><b>${pcs.toLocaleString()}</b><small>across ${ITEMS.filter((i) => i.stock > 0).length} items</small></div>
       <div><span>Stock value</span><b>${RM0(cost)}</b><small>at cost · ${RM0(retail)} retail</small></div>
       <div><span>Sold in ${mName}</span><b>${(MONTH.pcs || 0).toLocaleString()}</b><small>${RM0(MONTH.revenue)} sales</small></div>
       <div><span>Profit in ${mName}</span><b>${RM0(MONTH.profit)}</b><small>sales minus cost</small></div>`;
