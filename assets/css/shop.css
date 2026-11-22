@@ -947,3 +947,8 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 @media (max-width:767px){.lead-img{aspect-ratio:1/1}}
 
 .prices{margin:-4px 0 18px}
+
+/* top menu: only sideways scrolling, no vertical drag or bounce */
+.tabs{overflow:hidden;overscroll-behavior:none;touch-action:pan-x}
+.tabs-in{overflow-y:hidden!important;overscroll-behavior:contain;touch-action:pan-x;-webkit-overflow-scrolling:touch}
+.tabs-in::-webkit-scrollbar{display:none}
