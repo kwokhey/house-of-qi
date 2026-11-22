@@ -945,3 +945,5 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 
 /* phones: show the whole square product photo, no top/bottom crop */
 @media (max-width:767px){.lead-img{aspect-ratio:1/1}}
+
+.prices{margin:-4px 0 18px}
