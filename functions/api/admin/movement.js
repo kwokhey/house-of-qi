@@ -13,7 +13,7 @@ import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, itemName, itemDetails } from "../../_lib/db.js";
 import { creditSale } from "../../_lib/affiliates.js";
 import { json } from "../../_lib/stripe.js";
-import { billTo, createInvoice } from "../../_lib/invoice.js";
+import { billTo, createInvoice, addToInvoice, dropFromInvoice } from "../../_lib/invoice.js";
 
 async function guard(request, env) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -45,7 +45,11 @@ export async function onRequestPost({ request, env }) {
     ]);
     // invoice: made when "sold to" details were filled in
     const to = billTo(b.to);
-    if (to) {
+    if (b.addTo) {
+      const number = await addToInvoice(D, b.addTo, { item, qty, price, movementId: res[0].meta.last_row_id, date: b.saleDate });
+      if (!number) return json({ ok: true, warning: `Sale recorded, but invoice ${b.addTo} wasn't found, so it wasn't added. Use "Make invoice" in History.` });
+      b.__invoice = number;
+    } else if (to) {
       const number = await createInvoice(D, { to, date: b.saleDate, terms: b.terms, item, qty, price, movementId: res[0].meta.last_row_id, channel: channel || "Offline", note });
       b.__invoice = number;
     }
@@ -92,9 +96,9 @@ export async function onRequestDelete({ request, env }) {
   const vals = m.kind === "restock" ? [m.qty, m.qty] : [m.qty];
   await D.batch([
     D.prepare("DELETE FROM movements WHERE id = ?").bind(mid),
-    D.prepare("UPDATE invoices SET void = 1 WHERE movement_id = ?").bind(mid), // undone sale → its invoice is marked VOID
     D.prepare("DELETE FROM aff_sales WHERE ref = ?").bind(`mv-${mid}`),
     D.prepare(`UPDATE items SET ${back}, updated_at = ? WHERE id = ?`).bind(...vals, now, m.item_id),
   ]);
+  if (m.invoice) await dropFromInvoice(D, m.invoice, mid); // its line leaves the invoice (VOID when nothing is left)
   return json({ ok: true });
 }

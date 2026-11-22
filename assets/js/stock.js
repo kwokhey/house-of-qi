@@ -196,12 +196,22 @@
   /* invoice details for an offline sale ("sold to"); leave Sold to empty for no invoice */
   const today = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
   const invFields = (date) => `<div class="inv-f"><b>Invoice details</b> <small class="muted">Fill in "Sold to" to make an invoice. Leave it empty for no invoice.</small>
-      <div class="grid-f">${field("iName", "Sold to (customer name) *", "", 'placeholder="e.g. Tan Mei Ling"')}${field("iCo", "Company (optional)", "")}
+      <label class="f"><span>Invoice</span><select id="iMode"><option value="">New invoice</option></select></label>
+      <small class="muted" id="iModeHint">Customer bought several pieces? Record the first piece as a new invoice, then for each other piece pick that invoice here.</small>
+      <div class="grid-f" id="iNew">${field("iName", "Sold to (customer name) *", "", 'placeholder="e.g. Tan Mei Ling"')}${field("iCo", "Company (optional)", "")}
       ${field("iPhone", "Phone", "", 'inputmode="tel"')}${field("iEmail", "Email", "", 'inputmode="email"')}
       ${field("iAttn", "Attn / PIC (optional)", "")}${field("iDate", "Sale date", date || today(), 'type="date"')}
       ${field("iTerms", "Payment terms", "Paid in full")}
       <label class="f" style="grid-column:1/-1"><span>Address</span><textarea id="iAddr" rows="2" placeholder="Street, postcode, city, state"></textarea></label></div></div>`;
-  const invData = () => ({ to: { name: $("#iName").value, company: $("#iCo").value, phone: $("#iPhone").value, email: $("#iEmail").value, attn: $("#iAttn").value, address: $("#iAddr").value }, saleDate: $("#iDate").value, terms: $("#iTerms").value });
+  const fillInvoices = async () => {
+    try {
+      const { invoices } = await api("/api/admin/invoice");
+      const sel = $("#iMode"); if (!sel) return;
+      sel.innerHTML = `<option value="">New invoice</option>` + invoices.filter((v) => !v.void).slice(0, 40).map((v) => `<option value="${esc(v.number)}">Add to ${esc(v.number)} · ${esc(v.to || "")} · RM${Number(v.total || 0).toFixed(2)}</option>`).join("");
+      sel.onchange = () => { $("#iNew").hidden = !!sel.value; };
+    } catch {}
+  };
+  const invData = () => ({ addTo: $("#iMode")?.value || undefined, to: { name: $("#iName").value, company: $("#iCo").value, phone: $("#iPhone").value, email: $("#iEmail").value, attn: $("#iAttn").value, address: $("#iAddr").value }, saleDate: $("#iDate").value, terms: $("#iTerms").value });
   const openInvoice = (no, w) => { const u = `/invoice.html?no=${encodeURIComponent(no)}`; if (w) w.location = u; else window.open(u, "_blank"); };
 
   const sellers = async () => { try { return (await api("/api/admin/affiliates")).affiliates; } catch { return []; } };
@@ -223,6 +233,7 @@
           <button type="button" class="btn gold sm" id="mGo">Save count</button></div>`,
     }[kind];
     box.innerHTML = f;
+    if (kind === "sale") fillInvoices();
     if (kind === "sale") $("#mCh").onchange = () => { const o = $("#mCh").value === "Other"; $("#mChOF").hidden = !o; if (o) $("#mChO").focus(); };
     if (kind === "sale") sellers().then((L) => {
       const act = L.filter((a) => a.active);
@@ -234,10 +245,11 @@
     $("#mGo").onclick = async () => {
       $("#mGo").disabled = true;
       const inv = kind === "sale" ? invData() : null;
-      const w = inv && inv.to.name.trim() ? window.open("", "_blank") : null; // opened now so the browser doesn't block it
+      const w = inv && (inv.to.name.trim() || inv.addTo) ? window.open("", "_blank") : null; // opened now so the browser doesn't block it
       try {
         const r = await api("/api/admin/movement", { method: "POST", body: JSON.stringify({ itemId: i.id, kind, qty: $("#mQty").value, price: $("#mPrice")?.value, cost: $("#mCost")?.value, channel: $("#mCh")?.value === "Other" && $("#mChO").value.trim() ? $("#mChO").value.trim() : $("#mCh")?.value, note: $("#mNote").value, aff: $("#mAff")?.value || undefined, ...(inv || {}) }) });
         if (r.invoice) openInvoice(r.invoice, w); else if (w) w.close();
+        if (r.warning) toast(r.warning);
         toast(r.invoice ? `Sale recorded · invoice ${r.invoice}` : { sale: "Sale recorded", restock: "Stock added", adjust: "Count saved" }[kind]);
         await load(); openEditor(ITEMS.find((x) => x.id === i.id));
       } catch (x) { if (w) w.close(); toast(x.message); $("#mGo").disabled = false; }
@@ -255,11 +267,11 @@
       $("#edHist").querySelectorAll("[data-inv]").forEach((b) => (b.onclick = () => openInvoice(b.dataset.inv)));
       $("#edHist").querySelectorAll("[data-mkinv]").forEach((b) => (b.onclick = () => {
         $("#mvForm").innerHTML = `<div class="mv"><b>Invoice for this offline sale</b>${invFields(b.dataset.d)}<button type="button" class="btn gold sm" id="iGo">Make invoice</button></div>`;
-        $("#mvForm").scrollIntoView({ block: "center" }); $("#iName").focus();
+        $("#mvForm").scrollIntoView({ block: "center" }); $("#iName").focus(); fillInvoices();
         $("#iGo").onclick = async () => {
-          const d = invData(); if (!d.to.name.trim()) { toast("Please enter who it was sold to."); return; }
+          const d = invData(); if (!d.addTo && !d.to.name.trim()) { toast("Please enter who it was sold to."); return; }
           const w = window.open("", "_blank"); $("#iGo").disabled = true;
-          try { const r = await api("/api/admin/invoice", { method: "POST", body: JSON.stringify({ mid: b.dataset.mkinv, to: d.to, date: d.saleDate, terms: d.terms }) }); openInvoice(r.number, w); toast(`Invoice ${r.number} made`); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); }
+          try { const r = await api("/api/admin/invoice", { method: "POST", body: JSON.stringify({ mid: b.dataset.mkinv, to: d.to, addTo: d.addTo, date: d.saleDate, terms: d.terms }) }); openInvoice(r.number, w); toast(`Invoice ${r.number} made`); await load(); openEditor(ITEMS.find((x) => x.id === i.id)); }
           catch (x) { if (w) w.close(); toast(x.message); $("#iGo").disabled = false; }
         };
       }));
