@@ -112,6 +112,7 @@ export async function onRequestPost({ request, env }) {
   if (!from || !to) return json({ error: "Say which channel to change, and to what." }, 400);
   const D = await db(env);
   const mv = await D.prepare("UPDATE movements SET channel = ? WHERE kind = 'sale' AND ref NOT LIKE 'cs_%' AND channel = ?").bind(to, from).run();
+  await D.prepare("UPDATE aff_sales SET channel = ? WHERE channel = ? AND ref NOT LIKE 'cs_%'").bind(to, from).run();
   const { results } = await D.prepare("SELECT seq, data FROM invoices").all();
   let inv = 0;
   for (const r of results) {
