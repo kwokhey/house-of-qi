@@ -272,7 +272,7 @@ export async function itemImages(env, D, s, site = SITE) {
     for (const li of (s.line_items && s.line_items.data) || []) {
       const name = String(li.description || "").replace(/ · Pre-order 50% deposit$/, "").trim();
       let r = null;
-      try { r = await D.prepare("SELECT id FROM items WHERE name = ? ORDER BY preorder DESC, (SELECT COUNT(*) FROM images WHERE images.item_id = items.id) DESC LIMIT 1").bind(name).first(); } catch {}
+      try { r = await D.prepare("SELECT id FROM items WHERE TRIM(stone || ' ' || type) = ? ORDER BY preorder DESC, (SELECT COUNT(*) FROM images WHERE images.item_id = items.id) DESC LIMIT 1").bind(name).first(); } catch {}
       ids.push(r ? r.id : "");
     }
   }
