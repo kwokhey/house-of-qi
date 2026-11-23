@@ -55,7 +55,22 @@ export async function onRequestGet({ request, env }) {
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   banner = { ...(banner || {}), photos: bannerPhotos(banner) };
   const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]"), ...(r.extra !== undefined ? { extra: JSON.parse(r.extra || "[]") } : {}) });
-  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, preSeason, preItems, now: Date.now() });
+  // seller (affiliate) codes count too: their sales and the customer discount they gave (website + offline)
+  let sellers = { active: 0, total: 0, uses: 0, revenue: 0, given: 0 };
+  try {
+    const af = await D.prepare("SELECT COUNT(*) AS total, COALESCE(SUM(active), 0) AS active FROM affiliates").first();
+    const rows = (await D.prepare("SELECT s.ref, s.amount, a.disc_pct FROM aff_sales s JOIN affiliates a ON a.id = s.aff_id").all()).results;
+    const off = (await D.prepare(`SELECT m.id, -m.qty AS qty, m.unit_price, i.price FROM movements m JOIN items i ON i.id = m.item_id
+      WHERE m.id IN (SELECT CAST(SUBSTR(ref, 4) AS INTEGER) FROM aff_sales WHERE ref LIKE 'mv-%')`).all()).results;
+    const offDisc = Object.fromEntries(off.map((r) => [String(r.id), Math.max(0, (r.price - r.unit_price) * r.qty)]));
+    let given = 0;
+    for (const r of rows) {
+      if (r.ref.startsWith("mv-") && offDisc[r.ref.slice(3)] !== undefined) given += offDisc[r.ref.slice(3)];
+      else if (r.disc_pct > 0 && r.disc_pct < 100) given += (r.amount * r.disc_pct) / (100 - r.disc_pct);
+    }
+    sellers = { active: af.active || 0, total: af.total || 0, uses: rows.length, revenue: Math.round(rows.reduce((t, r) => t + (r.amount || 0), 0) * 100) / 100, given: Math.round(given * 100) / 100 };
+  } catch (e) { console.error("seller stats", e.message); }
+  return json({ sellers, coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, preSeason, preItems, now: Date.now() });
 }
 
 export async function onRequestPost({ request, env }) {

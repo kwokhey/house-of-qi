@@ -66,12 +66,13 @@
   function render() {
     const live = D.coupons.filter((c) => status(c, c.max_uses && c.uses >= c.max_uses)[0] === "live").length;
     const liveSales = D.sales.filter((s) => status(s)[0] === "live").length;
-    const uses = D.coupons.reduce((t, c) => t + c.uses, 0), given = D.coupons.reduce((t, c) => t + c.given, 0), rev = D.coupons.reduce((t, c) => t + c.revenue, 0);
+    const SL = D.sellers || { active: 0, total: 0, uses: 0, revenue: 0, given: 0 };
+    const uses = D.coupons.reduce((t, c) => t + c.uses, 0) + SL.uses, given = D.coupons.reduce((t, c) => t + c.given, 0) + SL.given, rev = D.coupons.reduce((t, c) => t + c.revenue, 0) + SL.revenue;
     $("#mTiles").innerHTML = `
-      <div><span>Live codes</span><b>${live}</b><small>${D.coupons.length} in total</small></div>
+      <div><span>Live codes</span><b>${live + SL.active}</b><small>${D.coupons.length} coupon · ${SL.total} seller</small></div>
       <div><span>Live sales</span><b>${liveSales}</b><small>${D.sales.length} in total</small></div>
       <div><span>Orders with a code</span><b>${uses}</b><small>${RM(rev)} in sales</small></div>
-      <div><span>Discount given</span><b>${RM(given)}</b><small>through codes</small></div>`;
+      <div><span>Discount given</span><b>${RM(given)}</b><small>through coupon and seller codes</small></div>`;
     renderAnn(); renderBan(); renderSg(); renderPre();
     $("#mCodes").innerHTML = D.coupons.length ? D.coupons.map(codeRow).join("") : `<p class="m-empty">No codes yet. Try one like <b>WELCOME10</b> for 10% off a first order.</p>`;
     $("#mColls").innerHTML = (D.collections || []).length ? D.collections.map(collRow).join("") : `<p class="m-empty">No collections yet. They appear as picture tiles on the shop's home page.</p>`;
@@ -113,13 +114,14 @@
   };
 
   function renderSg() {
+    if (!$("#mSg")) return; // section removed from the page (23 Nov)
     const a = D.sgCollect || { on: false, note: "" };
     $("#mSg").innerHTML = `
       <label class="f full"><span>Note for customers (dates and place)</span><input id="sgNote" maxlength="160" value="${esc(a.note || "")}" placeholder="e.g. Collect at Orchard on 12–15 Dec · we will WhatsApp you"></label>
       <label class="tgl"><input type="checkbox" id="sgOn"${a.on ? " checked" : ""}> Show "Singapore self-collect" at checkout <em class="st ${a.on ? "live" : "off"}">${a.on ? "On" : "Off"}</em></label>
       <div class="ed-f"><button class="btn sm" type="submit">Save</button></div>`;
   }
-  $("#mSg").onsubmit = async (e) => {
+  if ($("#mSg")) $("#mSg").onsubmit = async (e) => {
     e.preventDefault();
     try {
       const r = await api("/api/admin/marketing", { method: "POST", body: JSON.stringify({ type: "sgcollect", on: $("#sgOn").checked, note: $("#sgNote").value }) });
