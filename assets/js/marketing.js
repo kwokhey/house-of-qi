@@ -3,6 +3,16 @@
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const RM = (n) => { n = Number(n || 0); const f = n % 1 ? 2 : 0; return "RM" + n.toLocaleString("en-MY", { minimumFractionDigits: f, maximumFractionDigits: f }); };
+  const testMail = async (body, btn) => {
+    btn.disabled = true;
+    try { const r = await fetch("/api/admin/test-email", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({}));
+      toast(r.ok ? `Test sent to ${(j.to || []).join(", ") || "the team"}` : (j.error || "Couldn't send the test email.")); }
+    catch { toast("Couldn't send the test email."); } finally { btn.disabled = false; }
+  };
+  document.addEventListener("click", (e) => {
+    if (e.target.id === "mTestTeam") testMail({}, e.target);
+    if (e.target.id === "mTestCust") testMail({ customer: true, to: ($("#mTestTo").value || "").trim() }, e.target);
+  });
   const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); };
   const MYT = 8 * 3600 * 1000;
   const ymd = (ts) => (ts ? new Date(ts + MYT).toISOString().slice(0, 10) : "");

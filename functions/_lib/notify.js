@@ -11,7 +11,7 @@ import { getSetting } from "./db.js";
 // so each order uses 1 Resend email instead of 4. The 4 people are listed in that worker.
 // Switch-over: once all 4 have clicked Cloudflare's verify link, set the D1 setting order_emails = "team@houseofqi.shop".
 // Until then the alert still goes to the 4 addresses directly, so nobody misses an order.
-export const DEFAULT_TO = ["jessie@soleiltrinity.com", "kongeu@soleiltrinity.com", "suzee@soleiltrinity.com", "naomi@soleiltrinity.com"];
+export const DEFAULT_TO = ["team@houseofqi.shop"]; // forwarded by Cloudflare (worker hoq-team-mail) to Jessie, Kong Eu, Suzee, Naomi — all verified 23 Nov 2026
 const FROM = "House of Qi Orders <orders@houseofqi.shop>";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
