@@ -5,7 +5,19 @@
   const money = (n) => "RM" + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const dmy = (d) => { const m = String(d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}.${m[2]}.${m[1]}` : esc(d); };
   const thisMonth = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 7);
-  let L = [], F = "all", PRE = null, preLoading = false;
+  let L = [], F = "all", PRE = null, preLoading = false, SAMPLE = false;
+  // a made-up pre-order, only to show what the list looks like (nothing is saved, emailed or charged)
+  const sampleOrders = () => {
+    const t = Date.now();
+    return [
+      { sample: true, sessionId: "sample-1", orderNo: "HQ-SAMPLE-01", created: t - 3 * 864e5, name: "Amy Tan", phone: "+60 12-345 6789", email: "amy@example.com",
+        items: [{ qty: 1, name: "Larimar Bracelet · Pre-order 50% deposit", options: "1× Larimar Bracelet · 12 mm" }], total: 469, balance: 479, balanceShip: 10, balanceStatus: "due" },
+      { sample: true, sessionId: "sample-2", orderNo: "HQ-SAMPLE-02", created: t - 9 * 864e5, name: "Jason Lim", phone: "+60 17-222 3344", email: "jason@example.com",
+        items: [{ qty: 1, name: "Mica Bracelet · Pre-order 50% deposit", options: "1× Mica Bracelet · 10 mm" }], total: 340, balance: 360, balanceShip: 20, balanceStatus: "requested", balanceAt: t - 864e5, balanceUrl: "https://checkout.stripe.com/sample" },
+      { sample: true, sessionId: "sample-3", orderNo: "HQ-SAMPLE-03", created: t - 20 * 864e5, name: "Mei Ling", phone: "+65 9123 4567", email: "meiling@example.com",
+        items: [{ qty: 1, name: "Larimar Pendant · Pre-order 50% deposit", options: "" }], total: 134, balance: 222, balanceShip: 88, balanceStatus: "paid", balancePaidAt: t - 2 * 864e5 },
+    ];
+  };
   const api = async (u, o = {}) => { const r = await fetch(u, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...o }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Something went wrong. Please try again."); return d; };
   const when = (t) => (t ? new Date(t).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) : "");
   const toast = (m) => { const t = document.getElementById("toast"); if (t) { t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2600); } else alert(m); };
@@ -28,12 +40,13 @@
   const waText = (o, url) => `Hi ${(o.name || "").split(" ")[0] || "there"}, good news from House of Qi! Your pre-order ${o.orderNo} (${o.items.map((i) => i.name).join(", ")}) has arrived. Please pay the balance of ${money(o.balance)}${o.balanceShip ? ` (includes ${money(o.balanceShip)} delivery)` : ""}${url ? ` here: ${url}` : ". We'll send you the payment link shortly"}. Thank you!`;
   function renderPre(q) {
     if (!PRE) { $("#invSum").textContent = ""; $("#invList").innerHTML = '<p class="muted">Loading pre-orders…</p>'; loadPre(); return; }
-    const rows = PRE.filter((o) => !q || [o.orderNo, o.name, o.phone, o.email, ...o.items.map((i) => i.name + " " + (i.options || ""))].join(" ").toLowerCase().includes(q));
+    const src = SAMPLE ? sampleOrders() : PRE;
+    const rows = src.filter((o) => !q || [o.orderNo, o.name, o.phone, o.email, ...o.items.map((i) => i.name + " " + (i.options || ""))].join(" ").toLowerCase().includes(q));
     const open = rows.filter((o) => o.balanceStatus !== "paid");
-    $("#invSum").textContent = rows.length ? `${rows.length} pre-order${rows.length === 1 ? "" : "s"} · ${open.length} waiting for the balance · ${money(open.reduce((a, o) => a + o.balance, 0))} to collect` : "";
+    $("#invSum").innerHTML = (SAMPLE ? '<b>Sample only</b> · made-up pre-orders to show how this list works. Buttons do nothing. <button type="button" class="link" id="preHideS">Hide sample</button><br>' : "") + esc(rows.length ? `${rows.length} pre-order${rows.length === 1 ? "" : "s"} · ${open.length} waiting for the balance · ${money(open.reduce((a, o) => a + o.balance, 0))} to collect` : "");
     $("#invList").innerHTML = rows.length ? rows.map((o) => { const st = preState(o), ph = (o.phone || "").replace(/\D/g, "");
-      return `<article class="inv-row pre-row" data-sid="${esc(o.sessionId)}">
-        <div class="inv-a"><b>${esc(o.orderNo)}</b><span>${when(o.created)}</span></div>
+      return `<article class="inv-row pre-row${o.sample ? " is-sample" : ""}" data-sid="${esc(o.sessionId)}">
+        <div class="inv-a"><b>${esc(o.orderNo)}</b><span>${when(o.created)}</span>${o.sample ? '<em class="inv-tag void">Sample</em>' : ""}</div>
         <div class="inv-b"><b>${esc(o.name || "")}</b>
           <small class="muted">${esc([o.phone, o.email].filter(Boolean).join(" · "))}</small>
           <small>${o.items.map((i) => `${esc(i.qty)}× ${esc(i.name.replace(/ · Pre-order 50% deposit$/, ""))}${i.options ? ` <span class="muted">${esc(String(i.options).split(" · ").slice(1).join(" · "))}</span>` : ""}`).join(", ")}</small>
@@ -44,9 +57,12 @@
             ${o.email ? `<a class="btn ghost sm" href="mailto:${esc(o.email)}?subject=${encodeURIComponent(`Your House of Qi pre-order ${o.orderNo}`)}&body=${encodeURIComponent(waText(o, o.balanceUrl))}">Write email</a>` : ""}
             ${o.balanceUrl ? `<button type="button" class="link" data-copy="${esc(o.balanceUrl)}">Copy payment link</button>` : ""}</div>`}</div>
         <div class="inv-c"><b>${money(o.balance)}</b><em class="inv-tag ${st[0]}">${st[1]}</em></div>
-      </article>`; }).join("") : `<p class="muted">${PRE.length ? "No pre-orders match." : "No pre-orders yet. They appear here when a customer pays the 50% deposit online."}</p>`;
+      </article>`; }).join("") : `<p class="muted">${src.length ? "No pre-orders match." : 'No pre-orders yet. They appear here when a customer pays the 50% deposit online. <button type="button" class="link" id="preShowS">Show a sample</button>'}</p>`;
+    if ($("#preShowS")) $("#preShowS").onclick = () => { SAMPLE = true; render(); };
+    if ($("#preHideS")) $("#preHideS").onclick = () => { SAMPLE = false; render(); };
     $("#invList").querySelectorAll(".pre-row").forEach((el) => {
-      const o = PRE.find((x) => x.sessionId === el.dataset.sid);
+      const o = src.find((x) => x.sessionId === el.dataset.sid);
+      if (o.sample) { el.querySelectorAll("a,button").forEach((x) => { x.onclick = (e) => { e.preventDefault(); toast("This is only a sample. Nothing was sent."); }; }); return; }
       const b = el.querySelector("[data-req]");
       if (b) b.onclick = async () => {
         if (!confirm(`Email ${o.name || "the customer"} a link to pay the balance of ${money(o.balance)} for ${o.orderNo}?`)) return;
