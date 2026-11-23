@@ -4,6 +4,7 @@
  *   online  — paid website orders from Stripe (orders, pre-order deposits, pre-order balances), with refunds
  *   offline — sales recorded in Stock → Sold offline
  * Test / removed orders (hidden from Orders) are left out.
+ * POST /api/admin/sales { action: "renameChannel", from, to }  changes "Sold through" on offline sales and their invoices
  */
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, getSetting, itemName, itemDetails } from "../../_lib/db.js";
@@ -100,4 +101,22 @@ export async function onRequestGet({ request, env }) {
     month: `${m[1]}-${m[2]}`, online, offline, onlineError,
     summary: { online: on, offline: off, total: { count: on.count + off.count, pieces: on.pieces + off.pieces, gross: r2(on.gross + off.gross), refunded: on.refunded, net: r2(on.net + off.net) } },
   });
+}
+
+export async function onRequestPost({ request, env }) {
+  if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
+  if (!hasDB(env)) return json({ error: "The database isn't connected yet." }, 503);
+  const b = await request.json().catch(() => ({}));
+  if (b.action !== "renameChannel") return json({ error: "Unknown action." }, 400);
+  const from = String(b.from || "").trim().slice(0, 40), to = String(b.to || "").trim().slice(0, 40);
+  if (!from || !to) return json({ error: "Say which channel to change, and to what." }, 400);
+  const D = await db(env);
+  const mv = await D.prepare("UPDATE movements SET channel = ? WHERE kind = 'sale' AND ref NOT LIKE 'cs_%' AND channel = ?").bind(to, from).run();
+  const { results } = await D.prepare("SELECT seq, data FROM invoices").all();
+  let inv = 0;
+  for (const r of results) {
+    let d; try { d = JSON.parse(r.data); } catch { continue; }
+    if (d && d.channel === from) { d.channel = to; await D.prepare("UPDATE invoices SET data = ? WHERE seq = ?").bind(JSON.stringify(d), r.seq).run(); inv++; }
+  }
+  return json({ ok: true, sales: mv.meta?.changes || 0, invoices: inv });
 }

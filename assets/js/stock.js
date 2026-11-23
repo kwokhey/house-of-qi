@@ -6,7 +6,7 @@
   const RM0 = (n) => "RM" + Math.round(Number(n || 0)).toLocaleString("en-MY");
   const day = (ts) => new Date(ts).toLocaleString("en-MY", { day: "numeric", month: "short", year: "2-digit", hour: "numeric", minute: "2-digit" }).replace(",", "");
   const toast = (m) => { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); };
-  const CHANNELS = ["Instagram", "WhatsApp", "Facebook", "Bazaar / event", "In person", "Other"];
+  const CHANNELS = ["Tea & Qi", "Instagram", "WhatsApp", "Facebook", "Bazaar / event", "In person", "Other"];
   const TYPES = ["Bracelet", "Pendant", "Necklace", "Ring", "Earrings", "Sphere", "Statue", "Stand", "Cluster", "Tumbled", "Other"];
   const COLLECTIONS = [["bracelets", "Bracelets"], ["pendants", "Pendants"], ["rings", "Rings"], ["earrings", "Earrings"], ["decor", "Home & Décor"], ["sets", "Gift Sets"]];
   const KIND = { sale: "Sold", gift: "Gift", restock: "Stock in", adjust: "Adjusted", consign: "Seller" };
@@ -253,7 +253,14 @@
       const { invoices } = await api("/api/admin/invoice");
       const sel = $("#iMode"); if (!sel) return;
       sel.innerHTML = `<option value="">New invoice</option>` + invoices.filter((v) => !v.void).slice(0, 40).map((v) => `<option value="${esc(v.number)}">Add to ${esc(v.number)} · ${esc(v.to || "")} · RM${Number(v.total || 0).toFixed(2)}</option>`).join("");
-      sel.onchange = () => { $("#iNew").hidden = !!sel.value; };
+      sel.onchange = () => {
+        $("#iNew").hidden = !!sel.value;
+        // adding to an existing invoice: use the same "Sold through" as that invoice
+        const v = invoices.find((x) => x.number === sel.value), ch = v && v.channel, m = $("#mCh");
+        if (!ch || !m) return;
+        if (CHANNELS.includes(ch)) { m.value = ch; $("#mChOF").hidden = true; }
+        else { m.value = "Other"; $("#mChOF").hidden = false; $("#mChO").value = ch; }
+      };
     } catch {}
   };
   const invData = () => ({ addTo: $("#iMode")?.value || undefined, to: { name: $("#iName").value, company: $("#iCo").value, phone: $("#iPhone").value, email: $("#iEmail").value, attn: $("#iAttn").value, address: $("#iAddr").value }, saleDate: $("#iDate").value, terms: $("#iTerms").value });
@@ -265,7 +272,7 @@
     const f = {
       sale: `<div class="mv"><b>Record an offline sale</b><div class="grid-f">
           ${field("mQty", "Quantity", 1, 'inputmode="numeric"')}${field("mPrice", "Price paid per piece (RM)", i.price, 'inputmode="decimal"')}
-          ${selectF("mCh", "Sold through", CHANNELS, "Instagram")}<label class="f" id="mChOF" hidden><span>Sold through (please specify)</span><input id="mChO" maxlength="40" placeholder="e.g. Shopee, Carousell, friend referral"></label>${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
+          ${selectF("mCh", "Sold through", CHANNELS, "Tea & Qi")}<label class="f" id="mChOF" hidden><span>Sold through (please specify)</span><input id="mChO" maxlength="40" placeholder="e.g. Shopee, Carousell, friend referral"></label>${field("mNote", "Note", "", 'placeholder="e.g. customer name"')}
           <label class="f" id="mAffF" hidden><span>Sold by (affiliate)</span><select id="mAff"></select></label></div>
           ${invFields()}
           <button type="button" class="btn gold sm" id="mGo">Record sale</button></div>`,
