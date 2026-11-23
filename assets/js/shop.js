@@ -285,9 +285,17 @@ function openDetail(id,keep){let m=BY[id];if(!m)return;
   else{$('#backdrop').classList.add('on');$('#sheet').classList.add('open')}}
 
 /* extra photo angles: thumbnails over the photo, swipe or tap to change */
-let GAL={i:0,L:[]};
+let GAL={i:0,L:[]},VID='';
+/* product video: full-screen player */
+function vidOpen(){if(!VID)return;let o=$('#vidOv');if(!o){document.body.insertAdjacentHTML('beforeend','<div class="vid-ov" id="vidOv" role="dialog" aria-modal="true" aria-label="Product video"><button type="button" class="vid-x" data-act="vidClose" aria-label="Close video">×</button><video id="vidEl" controls playsinline preload="auto"></video></div>');o=$('#vidOv');o.addEventListener('click',e=>{if(e.target===o)vidClose()})}
+  const v=$('#vidEl');if(v.getAttribute('src')!==VID)v.src=VID;o.classList.add('on');document.body.classList.add('vid-open');v.currentTime=0;const p=v.play();if(p&&p.catch)p.catch(()=>{})}
+function vidClose(){const o=$('#vidOv');if(!o)return;o.classList.remove('on');document.body.classList.remove('vid-open');const v=$('#vidEl');if(v)v.pause()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#vidOv')&&$('#vidOv').classList.contains('on')){e.stopPropagation();vidClose()}},true);
 function galPaint(m){const box=$('#shTh');if(!box)return;const L=[img(m.id,WIDE.matches?'portrait':'hero'),...(m.gallery||[]).map(u=>'/'+String(u).replace(/^\//,''))];GAL={i:0,L};
-  box.hidden=L.length<2;box.innerHTML=L.length<2?'':L.map((u,n)=>`<button type="button" class="sh-t${n?'':' on'}" data-act="galGo" data-i="${n}" aria-label="Photo ${n+1} of ${L.length}"><img src="${u}" alt="" loading="lazy"></button>`).join('');
+  const vt=m.video?`<button type="button" class="sh-t sh-v" data-act="vidOpen" aria-label="Play video"><img src="${L[0]}" alt="" loading="lazy"><i aria-hidden="true"></i></button>`:'';
+  box.hidden=L.length<2&&!m.video;box.innerHTML=L.length<2&&!m.video?'':L.map((u,n)=>`<button type="button" class="sh-t${n?'':' on'}" data-act="galGo" data-i="${n}" aria-label="Photo ${n+1} of ${L.length}"><img src="${u}" alt="" loading="lazy"></button>`).join('')+vt;
+  {const h=$('#shImg').closest('.sheet-hero');if(h){h.querySelectorAll('.sh-vbtn').forEach(x=>x.remove());if(m.video)h.insertAdjacentHTML('beforeend','<button type="button" class="sh-vbtn" data-act="vidOpen"><i aria-hidden="true"></i>Watch video</button>')}}
+  VID=m.video?'/'+String(m.video).replace(/^\//,''):'';
   const hero=$('#shImg').closest('.sheet-hero');if(hero&&!hero.dataset.sw){hero.dataset.sw=1;let x0=null,y0=0;
     // tap the photo to zoom (a swipe isn't a tap, so swiping between angles still works)
     $('#shImg').addEventListener('click',()=>zoomOpen());
@@ -503,6 +511,7 @@ const ACT={
     if(head)head.insertAdjacentHTML('afterend',box);else r.insertAdjacentHTML('afterbegin',box)},
   banSet(el){banSet(+el.dataset.i)},
   galGo(el){galGo(+el.dataset.i)},
+  vidOpen(){vidOpen()},vidClose(){vidClose()},
   zoomOpen(){zoomOpen()},zoomClose(){zoomClose()},zoomStep(el){zvShow(GAL.i+(+el.dataset.d))},zoomBy(el){zvZoom(ZV.k*(+el.dataset.f))},
   banGo(){const t=$('#sec-colls')||$('#sec-colour')||$('#homeBody .sec');if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})},
   sizeGo(el){closeMega();const b=document.querySelector(`#sec-bracelets .chip-s[data-mm="${el.dataset.mm}"]`);if(!b)return;if($('#home').classList.contains('is-search')){window.__pre=null;closeSearch()}ACT.size(b);const sec=$('#sec-bracelets');setTimeout(()=>$('#home').scrollTo({top:sec.offsetTop-hdrH()+2,behavior:'smooth'}),30)},

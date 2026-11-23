@@ -66,6 +66,7 @@ export function rowToProduct(r, settings) {
     // a real photo from the Stock tab wins; otherwise a showcase sample (data/catalog.json → samplePhotos), else drawn art
     image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : (settings.samplePhotos && settings.samplePhotos[r.id]) || "",
     // extra angles, shown after the main photo in the product view
+    video: (() => { try { const v = JSON.parse(r.video || "null"); return v && v.k ? `${v.k}?v=${v.v}` : ""; } catch { return ""; } })(),
     gallery: (() => { try { return JSON.parse(r.gallery || "[]").filter((p) => p && p.k).map((p) => `img/${encodeURIComponent(p.k)}.jpg?v=${p.v}`); } catch { return []; } })(),
     bestseller: r.featured ? r.featured : 0,
     stone: r.stone,

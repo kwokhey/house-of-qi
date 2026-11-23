@@ -960,3 +960,13 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .po-mini{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:#3B2C23;color:#F4E3C4;font-size:10px;letter-spacing:.14em;text-transform:uppercase;vertical-align:middle}
 .mto-note .po-dep{font-weight:600}
 [data-pc] .pc-img::after,[data-pc] .gc-img::after,[data-pc] .lead-img::after,[data-pc] .ri-img::after{content:"Pre-order closed"}
+
+/* product video */
+.sh-t.sh-v{position:relative}.sh-t.sh-v i{position:absolute;inset:0;display:grid;place-items:center;background:rgba(30,22,17,.35);border-radius:inherit}
+.sh-t.sh-v i::after{content:"";border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+.sh-vbtn{position:absolute;right:14px;top:14px;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 10px;border:0;border-radius:99px;background:rgba(30,22,17,.72);color:#F7EEE4;font:600 11px var(--f-body,sans-serif);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
+.sh-vbtn i{width:22px;height:22px;border-radius:50%;background:#F7EEE4;display:grid;place-items:center}.sh-vbtn i::after{content:"";border-left:8px solid #2b1f18;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+.vid-ov{position:fixed;inset:0;z-index:9999;background:rgba(15,10,8,.92);display:none;align-items:center;justify-content:center;padding:56px 12px 20px}.vid-ov.on{display:flex}
+.vid-ov video{max-width:100%;max-height:100%;width:auto;border-radius:12px;background:#000}
+.vid-x{position:absolute;top:12px;right:14px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:26px;line-height:1;cursor:pointer}
+body.vid-open{overflow:hidden}

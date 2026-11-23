@@ -114,6 +114,9 @@
         <div class="ang-grid">${g.map((p, n) => `<span class="ang"><img src="/img/${encodeURIComponent(p.k)}.jpg?v=${p.v}" alt="">
           <span class="ang-t"><button type="button" data-amv="${esc(p.k)}" data-d="-1" ${n ? "" : "disabled"} aria-label="Move earlier">‹</button><button type="button" data-amv="${esc(p.k)}" data-d="1" ${n < g.length - 1 ? "" : "disabled"} aria-label="Move later">›</button><button type="button" data-aadj="${esc(p.k)}" aria-label="Adjust">✎</button><button type="button" data-adel="${esc(p.k)}" aria-label="Remove">✕</button></span></span>`).join("")}
           ${g.length < 5 ? `<label class="ang ang-add"><input type="file" id="edAngFile" accept="image/*" hidden><em>+ Add angle</em></label>` : ""}</div></div>`; })()}
+      ${(() => { let v = null; try { v = JSON.parse(i.video || "null"); } catch {} return `<div class="ed-vid" id="edVid"><div class="ang-h"><b>Video</b><small>${v && v.k ? `${(v.s / 1048576).toFixed(1)} MB · shown with the photos, customers tap ▶ to play` : "optional · MP4 or MOV, up to 90 MB · a short clip (10–30 s) loads fastest"}</small></div>
+        <div class="vid-row">${v && v.k ? `<video src="/${esc(v.k)}?v=${v.v}" controls playsinline preload="metadata"></video>` : ""}
+          <div class="vid-act"><label class="btn ghost sm">${v && v.k ? "Replace video" : "+ Add video"}<input type="file" id="edVidFile" accept="video/mp4,video/quicktime,video/webm,video/*" hidden></label>${v && v.k ? '<button type="button" class="link" id="edVidDel">Remove video</button>' : ""}<small id="edVidMsg"></small></div></div></div>`; })()}
       <div class="ed-stock"><div><span>In stock</span><b id="edStock" class="${i.stock <= 0 ? "zero" : ""}">${i.stock}</b><small>${i.sold || 0} sold · ${i.stock_in} received</small></div>
         <div class="ed-acts"><button type="button" class="btn gold sm" data-mv="sale"${i.stock <= 0 ? " disabled" : ""}>Sold offline</button><button type="button" class="btn ghost sm" data-mv="gift"${i.stock <= 0 ? " disabled" : ""}>Gift</button><button type="button" class="btn ghost sm" data-mv="restock">Add stock</button><button type="button" class="btn ghost sm" data-mv="adjust">Adjust count</button><button type="button" class="btn ghost sm" data-oos${i.stock <= 0 ? " disabled" : ""}>${i.stock <= 0 ? "Out of stock" : "Mark out of stock"}</button></div>
         <div id="mvForm"></div></div>`}
@@ -187,6 +190,23 @@
     if (!isNew) {
       $("#edFile").onchange = (e) => { const f = e.target.files[0]; if (f) adjustPhoto(i, f); };
       if ($("#edAdjPh")) $("#edAdjPh").onclick = () => adjustPhoto(i, `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}`);
+      if ($("#edVidFile")) $("#edVidFile").onchange = (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        if (f.size > 90 * 1048576) { toast("That video is over 90 MB. Please trim it or record a shorter clip."); return; }
+        const msg = $("#edVidMsg"), x = new XMLHttpRequest();
+        x.open("POST", "/api/admin/video?id=" + encodeURIComponent(i.id));
+        x.setRequestHeader("Content-Type", f.type || "video/mp4");
+        x.upload.onprogress = (ev) => { if (ev.lengthComputable) msg.textContent = `Uploading… ${Math.round((ev.loaded / ev.total) * 100)}%`; };
+        x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {}
+          if (x.status >= 200 && x.status < 300) { i.video = JSON.stringify(d.video); const it = ITEMS.find((z) => z.id === i.id); if (it) it.video = i.video; toast("Video saved. It shows on the product page."); openEditor(i); }
+          else { msg.textContent = ""; toast(d.error || "The video didn't upload. Please try again."); } };
+        x.onerror = () => { msg.textContent = ""; toast("The video didn't upload. Please check your connection and try again."); };
+        msg.textContent = "Uploading… 0%"; x.send(f);
+      };
+      if ($("#edVidDel")) $("#edVidDel").onclick = async () => {
+        if (!confirm("Remove this video from the product?")) return;
+        try { await api("/api/admin/video?id=" + encodeURIComponent(i.id), { method: "DELETE" }); i.video = ""; const it = ITEMS.find((z) => z.id === i.id); if (it) it.video = ""; toast("Video removed"); openEditor(i); } catch (x) { toast(x.message); }
+      };
       if ($("#edAngFile")) $("#edAngFile").onchange = (e) => { const f = e.target.files[0]; if (f) adjustPhoto(i, f, "new"); };
       const ang = $("#sEdit .ed-ang");
       if (ang) ang.onclick = async (e) => {
