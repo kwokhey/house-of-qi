@@ -176,7 +176,7 @@
       im.onerror = rej; im.src = url;
     });
   }
-  const inColl = (c) => covered(c).filter((i) => !c.max_price || i.price <= c.max_price);
+  const inColl = (c) => D.items.filter((i) => (covered(c).includes(i) && (!c.max_price || i.price <= c.max_price)) || (c.extra || []).includes(i.id));
   const thumbOf = (i) => (i && i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : i && typeof ART !== "undefined" ? ART.get(i.id, "sq", { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }) : "");
   function collRow(c) {
     const items = inColl(c), cover = items.find((i) => i.id === c.cover) || items.find((i) => i.image_v) || items[0];
@@ -230,7 +230,8 @@
     $("#kCovDel").onclick = () => { pendingCover = null; coverV = 0; c._removeCover = true; paintCover(); };
     paintCover();
     const scope = () => $("#kScope").value;
-    const rule = () => scope() === "price" ? { scope: "price", targets: range.map((x) => String(+x || 0)), max_price: 0 } : { scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 };
+    const rule = () => ({ ...rule0(), extra: c.extra || [] });
+    const rule0 = () => scope() === "price" ? { scope: "price", targets: range.map((x) => String(+x || 0)), max_price: 0 } : { scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 };
     const sum = () => {
       const items = inColl(rule());
       $("#kSum").textContent = `${items.length} piece${items.length === 1 ? "" : "s"} in stock will show in this collection.`;

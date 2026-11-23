@@ -318,3 +318,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .po-box small{display:block;color:#7a6658;font-size:12px}
 .po-wait{color:#8a2c1f}
 .toggles input[type=checkbox]{flex:none}
+.f .ecoll label span,.f .ecoll label small{text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)}.f .ecoll label small{font-size:12px;color:var(--ink-3)}.f .ecoll .zh{font-size:13px;color:var(--ink-3)}

@@ -134,9 +134,10 @@
       <p class="margin" id="eMargin"></p>
       <label class="f full"><span>Description (shown in the shop)</span><textarea id="eDesc" rows="3" placeholder="${esc(i.auto_description ? "Automatic (shown in the shop now): " + i.auto_description : "Leave empty for an automatic line")}">${esc(i.description)}</textarea></label>
       <label class="f full"><span>Meaning</span><textarea id="eMean" rows="5" placeholder="e.g. The stone of calm, traditionally used for…">${esc(i.meaning || i.auto_meaning || "")}</textarea></label>
-      <div class="toggles"><label><input type="checkbox" id="ePub"${i.published ? " checked" : ""}> Show on website</label><label><input type="checkbox" id="eFeat"${i.featured ? " checked" : ""}> Featured on home page</label><label><input type="checkbox" id="ePre"${i.preorder ? " checked" : ""}> Pre-order (50% deposit now, rest when ready · also in Collectibles)</label></div>
+      <div class="toggles"><label><input type="checkbox" id="ePub"${i.published ? " checked" : ""}> Show on website</label><label><input type="checkbox" id="eFeat"${i.featured ? " checked" : ""}> Featured on home page</label><label><input type="checkbox" id="ePre"${i.preorder ? " checked" : ""}> Pre-order (50% deposit now, rest when ready)</label></div>
       <label class="f full" id="ePreNoteW"${i.preorder ? "" : " hidden"}><span>Pre-order note (shown to customers)</span><input id="ePreNote" maxlength="120" value="${esc(i.preorder_note || "")}" placeholder="e.g. Ready in about 3–4 weeks"></label>
       <label class="f full" id="ePreSzW"${i.preorder ? "" : " hidden"}><span>Pre-order bead sizes and prices (optional, one per line)</span><textarea id="ePreSz" rows="4" placeholder="10 mm = 680&#10;12 mm = 938&#10;14 mm = 1380">${esc(i.preorder_sizes || "")}</textarea><small class="muted">Customers choose a size on the product page and pay 50% of that size's price. Leave empty to sell just this piece at the selling price.</small></label>
+      ${isNew ? "" : '<div class="f full"><span>Our collections</span><div class="pick ecoll" id="eColls"><small class="muted">Loading…</small></div></div>'}
       <p class="err" id="edErr" hidden></p>
       <div class="ed-f"><button class="btn" type="submit" id="edSave">${isNew ? "Add item" : "Save changes"}</button>${!isNew && !i.sold ? '<button type="button" class="link danger" id="edDel">Delete item</button>' : ""}</div>
       ${isNew ? "" : '<h3>History</h3><ul class="hist" id="edHist"><li class="muted">Loading…</li></ul>'}
@@ -146,6 +147,23 @@
       $("#eMargin").textContent = p && c ? `Profit per piece ${RM(p - c)} · ${(p / c).toFixed(2)}× cost` : "";
     };
     $("#eCost").oninput = $("#ePrice").oninput = margin; margin();
+    if (!isNew) (async () => {
+      try {
+        const { collections } = await api("/api/admin/marketing?colls=1");
+        const t = (a) => a.map((x) => String(x).toLowerCase());
+        const auto = (c) => {
+          const T = t(c.targets), szp = i.preorder ? String(i.preorder_sizes || "").split(/\n/).map((l) => +((l.split(/[=:]/)[1] || "").replace(/[^\d.]/g, ""))).filter((n) => n > 0) : [], price = szp.length ? Math.min(...szp) : +i.price || 0;
+          const hit = c.scope === "all" || (c.scope === "collection" && T.includes(String(i.collection || "").toLowerCase())) || (c.scope === "stones" && T.includes(String(i.stone).toLowerCase()))
+            || (c.scope === "price" && price >= (+c.targets[0] || 0) && (!(+c.targets[1]) || price <= +c.targets[1]));
+          return hit && (!c.max_price || price <= c.max_price);
+        };
+        const box = $("#eColls"); if (!box) return;
+        box.innerHTML = collections.length ? collections.map((c) => {
+          const a = c.scope !== "items" && auto(c), on = a || (c.scope === "items" ? c.targets : c.extra || []).includes(i.id);
+          return `<label><input type="checkbox" data-cid="${c.id}" data-was="${on && !a ? 1 : 0}"${on ? " checked" : ""}${a ? " disabled" : ""}><span>${esc(c.name)}${c.zh ? ` <span class="zh">${esc(c.zh)}</span>` : ""}</span><small>${a ? "included automatically" : c.active ? "" : "hidden"}</small></label>`;
+        }).join("") : '<small class="muted">No collections yet. Make one in the Marketing tab.</small>';
+      } catch { const box = $("#eColls"); if (box) box.innerHTML = '<small class="muted">Couldn\'t load collections.</small>'; }
+    })();
     $("#ePre").onchange = () => { $("#ePreNoteW").hidden = $("#ePreSzW").hidden = !$("#ePre").checked; };
     d.querySelector("[data-x]").onclick = () => d.close();
     $("#edForm").onsubmit = async (e) => {
@@ -159,7 +177,10 @@
       $("#edSave").disabled = true;
       const newId = $("#eId").value.trim();
       if (!isNew && newId !== i.id && !confirm(`Change the item ID from ${i.id} to ${newId}?\n\nPhotos, stock history and sales move with it. Printed tags and shared links that use ${i.id} will no longer match, and the next import should use ${newId}.`)) { $("#edSave").disabled = false; return; }
-      try { const r = await api("/api/admin/items", { method: "POST", body: JSON.stringify(body) }); toast(isNew ? `${r.item.id} added` : newId !== i.id ? `Item ID changed to ${r.item.id}` : "Saved"); await load(); if (isNew) openEditor(ITEMS.find((x) => x.id === r.item.id)); else d.close(); }
+      try { const r = await api("/api/admin/items", { method: "POST", body: JSON.stringify(body) });
+        for (const x of document.querySelectorAll("#eColls input[data-cid]:not([disabled])")) {
+          if (x.checked !== (x.dataset.was === "1")) await api("/api/admin/marketing", { method: "POST", body: JSON.stringify({ type: "collMember", id: +x.dataset.cid, item: r.item.id, on: x.checked }) });
+        } toast(isNew ? `${r.item.id} added` : newId !== i.id ? `Item ID changed to ${r.item.id}` : "Saved"); await load(); if (isNew) openEditor(ITEMS.find((x) => x.id === r.item.id)); else d.close(); }
       catch (x) { $("#edErr").textContent = x.message; $("#edErr").hidden = false; }
       $("#edSave").disabled = false;
     };

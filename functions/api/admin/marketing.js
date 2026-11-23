@@ -33,13 +33,17 @@ async function guard(request, env) {
 export async function onRequestGet({ request, env }) {
   const g = await guard(request, env); if (g) return g;
   const D = await db(env);
+  if (new URL(request.url).searchParams.get("colls")) { // light list for the Stock editor
+    const { results } = await D.prepare("SELECT id, name, zh, scope, targets, max_price, extra, active FROM collections ORDER BY sort, id").all();
+    return json({ collections: results.map((r) => ({ ...r, targets: JSON.parse(r.targets || "[]"), extra: JSON.parse(r.extra || "[]") })) });
+  }
   try { await syncSales(env); } catch (e) { console.error("sync", e.message); }
   const { results: coupons } = await D.prepare(`
     SELECT c.*, COUNT(u.ref) AS uses, COALESCE(SUM(u.discount), 0) AS given, COALESCE(SUM(u.total), 0) AS revenue, MAX(u.created_at) AS last_used
     FROM coupons c LEFT JOIN coupon_uses u ON u.code = c.code GROUP BY c.code ORDER BY c.active DESC, c.created_at DESC`).all();
   const { results: sales } = await D.prepare("SELECT * FROM sales ORDER BY active DESC, created_at DESC").all();
   const { results: stones } = await D.prepare("SELECT stone, COUNT(*) AS n FROM items WHERE published = 1 GROUP BY stone ORDER BY stone").all();
-  const { results: items } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, stock, collection, image_v FROM items WHERE published = 1 AND stock > 0 ORDER BY sort, id").all();
+  const { results: items } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, stock, collection, image_v FROM items WHERE published = 1 AND (stock > 0 OR preorder = 1) ORDER BY sort, id").all();
   const { results: collections } = await D.prepare("SELECT * FROM collections ORDER BY sort, id").all();
   let announce = null, banner = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
@@ -47,7 +51,7 @@ export async function onRequestGet({ request, env }) {
   try { sgCollect = JSON.parse((await getSetting(D, "sg_collect")) || "null"); } catch {}
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   banner = { ...(banner || {}), photos: bannerPhotos(banner) };
-  const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]") });
+  const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]"), ...(r.extra !== undefined ? { extra: JSON.parse(r.extra || "[]") } : {}) });
   return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, now: Date.now() });
 }
 
@@ -118,6 +122,19 @@ export async function onRequestPost({ request, env }) {
     const id = Math.floor(num(b.id));
     if (id) await D.prepare("UPDATE collections SET name=?, zh=?, blurb=?, scope=?, targets=?, max_price=?, cover=?, sort=?, active=?, updated_at=? WHERE id=?").bind(...f, now, id).run();
     else await D.prepare("INSERT INTO collections (name, zh, blurb, scope, targets, max_price, cover, sort, active, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)").bind(...f, now, now).run();
+    return json({ ok: true });
+  }
+
+  // put one piece into (or take it out of) a collection, from the Stock editor
+  if (b.type === "collMember") {
+    const id = Math.floor(num(b.id)), item = str(b.item, 80);
+    const c = await D.prepare("SELECT * FROM collections WHERE id = ?").bind(id).first();
+    if (!c || !item) return json({ error: "Collection not found." }, 404);
+    const field = c.scope === "items" ? "targets" : "extra";
+    let list = []; try { list = JSON.parse(c[field] || "[]"); } catch {}
+    list = list.filter((x) => x !== item);
+    if (b.on) list.push(item);
+    await D.prepare(`UPDATE collections SET ${field} = ?, updated_at = ? WHERE id = ?`).bind(JSON.stringify(list.slice(-300)), now, id).run();
     return json({ ok: true });
   }
 
