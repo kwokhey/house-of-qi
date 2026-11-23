@@ -112,8 +112,10 @@ function renderHome(){
   const intents=!usedInts.length?'':`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${usedInts.map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
   const cols=(CFG.curated||[]).filter(c=>byIds(c.ids).length);
-  const collSec=!cols.length?'':`<section class="sec disc" id="sec-colls"><div class="gx"><div class="sec-head"><h3 class="disp">Premium <em>Collectibles</em></h3><span class="count">${cols.length}</span></div></div>
-    <div class="rail gx coll-rail">${cols.map(c=>{const n=byIds(c.ids).length;return`<button class="coll" data-act="coll" data-id="${c.id}"><span class="coll-img"><img src="${c.coverImg?'/'+c.coverImg:img(c.cover||c.ids[0],'tall')}" alt="" decoding="async" loading="lazy"></span><span class="coll-txt"><b>${esc(c.name)}</b>${c.zh?`<span class="zh">${esc(c.zh)}</span>`:''}${c.blurb?`<small>${esc(c.blurb)}</small>`:''}<em>${n} piece${n===1?'':'s'}</em></span></button>`}).join('')}<span class="rail-end"></span></div></section>`;
+  // Premium Collectibles: every piece the admin ticked into a collection, shown directly (collection order, no repeats)
+  const collItems=[...new Map(cols.flatMap(c=>byIds(c.ids)).map(m=>[m.id,m])).values()];
+  const collSec=!collItems.length?'':`<section class="sec disc gx" id="sec-colls"><div class="sec-head"><h3 class="disp">Premium <em>Collectibles</em></h3><span class="count">${collItems.length} piece${collItems.length===1?'':'s'}</span></div>
+    <div class="grid2">${collItems.map(m=>gcard(m,'tall')).join('')}</div></section>`;
   const colours=(CFG.colours||[]);
   const colSec=colours.length<2?'':`<section class="sec disc gx" id="sec-colour"><div class="sec-head"><h3 class="disp">Shop by <em>colour</em></h3></div>
     <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
