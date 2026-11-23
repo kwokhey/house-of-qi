@@ -219,7 +219,7 @@ function showResults(title,sub,items){const box=$('#results');box.innerHTML=`<di
 function search(q){q=q.trim().toLowerCase();if(!q){$('#results').innerHTML='<p class="empty-q">Try “rose quartz”, “citrine” or “pendant”.</p>';return}
   const hits=CAT.filter(m=>(m.name+' '+m.zh+' '+m.details+' '+m.id+' '+m.desc+' '+m.stone+' '+m.cat+' '+m.ints.map(i=>INTENTS[i][0]).join(' ')).toLowerCase().includes(q));
   hits.length?showResults('Results',`${hits.length} for “${esc(q)}”`,hits):($('#results').innerHTML=`<p class="empty-q">No pieces match “${esc(q)}”.</p>`)}
-$('#q').addEventListener('input',e=>search(e.target.value));
+$('#q').addEventListener('input',e=>{window.__fv=null;search(e.target.value)});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
 
 /* =====================================================================
@@ -493,8 +493,8 @@ async function showConfirmation(id){const d=$('#done');d.hidden=false;d.classLis
    ACTIONS
    ===================================================================== */
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
-function openSearch(){$('#topbar').classList.add('searching');($('#home').classList.contains('is-search')||(window.__pre=$('#home').scrollTop)),$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;search($('#q').value);setTimeout(()=>$('#q').focus(),60)}
-function closeSearch(){$('#topbar').classList.remove('searching');$('#home').classList.remove('is-search');$('#results').hidden=true;$('#q').value='';$('#q').blur();requestAnimationFrame(()=>{setTab(document.querySelector('.tab.on')?.dataset.cat||TABS[0][0],false);/* back to where they were before searching */if(window.__pre!=null){const y=window.__pre;window.__pre=null;spyLock=Date.now()+600;$('#home').scrollTop=y;requestAnimationFrame(()=>{$('#home').scrollTop=y})}})}
+function openSearch(){window.__fv=null;$('#topbar').classList.add('searching');($('#home').classList.contains('is-search')||(window.__pre=$('#home').scrollTop)),$('#home').classList.add('is-search');$('#results').hidden=false;$('#home').scrollTop=0;search($('#q').value);setTimeout(()=>$('#q').focus(),60)}
+function closeSearch(){window.__fv=null;$('#topbar').classList.remove('searching');$('#home').classList.remove('is-search');$('#results').hidden=true;$('#q').value='';$('#q').blur();requestAnimationFrame(()=>{setTab(document.querySelector('.tab.on')?.dataset.cat||TABS[0][0],false);/* back to where they were before searching */if(window.__pre!=null){const y=window.__pre;window.__pre=null;spyLock=Date.now()+600;$('#home').scrollTop=y;requestAnimationFrame(()=>{$('#home').scrollTop=y})}})}
 const ACT={
   top(){$('#home').scrollTo({top:0,behavior:'smooth'})},
   search:openSearch,searchClose:closeSearch,
@@ -557,6 +557,8 @@ const ACT={
   removeCode(){S.code='';S.promo=null;save();refreshCo();const m=$('#codeMsg');if(m)m.hidden=true;setTimeout(()=>$('#codeIn')?.focus(),30)},
   closeDone(){const d=$('#done');const end=()=>{d.hidden=true;d.innerHTML=''};if(d.animate)d.animate([{opacity:1},{opacity:0}],{duration:300}).finished.then(end,end);else end();toHome();$('#home').scrollTop=0},
 };
+/* remember which filtered page is showing, so a refresh can bring it back */
+['colour','colls','coll','birth','chakra','intent'].forEach(k=>{const f=ACT[k];ACT[k]=(el,e)=>{const r=f(el,e);window.__fv=[k,Object.assign({},el&&el.dataset||{})];return r}});
 document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(o&&!o.closest('[hidden]')){openDetail(o.dataset.open);return}
   const a=e.target.closest('[data-act]');if(a&&ACT[a.dataset.act]&&!a.disabled)ACT[a.dataset.act](a,e)});
 function closeMega(){const m=$('#mega');if(m&&!m.hidden){m.hidden=true;const b=$('.mg-btn');if(b){b.setAttribute('aria-expanded','false');b.classList.remove('open')}}}
@@ -571,13 +573,14 @@ window.addEventListener('resize',()=>{if(TABS.length)setTab(document.querySelect
 const VIEWK='hq-view';
 function saveView(){try{const f=[...document.querySelectorAll('#homeBody section[id^="sec-"]')].filter(x=>x.dataset.mm||x.dataset.pr).map(x=>[x.id,x.dataset.mm||'',x.dataset.pr||'']);
   const srch=$('#home').classList.contains('is-search');
-  sessionStorage.setItem(VIEWK,JSON.stringify({y:$('#home').scrollTop,q:srch?$('#q').value:'',pre:srch?window.__pre:null,p:DR&&$('#sheet').classList.contains('open')?DR.m.id:'',v:stack[stack.length-1],f,at:Date.now()}))}catch(e){}}
+  sessionStorage.setItem(VIEWK,JSON.stringify({y:$('#home').scrollTop,q:srch?$('#q').value:'',fv:srch?window.__fv||null:null,pre:srch?window.__pre:null,p:DR&&$('#sheet').classList.contains('open')?DR.m.id:'',v:stack[stack.length-1],f,at:Date.now()}))}catch(e){}}
 addEventListener('pagehide',saveView);addEventListener('beforeunload',saveView);document.addEventListener('visibilitychange',()=>{if(document.hidden)saveView()});
 function restoreView(){let nav='';try{nav=(performance.getEntriesByType('navigation')[0]||{}).type||''}catch(e){}if(nav!=='reload'&&nav!=='back_forward')return; /* only when refreshing (or coming back), not on a fresh visit */
   let s=null;try{s=JSON.parse(sessionStorage.getItem(VIEWK)||'null')}catch(e){}if(!s||Date.now()-s.at>3600e3)return;
   (s.f||[]).forEach(([id,mm,pr])=>{const sec=$('#'+id);if(!sec)return;if(mm){const b=sec.querySelector(`.chip-s:not(.chip-p)[data-mm="${mm}"]`);if(b)ACT.size(b)}if(pr){const b=sec.querySelector(`.chip-p[data-pr="${pr}"]`);if(b)ACT.price(b)}});
   const to=()=>{$('#home').scrollTop=s.y||0};
-  if(s.q){$('#q').value=s.q;openSearch();window.__pre=s.pre;setTimeout(()=>$('#q').blur(),80)}
+  if(s.fv&&ACT[s.fv[0]]){ACT[s.fv[0]]({dataset:s.fv[1]||{}});window.__pre=s.pre}
+  else if(s.q){$('#q').value=s.q;openSearch();window.__pre=s.pre;setTimeout(()=>$('#q').blur(),80)}
   if(s.y){spyLock=Date.now()+1500;requestAnimationFrame(to);setTimeout(to,400);setTimeout(to,1200)}
   if(s.p&&BY[s.p])setTimeout(()=>openDetail(s.p),300);
   if((s.v==='bag'||s.v==='checkout')&&S.cart.length){renderBag();go('bag')}}
