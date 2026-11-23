@@ -557,6 +557,85 @@
     } catch (x) { toast(x.message || "Export failed"); }
   }
 
+  /* ---------- monthly sales report (online + offline + total), as Excel ---------- */
+  function openSales() {
+    const d = $("#sSalesD");
+    const now = new Date(Date.now() + 8 * 3600e3); // Malaysia time
+    const cur = now.toISOString().slice(0, 7);
+    d.innerHTML = `<div class="ed"><div class="ed-h"><b>Monthly sales</b><button type="button" class="link" data-x>Close</button></div>
+      <p class="lede">Download one Excel file with the month's website (online) sales, offline sales and the total. Test orders you removed from Orders are left out; refunds are shown.</p>
+      <label class="fld">Month<input type="month" id="slMonth" value="${cur}" max="${cur}"></label>
+      <p class="err" id="slErr" hidden></p>
+      <div class="ed-f"><button class="btn gold" id="slGo">Download Excel</button></div></div>`;
+    d.querySelector("[data-x]").onclick = () => d.close();
+    $("#slGo").onclick = () => exportSales($("#slMonth").value);
+    d.showModal();
+  }
+  async function exportSales(month) {
+    const err = (m) => { $("#slErr").textContent = m; $("#slErr").hidden = !m; };
+    err("");
+    if (!/^\d{4}-\d{2}$/.test(month || "")) return err("Choose a month.");
+    const btn = $("#slGo"); btn.disabled = true; btn.textContent = "Preparing…";
+    try {
+      const r = await fetch(`/api/admin/sales?month=${month}`, { credentials: "same-origin" });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Couldn't load the sales.");
+      await loadScript(EXCELJS);
+      const label = new Date(month + "-01T00:00:00").toLocaleDateString("en-MY", { month: "long", year: "numeric" });
+      const day = (t) => new Date(t + 8 * 3600e3).toISOString().slice(0, 10);
+      const RMF = '"RM"#,##0.00';
+      const head = (ws) => { ws.getRow(1).font = { bold: true }; ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0E0D3" } }; };
+      const wb = new ExcelJS.Workbook();
+
+      const S = data.summary;
+      const ws0 = wb.addWorksheet("Summary");
+      ws0.columns = [{ width: 26 }, { width: 16 }, { width: 16 }, { width: 16 }];
+      ws0.addRow([`House of Qi · Sales ${label}`]).font = { bold: true, size: 14 };
+      ws0.addRow([]);
+      const h = ws0.addRow(["", "Online (website)", "Offline", "Total"]); h.font = { bold: true }; h.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0E0D3" } };
+      const rows = [["Orders / sales", "count"], ["Pieces sold", "pieces"], ["Sales (RM)", "gross"], ["Refunds (RM)", "refunded"], ["Net sales (RM)", "net"]];
+      for (const [t, k] of rows) {
+        const row = ws0.addRow([t, S.online[k] || 0, S.offline[k] || 0, S.total[k] || 0]);
+        if (/RM/.test(t)) [2, 3, 4].forEach((c) => (row.getCell(c).numFmt = RMF));
+        if (k === "net") row.font = { bold: true };
+      }
+      const pr = ws0.addRow(["Offline profit (RM)", "", S.offline.profit || 0, ""]); pr.getCell(3).numFmt = RMF;
+      ws0.addRow([]);
+      ws0.addRow(["Online counts website orders and pre-order deposits; pre-order balance payments are added to sales when paid. Delivery fees are included in online sales."]).font = { italic: true, color: { argb: "FF8A7A6E" } };
+      if (data.onlineError) ws0.addRow([data.onlineError]).font = { color: { argb: "FFB0412E" } };
+
+      const ws1 = wb.addWorksheet("Online", { views: [{ state: "frozen", ySplit: 1 }] });
+      ws1.columns = [
+        { header: "Date", width: 12 }, { header: "Order", width: 18 }, { header: "Type", width: 18 }, { header: "Customer", width: 22 }, { header: "Email", width: 26 },
+        { header: "Items", width: 46 }, { header: "Pieces", width: 8 }, { header: "Subtotal", width: 12 }, { header: "Discount", width: 11 }, { header: "Delivery", width: 11 },
+        { header: "Paid", width: 12 }, { header: "Refunded", width: 11 }, { header: "Net", width: 12 }, { header: "Code", width: 12 },
+      ];
+      head(ws1);
+      for (const o of data.online) ws1.addRow([day(o.date), o.orderNo, o.type, o.customer, o.email, o.items, o.pieces || "", o.subtotal, o.discount || "", o.delivery || "", o.total, o.refunded || "", Math.round((o.total - o.refunded) * 100) / 100, o.code || ""]);
+      const t1 = ws1.addRow(["Total", "", "", "", "", "", S.online.pieces, "", "", "", S.online.gross, S.online.refunded, S.online.net]); t1.font = { bold: true };
+      ["H", "I", "J", "K", "L", "M"].forEach((c) => (ws1.getColumn(c).numFmt = RMF));
+
+      const ws2 = wb.addWorksheet("Offline", { views: [{ state: "frozen", ySplit: 1 }] });
+      ws2.columns = [
+        { header: "Date", width: 12 }, { header: "Invoice", width: 11 }, { header: "Item ID", width: 14 }, { header: "Item", width: 30 }, { header: "Details", width: 18 },
+        { header: "Qty", width: 6 }, { header: "Price each", width: 12 }, { header: "Amount", width: 12 }, { header: "Cost each", width: 11 }, { header: "Profit", width: 12 },
+        { header: "Channel", width: 14 }, { header: "Note", width: 34 },
+      ];
+      head(ws2);
+      for (const x of data.offline) ws2.addRow([day(x.date), x.invoice, x.itemId, x.item, x.details, x.qty, x.price, x.amount, x.cost, x.profit, x.channel, x.note]);
+      const t2 = ws2.addRow(["Total", "", "", "", "", S.offline.pieces, "", S.offline.gross, "", S.offline.profit]); t2.font = { bold: true };
+      ["G", "H", "I", "J"].forEach((c) => (ws2.getColumn(c).numFmt = RMF));
+
+      const blob = new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `House of Qi sales ${month}.xlsx`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      toast(`Sales for ${label} downloaded`);
+      $("#sSalesD").close();
+    } catch (x) { err(x.message || "Export failed"); }
+    finally { btn.disabled = false; btn.textContent = "Download Excel"; }
+  }
+
   /* ---------- wiring ---------- */
   document.addEventListener("click", (e) => {
     const r = e.target.closest("[data-sid]");
@@ -568,6 +647,7 @@
   $("#sAdd").onclick = () => openEditor(null);
   $("#sImport").onclick = openImport;
   $("#sExport").onclick = exportExcel;
+  $("#sSales").onclick = openSales;
   // tags for the items in the list right now (search + filter), or one item from its editor
   $("#sTags").onclick = () => window.open(`/tags.html?ids=${encodeURIComponent(SHOWN.map((i) => i.id).join(","))}`, "_blank");
   window.Stock = { load };
