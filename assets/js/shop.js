@@ -87,7 +87,7 @@ const IC={
    SHOP
    ===================================================================== */
 const priceHTML=m=>`${hasFrom(m)||m.fromP?'<span class="from">From</span>':''}${m.was?`<s class="was">${RM(m.was)}</s>`:''}<span class="price${m.was?' now':''}">${RM(m.price)}</span>${m.sale?`<span class="off">−${m.sale.percent}%</span>`:''}${m.preorder&&!m.preorderClosed?'<span class="po-mini">Pre-order</span>':''}`;
-const intTag=m=>m.preorderClosed?'<span class="tag out">Pre-order closed</span>':m.preorder?'<span class="tag po">Pre-order · 50% deposit</span>':m.soldOut?`<span class="tag out">${m.reserved?'Reserved':'Sold out'}</span>`:`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
+const intTag=m=>m.preorderClosed?'<span class="tag out">Pre-order closed</span>':m.preorder?'':m.soldOut?`<span class="tag out">${m.reserved?'Reserved':'Sold out'}</span>`:`<span class="tag${m.sale?' sale':''}">${m.sale?esc(m.sale.name):stockTag(m)||m.ints.filter(i=>INTENTS[i]).map(i=>INTENTS[i][0]).join(' · ')}</span>`;
 const WIDE=matchMedia('(min-width:768px)');
 const row=(m,v='sq')=>`<button class="ri" data-open="${m.id}"${m.soldOut?' data-out':''}${m.preorderClosed?' data-pc':''}><span class="ri-txt"><span class="ri-name">${m.name}</span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span><span class="ri-foot"><span>${priceHTML(m)}</span>${intTag(m)}</span></span><span class="ri-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"><span class="ri-add">${IC.plus}</span></span></button>`;
 const lead=(m,v='lead')=>`<button class="lead" data-open="${m.id}"${m.soldOut?' data-out':''}${m.preorderClosed?' data-pc':''}><span class="lead-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async"></span><span class="lead-top"><span class="ri-name">${m.name}</span><span>${priceHTML(m)}</span></span>${subLine(m)}<span class="ri-desc">${m.blurb||m.desc}</span></button>`;
@@ -112,10 +112,8 @@ function renderHome(){
   const intents=!usedInts.length?'':`<section class="sec gx" id="sec-intent"><div class="sec-head"><h3 class="disp">Shop by <em>intention</em></h3></div><div class="intents">${usedInts.map(([k,[n,c]])=>`<button class="chip-i" data-act="intent" data-k="${k}" style="--c:${c}"><i></i>${esc(n)}</button>`).join('')}</div></section>`;
   const spot=nov.length&&CFG.spotlight?`<section class="sec" id="sec-nov"><div class="gx">${head(esc(CFG.spotlight.title),'',nov.length)}${CFG.spotlight.note?`<p class="sec-note">${esc(CFG.spotlight.note)}</p>`:''}</div><div class="rail gx">${nov.map(m=>card(m,null,W?'lead':'tall')).join('')}<span class="rail-end"></span></div></section>`:'';
   const cols=(CFG.curated||[]).filter(c=>byIds(c.ids).length);
-  // Premium Collectibles: every piece the admin ticked into a collection, shown directly (collection order, no repeats)
-  const collItems=[...new Map(cols.flatMap(c=>byIds(c.ids)).map(m=>[m.id,m])).values()];
-  const collSec=!collItems.length?'':`<section class="sec disc gx" id="sec-colls"><div class="sec-head"><h3 class="disp">Premium <em>Collectibles</em></h3><span class="count">${collItems.length} piece${collItems.length===1?'':'s'}</span></div>
-    <div class="grid2">${collItems.map(m=>gcard(m,'tall')).join('')}</div></section>`;
+  const collSec=!cols.length?'':`<section class="sec disc" id="sec-colls"><div class="gx"><div class="sec-head"><h3 class="disp">Premium <em>Collectibles</em></h3><span class="count">${cols.length}</span></div></div>
+    <div class="rail gx coll-rail">${cols.map(c=>{const n=byIds(c.ids).length;return`<button class="coll" data-act="coll" data-id="${c.id}"><span class="coll-img"><img src="${c.coverImg?'/'+c.coverImg:img(c.cover||c.ids[0],'tall')}" alt="" decoding="async" loading="lazy"></span><span class="coll-txt"><b>${esc(c.name)}</b>${c.zh?`<span class="zh">${esc(c.zh)}</span>`:''}${c.blurb?`<small>${esc(c.blurb)}</small>`:''}<em>${n} piece${n===1?'':'s'}</em></span></button>`}).join('')}<span class="rail-end"></span></div></section>`;
   const colours=(CFG.colours||[]);
   const colSec=colours.length<2?'':`<section class="sec disc gx" id="sec-colour"><div class="sec-head"><h3 class="disp">Shop by <em>colour</em></h3></div>
     <div class="swatches">${colours.map(c=>`<button class="sw" data-act="colour" data-k="${c.id}" aria-label="${esc(c.name)}, ${c.n} pieces"><i style="${colSw(c)}"></i><b>${esc(c.name)}</b><small>${c.n}</small></button>`).join('')}</div></section>`;
@@ -144,7 +142,7 @@ function renderHome(){
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>`}
   ${collSec}${colSec}${birthSec}${chakSec}
-  <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${cols.length?'<button class="tab" data-act="tab" data-cat="colls">Collectibles</button>':''}${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
+  <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${cols.length?'<button class="tab" data-act="colls" data-cat="colls">Collectibles</button>':''}${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
   ${faqHTML()}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
@@ -492,6 +490,7 @@ const ACT={
   search:openSearch,searchClose:closeSearch,
   mega(el){const m=$('#mega'),open=m.hidden;m.hidden=!open;el.setAttribute('aria-expanded',open);el.classList.toggle('open',open)},
   colour(el){closeMega();const c=(CFG.colours||[]).find(x=>x.id===el.dataset.k);if(!c)return;$('#q').value=c.name;showFiltered(`<em>${esc(c.name)}</em> beads`,'',CAT.filter(m=>m.colour===c.id))},
+  colls(){closeMega();const ids=[...new Set((CFG.curated||[]).flatMap(c=>c.ids))];showFiltered('Premium <em>Collectibles</em>','',byIds(ids))},
   coll(el){closeMega();const c=(CFG.curated||[]).find(x=>String(x.id)===el.dataset.id);if(!c)return;$('#q').value=c.name;showFiltered(esc(c.name)+(c.zh?` <span class="zh">${esc(c.zh)}</span>`:''),c.blurb?esc(c.blurb):'',byIds(c.ids))},
   birth(el){closeMega();const b=(CFG.birthstones||[])[+el.dataset.i];if(!b)return;const want=new Set(b.stones.map(x=>x.toLowerCase()));$('#q').value=`${b.m} · ${b.gem}`;
     const items=CAT.filter(m=>want.has(String(m.stone).toLowerCase()));
@@ -575,7 +574,7 @@ function restoreView(){let nav='';try{nav=(performance.getEntriesByType('navigat
 /* boot */
 (async()=>{
   try{await loadCatalog()}catch(e){$('#homeBody').innerHTML='<p class="empty-q gx">The shop is unavailable right now. Please refresh in a moment.</p>';return}
-  $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button><button class="tab dtab" data-act="tab" data-cat="colls" hidden>Collectibles</button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
+  $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button><button class="tab dtab" data-act="colls" data-cat="colls" hidden>Collectibles</button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
   $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
   { const q=new URLSearchParams(location.search).get('p');const want=window.OPEN_P||q;
