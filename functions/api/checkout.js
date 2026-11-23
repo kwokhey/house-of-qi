@@ -161,6 +161,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   order.lines.forEach((l, i) => {
     const desc = [`${l.qty}× ${l.product.name}`, l.product.sizeOpts ? "" : l.product.details || "", ...l.chosen, l.product.sale ? `Sale ${l.product.sale.percent}% off (was RM${l.product.was})` : "", l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     meta[`i${i + 1}`] = desc.slice(0, 500);
+    if (order.preorder) meta[`p${i + 1}`] = l.product.id; // which piece (for the receipt photo); pre-orders don't touch stock
     if (!order.preorder) meta[`s${i + 1}`] = `${l.product.id}:${l.qty}:${Math.round(l.product.price * factor * 100) / 100}`; // used to deduct stock once paid (not for pre-orders)
   });
   for (const [key, val] of Object.entries(meta)) {

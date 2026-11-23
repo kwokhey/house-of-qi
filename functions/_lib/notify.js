@@ -264,7 +264,18 @@ export function sampleCustomerEmail(images = [], to = "") {
 
 /** Absolute photo URL for each line item (real photo, saved preview, or drawn preview); logo if none */
 export async function itemImages(env, D, s, site = SITE) {
-  const ids = Object.keys(s.metadata || {}).filter((k) => /^s\d+$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)).map((k) => String(s.metadata[k]).split(":")[0]);
+  const md = s.metadata || {};
+  const keyed = (re) => Object.keys(md).filter((k) => re.test(k)).sort((a, b) => a.slice(1) - b.slice(1)).map((k) => String(md[k]).split(":")[0]);
+  let ids = keyed(/^s\d+$/);
+  if (!ids.length) ids = keyed(/^p\d+$/); // pre-orders
+  if (!ids.length && D) { // older pre-orders: find the piece by its name on the receipt line
+    for (const li of (s.line_items && s.line_items.data) || []) {
+      const name = String(li.description || "").replace(/ · Pre-order 50% deposit$/, "").trim();
+      let r = null;
+      try { r = await D.prepare("SELECT id FROM items WHERE name = ? ORDER BY preorder DESC, (SELECT COUNT(*) FROM images WHERE images.item_id = items.id) DESC LIMIT 1").bind(name).first(); } catch {}
+      ids.push(r ? r.id : "");
+    }
+  }
   let og = [];
   try { og = await (await env.ASSETS.fetch(`${site}/assets/img/og/index.json`)).json(); } catch {}
   const out = [];
