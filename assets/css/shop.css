@@ -959,3 +959,4 @@ html.zv-lock,html.zv-lock body{overflow:hidden}
 .totals .po-tip{margin:10px 0 0;font-size:13px;line-height:1.5;opacity:.75}
 .po-mini{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:#3B2C23;color:#F4E3C4;font-size:10px;letter-spacing:.14em;text-transform:uppercase;vertical-align:middle}
 .mto-note .po-dep{font-weight:600}
+[data-pc] .pc-img::after,[data-pc] .gc-img::after,[data-pc] .lead-img::after,[data-pc] .ri-img::after{content:"Pre-order closed"}

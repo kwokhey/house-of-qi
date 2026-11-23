@@ -118,7 +118,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
       return { ...settings, ...(reset ? { products: [] } : {}), banner: bannerOf(settings, (await shopPromo(env)).banner), source: reset ? "empty" : "sample" };
     }
   }
-  const products = applySales(results.map((r) => withSizes(rowToProduct(r, settings), r)), await liveSales(D));
+  let products = applySales(results.map((r) => withSizes(rowToProduct(r, settings), r)), await liveSales(D));
   // pieces someone is paying for right now are held for them (checkout reservation, up to 30 min)
   if (!includeHidden) {
     try {
@@ -131,6 +131,17 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
       }
     } catch (e) { console.error("holds", e && e.message); }
   }
+  // pre-order season (Marketing tab): when on, only the chosen pre-order pieces can be ordered, and only between its dates
+  let preSeason = null;
+  try {
+    const s = JSON.parse((await getSetting(D, "preorder_season")) || "null");
+    if (s && s.on) {
+      const now = Date.now(), open = (!s.starts || now >= s.starts) && (!s.ends || now <= s.ends), ids = Array.isArray(s.ids) ? s.ids : [];
+      for (const p of products) if (p.preorder && !(open && ids.includes(p.id))) { p.preorderClosed = true; p.soldOut = true; p.stock = 0; }
+      if (!s.showClosed && !includeHidden) products = products.filter((p) => !p.preorderClosed);
+      if (open) preSeason = { name: s.name || "", ends: s.ends || 0 };
+    }
+  } catch (e) { console.error("season", e && e.message); }
   const inStock = products.filter((p) => !p.soldOut);
   const hero = inStock.find((p) => p.bestseller) || [...inStock].sort((a, b) => b.price - a.price)[0];
   const heroCfg = hero
@@ -155,7 +166,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   }).filter((c) => c.ids.length);
   const { samplePhotos, _samplePhotosNote, ...pub } = settings;
   pub.shipping = await liveShipping(D, settings.shipping);
-  return { ...pub, faqs: faqs(settings), banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections };
+  return { ...pub, faqs: faqs(settings), banner: bannerOf(settings, promo.banner), products, hero: heroCfg, spotlight: null, source: "inventory", announce: promo.announce || null, codes: !!promo.codes, colours, curated: collections, preSeason };
 }
 
 function safeArr(s) { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } }

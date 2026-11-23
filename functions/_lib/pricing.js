@@ -11,6 +11,7 @@ export function priceLine(catalog, raw) {
   const product = catalog.products.find((p) => p.id === raw?.id);
   if (!product) return { error: "One of the pieces in your bag is no longer available. Please remove it and try again." };
   if (product.reserved) return { error: `${product.name} is being checked out by another customer right now. If they don't complete payment it will be available again within 10 minutes.` };
+  if (product.preorderClosed) return { error: `Pre-orders for ${product.name} are closed right now. Please remove it from your bag.` };
   if (product.soldOut) return { error: `${product.name} has just sold out. Please remove it from your bag.` };
 
   const qty = Math.floor(Number(raw.qty));

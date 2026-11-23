@@ -72,11 +72,45 @@
       <div><span>Live sales</span><b>${liveSales}</b><small>${D.sales.length} in total</small></div>
       <div><span>Orders with a code</span><b>${uses}</b><small>${RM(rev)} in sales</small></div>
       <div><span>Discount given</span><b>${RM(given)}</b><small>through codes</small></div>`;
-    renderAnn(); renderBan(); renderSg();
+    renderAnn(); renderBan(); renderSg(); renderPre();
     $("#mCodes").innerHTML = D.coupons.length ? D.coupons.map(codeRow).join("") : `<p class="m-empty">No codes yet. Try one like <b>WELCOME10</b> for 10% off a first order.</p>`;
     $("#mColls").innerHTML = (D.collections || []).length ? D.collections.map(collRow).join("") : `<p class="m-empty">No collections yet. They appear as picture tiles on the shop's home page.</p>`;
     $("#mSales").innerHTML = D.sales.length ? D.sales.map(saleRow).join("") : `<p class="m-empty">No sales yet. A sale lowers prices automatically between the dates you choose.</p>`;
   }
+
+  function renderPre() {
+    const a = D.preSeason || { on: false, name: "", starts: 0, ends: 0, ids: [], showClosed: false };
+    const items = D.preItems || [], ids = new Set(a.ids || []);
+    const now = Date.now(), open = a.on && (!a.starts || now >= a.starts) && (!a.ends || now <= a.ends);
+    const st = !a.on ? ["off", "Off"] : open ? ["live", "Open now"] : a.starts && now < a.starts ? ["soon", "Starts " + ymd(a.starts)] : ["off", "Ended"];
+    const label = (i) => `${i.stone} ${i.type}${i.size_mm && !i.preorder_sizes ? ` · ${+i.size_mm} mm` : ""}${i.variant ? ` · ${i.variant}` : ""}`;
+    $("#mPre").innerHTML = `
+      <div class="grid-f">
+        <label class="f"><span>Season name (shown in the shop)</span><input id="psName" maxlength="60" value="${esc(a.name || "")}" placeholder="e.g. Chinese New Year 2027"></label>
+        <span></span>
+        <label class="f"><span>Opens (optional)</span><input id="psFrom" type="date" value="${ymd(a.starts)}"></label>
+        <label class="f"><span>Closes (optional)</span><input id="psTo" type="date" value="${ymd(a.ends)}"></label>
+      </div>
+      <div class="f full"><span>Pre-order pieces open this season</span></div>
+      ${items.length ? `<div class="pick-h"><small id="psN">${[...ids].filter((x) => items.some((i) => i.id === x)).length} of ${items.length} chosen</small><span><button type="button" class="link" id="psAll">Select all</button> · <button type="button" class="link" id="psNone">Clear</button></span></div>
+      <div class="pick">${items.map((i) => `<label><input type="checkbox" value="${esc(i.id)}"${ids.has(i.id) ? " checked" : ""}><span>${esc(label(i))}</span><small>${esc(i.id)}${i.published ? "" : " · hidden"}</small></label>`).join("")}</div>`
+        : `<p class="m-empty">No pre-order pieces yet. Tick "Pre-order" on a piece in the Stock tab first.</p>`}
+      <label class="tgl"><input type="checkbox" id="psShow"${a.showClosed ? " checked" : ""}> Show the other pre-order pieces as "Pre-order closed" (otherwise they're hidden from the shop)</label>
+      <label class="tgl"><input type="checkbox" id="psOn"${a.on ? " checked" : ""}> Use pre-order season <em class="st ${st[0]}">${st[1]}</em></label>
+      <div class="ed-f"><button class="btn sm" type="submit">Save</button></div>`;
+    const cnt = () => { const n = $("#psN"); if (n) n.textContent = `${$("#mPre").querySelectorAll(".pick input:checked").length} of ${items.length} chosen`; };
+    $("#mPre").querySelectorAll(".pick input").forEach((x) => (x.onchange = cnt));
+    if ($("#psAll")) $("#psAll").onclick = () => { $("#mPre").querySelectorAll(".pick input").forEach((x) => (x.checked = true)); cnt(); };
+    if ($("#psNone")) $("#psNone").onclick = () => { $("#mPre").querySelectorAll(".pick input").forEach((x) => (x.checked = false)); cnt(); };
+  }
+  $("#mPre").onsubmit = async (e) => {
+    e.preventDefault();
+    const ids = [...$("#mPre").querySelectorAll(".pick input:checked")].map((x) => x.value);
+    try {
+      const r = await api("/api/admin/marketing", { method: "POST", body: JSON.stringify({ type: "preseason", on: $("#psOn").checked, name: $("#psName").value, starts: $("#psFrom").value, ends: $("#psTo").value, showClosed: $("#psShow").checked, ids }) });
+      D.preSeason = r.preSeason; renderPre(); toast(r.preSeason.on ? `Pre-order season saved · ${ids.length} piece${ids.length === 1 ? "" : "s"} open. The shop updates within a minute.` : "Pre-order season is off · all pre-order pieces are open");
+    } catch (x) { toast(x.message); }
+  };
 
   function renderSg() {
     const a = D.sgCollect || { on: false, note: "" };

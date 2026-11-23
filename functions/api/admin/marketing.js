@@ -47,12 +47,15 @@ export async function onRequestGet({ request, env }) {
   const { results: collections } = await D.prepare("SELECT * FROM collections ORDER BY sort, id").all();
   let announce = null, banner = null;
   try { announce = JSON.parse((await getSetting(D, "announce")) || "null"); } catch {}
+  let preSeason = null;
+  try { preSeason = JSON.parse((await getSetting(D, "preorder_season")) || "null"); } catch {}
+  const { results: preItems } = await D.prepare("SELECT id, stone, type, variant, size_mm, price, preorder_sizes, published FROM items WHERE preorder = 1 ORDER BY sort, id").all();
   let sgCollect = null;
   try { sgCollect = JSON.parse((await getSetting(D, "sg_collect")) || "null"); } catch {}
   try { banner = JSON.parse((await getSetting(D, "banner")) || "null"); } catch {}
   banner = { ...(banner || {}), photos: bannerPhotos(banner) };
   const t = (r) => ({ ...r, targets: JSON.parse(r.targets || "[]"), ...(r.extra !== undefined ? { extra: JSON.parse(r.extra || "[]") } : {}) });
-  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, now: Date.now() });
+  return json({ coupons, sales: sales.map(t), collections: collections.map(t), stones, items, announce, banner, sgCollect, preSeason, preItems, now: Date.now() });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -187,6 +190,14 @@ export async function onRequestPost({ request, env }) {
     }
     await setSetting(D, "banner", JSON.stringify(a));
     return json({ ok: true, banner: a });
+  }
+
+  if (b.type === "preseason") {
+    const starts = dayStart(b.starts), ends = dayEnd(b.ends);
+    if (starts && ends && ends < starts) return json({ error: "The end date is before the start date." }, 400);
+    const a = { on: !!b.on, name: str(b.name, 60), starts, ends, showClosed: !!b.showClosed, ids: (Array.isArray(b.ids) ? b.ids : []).map((x) => str(x, 80)).filter(Boolean).slice(0, 500) };
+    await setSetting(D, "preorder_season", JSON.stringify(a));
+    return json({ ok: true, preSeason: a });
   }
 
   if (b.type === "sgcollect") {
