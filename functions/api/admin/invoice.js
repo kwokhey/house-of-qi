@@ -30,7 +30,10 @@ export async function onRequestGet({ request, env }) {
         const a = await D.prepare("SELECT a.code, a.disc_pct FROM aff_sales s JOIN affiliates a ON a.id = s.aff_id WHERE s.ref = ?").bind(`mv-${l.mid}`).first();
         if (!a || !(a.disc_pct > 0)) continue;
         const list = Math.round((l.rate / (1 - a.disc_pct / 100)) * 100) / 100;
-        if (list > l.rate + 0.004) { l.list = list; l.disc = `${a.code} ${+a.disc_pct}% off`; }
+        const code = (String(l.description || "").match(/Item code: (.*)$/m) || [])[1];
+        const it = code ? await D.prepare("SELECT price FROM items WHERE id = ?").bind(code.trim()).first() : null;
+        // only when the price paid really is the shop price minus the seller's discount
+        if (it && Math.abs(it.price - list) < 0.06 && list > l.rate + 0.004) { l.list = it.price; l.disc = `${a.code} ${+a.disc_pct}% off`; }
       } catch {}
     }
     const r2 = (n) => Math.round(n * 100) / 100;
