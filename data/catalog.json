@@ -124,6 +124,12 @@
       "name": "Gift Sets",
       "zh": "礼盒",
       "layout": "list"
+    },
+    {
+      "id": "preorder",
+      "name": "Pre-order",
+      "zh": "预购",
+      "layout": "grid"
     }
   ],
   "intentions": {
