@@ -45,7 +45,7 @@
     const open = rows.filter((o) => o.balanceStatus !== "paid");
     $("#invSum").innerHTML = (SAMPLE ? '<b>Sample only</b> · made-up pre-orders to show how this list works. Buttons do nothing. <button type="button" class="link" id="preHideS">Hide sample</button><br>' : "") + esc(rows.length ? `${rows.length} pre-order${rows.length === 1 ? "" : "s"} · ${open.length} waiting for the balance · ${money(open.reduce((a, o) => a + o.balance, 0))} to collect` : "");
     $("#invList").innerHTML = rows.length ? rows.map((o) => { const st = preState(o), ph = (o.phone || "").replace(/\D/g, "");
-      return `<article class="inv-row pre-row${o.sample ? " is-sample" : ""}" data-sid="${esc(o.sessionId)}">
+      return `<article class="inv-row pre-row${o.sample ? " is-sample" : ""}" data-psid="${esc(o.sessionId)}">
         <div class="inv-a"><b>${esc(o.orderNo)}</b><span>${when(o.created)}</span>${o.sample ? '<em class="inv-tag void">Sample</em>' : ""}</div>
         <div class="inv-b"><b>${esc(o.name || "")}</b>
           <small class="muted">${esc([o.phone, o.email].filter(Boolean).join(" · "))}</small>
@@ -61,7 +61,7 @@
     if ($("#preShowS")) $("#preShowS").onclick = () => { SAMPLE = true; render(); };
     if ($("#preHideS")) $("#preHideS").onclick = () => { SAMPLE = false; render(); };
     $("#invList").querySelectorAll(".pre-row").forEach((el) => {
-      const o = src.find((x) => x.sessionId === el.dataset.sid);
+      const o = src.find((x) => x.sessionId === el.dataset.psid);
       if (o.sample) { el.querySelectorAll("a,button").forEach((x) => { x.onclick = (e) => { e.preventDefault(); toast("This is only a sample. Nothing was sent."); }; }); return; }
       const b = el.querySelector("[data-req]");
       if (b) b.onclick = async () => {
