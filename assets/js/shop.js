@@ -142,14 +142,14 @@ function renderHome(){
     <span class="feature-row"><span class="price">${hasFrom(feat)?'<small>From</small>':''}${feat.was?`<s class="was">${RM(feat.was)}</s>`:''}${RM(feat.price)}</span><span class="pill-add">Shop now</span></span></span>
   </button>`}
   ${collSec}${colSec}${birthSec}${chakSec}
-  <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
+  <nav class="tabs" aria-label="Collections"><div class="tabs-in gx" id="tabsIn">${cols.length?'<button class="tab" data-act="tab" data-cat="colls">Collections</button>':''}${TABS.filter(([id])=>SPY.includes(id)).map(([id,n])=>`<button class="tab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('')}<span class="tab-ink" id="tabInk"></span></div></nav>
   ${secs.join('\n')}
   ${faqHTML()}
   <footer class="foot gx"><span class="mark" aria-hidden="true"></span><p class="co">by Soleil Trinity Infinite Resources Sdn.&nbsp;Bhd.<span>202201006345 (1452042-H)</span></p>
     <nav class="foot-links"><a href="/crystals">Crystal meanings</a><a href="/bracelets">Bracelets</a><a href="/policies">Shipping &amp; returns</a><a href="/policies#privacy">Privacy</a>${CFG.whatsapp?`<a href="https://wa.me/${encodeURIComponent(CFG.whatsapp)}" target="_blank" rel="noopener">WhatsApp us</a>`:''}</nav>
     <p class="foot-gem"><b>Please Note:</b> Due to the natural characteristics of gemstones, variations in colour, tone, clarity and patterns may occur. Actual product colours may also differ slightly from photographs due to lighting conditions, photography and individual screen settings. These natural variations contribute to the unique beauty and individuality of each piece.</p>
     <p>Prices in Malaysian Ringgit.</p><p>Crystal meanings describe traditional beliefs and are not medical advice.</p></footer>`;
-  document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=!SPY.includes(b.dataset.cat));
+  document.querySelectorAll('#dnav .tab[data-cat]').forEach(b=>b.hidden=b.dataset.cat==='colls'?!cols.length:!SPY.includes(b.dataset.cat));
   renderMega();initBan();
   setTab(SPY[0],false);
 }
@@ -573,7 +573,7 @@ function restoreView(){let nav='';try{nav=(performance.getEntriesByType('navigat
 /* boot */
 (async()=>{
   try{await loadCatalog()}catch(e){$('#homeBody').innerHTML='<p class="empty-q gx">The shop is unavailable right now. Please refresh in a moment.</p>';return}
-  $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
+  $('#dnav').innerHTML=`<button class="tab dtab mg-btn" data-act="mega" aria-expanded="false" aria-controls="mega">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m7 10 5 5 5-5"/></svg></button><button class="tab dtab" data-act="tab" data-cat="colls" hidden>Collections</button>`+TABS.map(([id,n])=>`<button class="tab dtab" data-act="tab" data-cat="${id}">${esc(n)}</button>`).join('');
   $('#topbar').insertAdjacentHTML('beforeend','<div class="mega" id="mega" hidden></div>');
   pruneCart();renderHome();updateBagUI();
   { const q=new URLSearchParams(location.search).get('p');const want=window.OPEN_P||q;
