@@ -27,7 +27,7 @@
   const isLow = (i) => i.stock > 0 && i.stock <= 2 && i.stock_in > 2;
   const GROUPS = {
     all: () => true, in: (i) => i.stock > 0, low: isLow, sold: (i) => (i.sold || 0) > 0, gift: (i) => (i.gifted || 0) > 0, out: (i) => i.stock <= 0,
-    nophoto: (i) => !i.image_v, hidden: (i) => !i.published,
+    nophoto: (i) => !i.image_v, hidden: (i) => !i.published, preorder: (i) => !!i.preorder,
   };
 
   /* ---------- list ---------- */
@@ -61,7 +61,7 @@
             <span class="s-flags">${!i.published ? "<em>Hidden</em>" : ""}${!i.image_v ? "<em>No photo</em>" : ""}${i.featured ? "<em class=\"g\">Featured</em>" : ""}${i.printed > 0 ? `<em class="g">${i.stock > 0 && i.printed >= i.stock ? "Tags printed" : `${i.printed} tag${i.printed === 1 ? "" : "s"} printed`}</em>` : ""}${i.sold ? `<em class="s">${i.sold} sold</em>` : ""}${i.gifted ? `<em class="gf">${i.gifted} gifted</em>` : ""}${i.with_sellers > 0 ? `<em>${i.with_sellers} with sellers</em>` : ""}${!(i.price > 0) ? `<em class="w">No price · not in shop</em>` : ""}</span></span>
           <span class="s-num"><b class="${i.stock <= 0 ? "zero" : isLow(i) ? "low" : ""}">${i.stock}</b><small>${RM0(i.price)}</small></span>
         </button>`).join("")
-      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", gift: "Nothing has been gifted yet. Use the Gift button on an item.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
+      : `<p class="empty">${ITEMS.length ? (Q.trim() ? "Nothing matches your search." : { sold: "Nothing has sold yet.", gift: "Nothing has been gifted yet. Use the Gift button on an item.", out: "Nothing is sold out. Every item still has stock.", low: "Nothing is running low.", nophoto: "Every item has a photo.", hidden: "No hidden items. Everything is showing in the shop.", preorder: "No pre-order pieces yet. Open a piece and tick Pre-order.", in: "Nothing in stock." }[FILTER] || "Nothing matches.") : "No stock yet. Tap Import to bring in your Excel list, or + Add item."}</p>`;
   }
 
   /* Link previews: for pieces without a photo, save the drawn picture as a JPG so
