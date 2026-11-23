@@ -30,6 +30,19 @@ export function gramsOf(r) {
 }
 
 /** Turn an inventory row into a shop product. */
+/** Pre-order bead sizes: one per line, "10 mm = 680" → [{label:"10 mm", price:680}] */
+export function preorderSizes(text) {
+  const out = [];
+  for (const line of String(text || "").split(/[\n;]+/)) {
+    const m = line.match(/^\s*(.+?)\s*[=:]\s*(?:RM)?\s*([\d,]+(?:\.\d+)?)\s*$/i);
+    if (!m) continue;
+    let label = m[1].trim().slice(0, 30), price = Math.round(Number(m[2].replace(/,/g, "")) * 100) / 100;
+    if (/^\d+(\.\d+)?$/.test(label)) label += " mm";
+    if (price > 0 && !out.some((x) => x.label.toLowerCase() === label.toLowerCase())) out.push({ label, price });
+  }
+  return out.slice(0, 12);
+}
+
 export function rowToProduct(r, settings) {
   const pendant = /pendant|necklace/i.test(r.type), ring = /^ring/i.test(r.type), earring = /^earring/i.test(r.type);
   const name = itemName(r);
@@ -70,6 +83,16 @@ export function rowToProduct(r, settings) {
   };
 }
 
+/** A pre-order with bead-size choices: price = cheapest size, each size adds the difference */
+function withSizes(p, r) {
+  const sz = r.preorder ? preorderSizes(r.preorder_sizes) : [];
+  if (!sz.length) return p;
+  const min = Math.min(...sz.map((x) => x.price));
+  const opts = sz.map((x, i) => ({ id: "s" + i, label: x.label, short: x.label, price: Math.round((x.price - min) * 100) / 100, note: "" }));
+  return { ...p, price: min, size: null, details: sz.length > 1 ? `${sz.length} bead sizes` : sz[0].label, quality: "Choose your bead size", specLabel: "Bead size",
+    sizeOpts: sz, groups: [{ id: "size", label: "Bead size", type: "one", default: "s0", opts }, ...p.groups] };
+}
+
 export function defaultDescription(r, details) {
   const one = r.stock === 1 ? " One piece only." : "";
   // keep place names capitalised: Baltic amber, Libyan glass, Tanzania sunstone
@@ -95,7 +118,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
       return { ...settings, ...(reset ? { products: [] } : {}), banner: bannerOf(settings, (await shopPromo(env)).banner), source: reset ? "empty" : "sample" };
     }
   }
-  const products = applySales(results.map((r) => rowToProduct(r, settings)), await liveSales(D));
+  const products = applySales(results.map((r) => withSizes(rowToProduct(r, settings), r)), await liveSales(D));
   // pieces someone is paying for right now are held for them (checkout reservation, up to 30 min)
   if (!includeHidden) {
     try {

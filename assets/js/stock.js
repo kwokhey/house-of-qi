@@ -136,6 +136,7 @@
       <label class="f full"><span>Meaning</span><textarea id="eMean" rows="5" placeholder="e.g. The stone of calm, traditionally used for…">${esc(i.meaning || i.auto_meaning || "")}</textarea></label>
       <div class="toggles"><label><input type="checkbox" id="ePub"${i.published ? " checked" : ""}> Show on website</label><label><input type="checkbox" id="eFeat"${i.featured ? " checked" : ""}> Featured on home page</label><label><input type="checkbox" id="ePre"${i.preorder ? " checked" : ""}> Pre-order (50% deposit now, rest when ready · also in Collectibles)</label></div>
       <label class="f full" id="ePreNoteW"${i.preorder ? "" : " hidden"}><span>Pre-order note (shown to customers)</span><input id="ePreNote" maxlength="120" value="${esc(i.preorder_note || "")}" placeholder="e.g. Ready in about 3–4 weeks"></label>
+      <label class="f full" id="ePreSzW"${i.preorder ? "" : " hidden"}><span>Pre-order bead sizes and prices (optional, one per line)</span><textarea id="ePreSz" rows="4" placeholder="10 mm = 680&#10;12 mm = 938&#10;14 mm = 1380">${esc(i.preorder_sizes || "")}</textarea><small class="muted">Customers choose a size on the product page and pay 50% of that size's price. Leave empty to sell just this piece at the selling price.</small></label>
       <p class="err" id="edErr" hidden></p>
       <div class="ed-f"><button class="btn" type="submit" id="edSave">${isNew ? "Add item" : "Save changes"}</button>${!isNew && !i.sold ? '<button type="button" class="link danger" id="edDel">Delete item</button>' : ""}</div>
       ${isNew ? "" : '<h3>History</h3><ul class="hist" id="edHist"><li class="muted">Loading…</li></ul>'}
@@ -145,13 +146,13 @@
       $("#eMargin").textContent = p && c ? `Profit per piece ${RM(p - c)} · ${(p / c).toFixed(2)}× cost` : "";
     };
     $("#eCost").oninput = $("#ePrice").oninput = margin; margin();
-    $("#ePre").onchange = () => { $("#ePreNoteW").hidden = !$("#ePre").checked; };
+    $("#ePre").onchange = () => { $("#ePreNoteW").hidden = $("#ePreSzW").hidden = !$("#ePre").checked; };
     d.querySelector("[data-x]").onclick = () => d.close();
     $("#edForm").onsubmit = async (e) => {
       e.preventDefault();
       const body = {
         id: $("#eId").value, oldId: isNew ? undefined : i.id, stone: $("#eStone").value, type: $("#eType").value, variant: $("#eVar").value, size_mm: $("#eSize").value,
-        collection: $("#eCol").value, cost: $("#eCost").value, price: $("#ePrice").value, supplier: $("#eSup").value, zh: $("#eZh").value, dims: $("#eDims").value, preorder: $("#ePre").checked, preorder_note: $("#ePreNote").value,
+        collection: $("#eCol").value, cost: $("#eCost").value, price: $("#ePrice").value, supplier: $("#eSup").value, zh: $("#eZh").value, dims: $("#eDims").value, preorder: $("#ePre").checked, preorder_note: $("#ePreNote").value, preorder_sizes: $("#ePreSz").value,
         description: $("#eDesc").value, meaning: $("#eMean").value, colour: $("#eColour").value, published: $("#ePub").checked, featured: $("#eFeat").checked ? (i.featured || 1) : 0,
         intentions: (() => { try { return JSON.parse(i.intentions || "[]"); } catch { return []; } })(), isNew, stock: isNew ? $("#eQty").value : undefined,
       };
