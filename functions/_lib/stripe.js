@@ -66,6 +66,8 @@ export function toOrder(s, { full = false } = {}) {
     balanceUrl: pm.balance_url || "",
     balanceAt: pm.balance_at ? Number(pm.balance_at) * 1000 : null,
     balancePaidAt: pm.balance_paid_at ? Number(pm.balance_paid_at) * 1000 : null,
+    refunded: (() => { const ch = pi && pi.latest_charge && typeof pi.latest_charge === "object" ? pi.latest_charge : null; return Math.max(ch ? (ch.amount_refunded || 0) / 100 : 0, Number(pm.refunded_amount) || 0); })(),
+    refundedAt: pm.refunded_at ? Number(pm.refunded_at) * 1000 : null,
     times: {
       confirmed: s.created * 1000,
       packed: pm.packed_at ? Number(pm.packed_at) * 1000 : null,

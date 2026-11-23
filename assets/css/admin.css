@@ -325,3 +325,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 .vid-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.vid-row video{width:220px;max-width:100%;border-radius:10px;background:#000}.vid-act{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.vid-act small{color:var(--ink-3,#8a7a6c)}
 a.link{text-decoration:none;display:inline-block}
 .fld{display:flex;flex-direction:column;gap:6px;margin:14px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep)}.fld input{font:15px var(--f-body);padding:10px 12px;border:1px solid rgba(160,120,70,.35);border-radius:8px;background:#fff;max-width:240px;letter-spacing:0;text-transform:none;color:inherit}
+.pill.rf{background:#e9e2dc;color:#7a6a5e}.sent.refunded{color:#7a6a5e}

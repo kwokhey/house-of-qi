@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
   const after = new URL(request.url).searchParams.get("after") || "";
   const p = new URLSearchParams({ limit: "30", status: "complete" });
   p.append("expand[]", "data.line_items");
-  p.append("expand[]", "data.payment_intent");
+  p.append("expand[]", "data.payment_intent.latest_charge");
   if (/^cs_(test|live)_[A-Za-z0-9]+$/.test(after)) p.set("starting_after", after);
 
   try { await syncSales(env); } catch (e) { console.error("sync", e.message); }

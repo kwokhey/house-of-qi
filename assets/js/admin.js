@@ -81,9 +81,10 @@ function card(o) {
         ${o.balanceUrl ? `<button class="link" data-copy="${esc(o.balanceUrl)}">Copy payment link</button>` : ""}</div>
         <small>Press when the piece is ready. The customer gets an email with a payment link (valid 24 hours), and you can WhatsApp it too.</small>` : ""}
     </div>` : "";
-  const back = { packed: "confirmed", shipped: "packed", ready: "packed" }[o.status];
+  if (o.refunded) act = `<p class="sent refunded">Refunded ${RM(o.refunded)}${o.refundedAt ? ` · ${when(o.refundedAt)}` : ""}</p>`;
+  const back = o.refunded ? null : { packed: "confirmed", shipped: "packed", ready: "packed" }[o.status];
   return `<article class="oc" data-s="${o.status}" data-pi="${esc(o.paymentIntent)}">
-    <div class="oc-h"><span class="oc-no">${esc(o.orderNo)}</span><span class="pill">${LABEL[o.status]}</span>${o.preorder ? `<span class="pill po">Pre-order</span>` : ""}<time>${when(o.created)}</time></div>
+    <div class="oc-h"><span class="oc-no">${esc(o.orderNo)}</span><span class="pill${o.refunded ? " rf" : ""}">${o.refunded ? "Refunded" : LABEL[o.status]}</span>${o.preorder ? `<span class="pill po">Pre-order</span>` : ""}<time>${when(o.created)}</time></div>
     <div class="oc-c"><b>${esc(o.name)}</b>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : ""}${o.email ? `<span>${esc(o.email)}</span>` : ""}</div>
     <ul>${items}</ul>
     ${po}
@@ -96,16 +97,16 @@ function card(o) {
       <a class="link" href="/api/admin/receipt?id=${encodeURIComponent(o.sessionId)}" target="_blank" rel="noopener">Email receipt</a>
       <button class="link" data-copy="${esc(trackLink(o))}">Copy tracking link</button>
       ${back ? `<button class="link undo" data-a="${back}" data-undo="1">Undo</button>` : ""}
-      <button class="link undo" data-hide="${esc(o.sessionId)}" title="For test or refunded orders. The payment record stays in Stripe.">Remove from list</button></div>
+      ${o.refunded ? `<button class="link undo" data-hide="${esc(o.sessionId)}" title="Hide this refunded order. The payment record stays in Stripe.">Remove from list</button>` : `<button class="link undo" data-refund="${esc(o.sessionId)}">Refund</button>`}</div>
   </article>`;
 }
 
 function render() {
-  const groups = { todo: (o) => o.status === "confirmed", packed: (o) => o.status === "packed", done: (o) => o.status === "shipped" || o.status === "ready", all: () => true };
+  const groups = { todo: (o) => !o.refunded && o.status === "confirmed", packed: (o) => !o.refunded && o.status === "packed", done: (o) => !o.refunded && (o.status === "shipped" || o.status === "ready"), refunded: (o) => !!o.refunded, all: () => true };
   for (const k in groups) $("#c-" + k).textContent = ORDERS.filter(groups[k]).length;
   document.querySelectorAll("#filters button").forEach((b) => b.classList.toggle("on", b.dataset.f === FILTER));
   const list = ORDERS.filter(groups[FILTER]);
-  const empty = { todo: "Nothing to pack. New paid orders appear here.", packed: "No packed orders waiting to be sent.", done: "No sent orders yet.", all: "No orders yet." }[FILTER];
+  const empty = { todo: "Nothing to pack. New paid orders appear here.", packed: "No packed orders waiting to be sent.", done: "No sent orders yet.", refunded: "No refunded orders.", all: "No orders yet." }[FILTER];
   $("#list").innerHTML = list.length ? list.map(card).join("") : `<p class="empty">${empty}</p>`;
   $("#more").hidden = !NEXT;
 }
@@ -167,6 +168,8 @@ document.addEventListener("click", async (e) => {
   if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied"); } catch { toast("Couldn't copy. Select the text instead."); } return; }
   const bal = e.target.closest("[data-bal]");
   if (bal) { requestBalance(bal.closest(".oc"), bal); return; }
+  const rf = e.target.closest("[data-refund]");
+  if (rf) { refundOrder(rf); return; }
   const h = e.target.closest("[data-hide]");
   if (h) {
     const no = h.closest(".oc")?.querySelector(".oc-no")?.textContent || "this order";
@@ -209,3 +212,19 @@ $("#loginForm").onsubmit = async (e) => {
     show("loginView");
   } catch { show("loginView"); }
 })();
+
+/* Refund a website order in full (Stripe), optionally putting the pieces back in stock */
+async function refundOrder(btn) {
+  const o = ORDERS.find((x) => x.sessionId === btn.dataset.refund);
+  if (!o) return;
+  const amt = o.total + (o.preorder && o.balanceStatus === "paid" ? o.balance : 0);
+  if (!confirm(`Refund ${o.orderNo} in full?\n\n${RM(amt)} goes back to ${o.name || "the customer"}'s card${o.preorder && o.balanceStatus === "paid" ? " (deposit + balance)" : ""}. It usually reaches them in 5–10 working days. This can't be undone.`)) return;
+  const restock = o.preorder ? false : confirm("Put the pieces back in stock?\n\nOK = yes, they're coming back or were never sent.\nCancel = no, the customer keeps them.");
+  btn.disabled = true; btn.textContent = "Refunding…";
+  try {
+    const r = await api("/api/admin/refund", { method: "POST", body: JSON.stringify({ id: o.sessionId, restock }) });
+    o.refunded = r.refunded; o.refundedAt = Date.now();
+    render();
+    toast(`${o.orderNo} refunded ${RM(r.refunded)}${r.restocked ? ` · ${r.restocked} piece${r.restocked === 1 ? "" : "s"} back in stock` : ""}`);
+  } catch (err) { btn.disabled = false; btn.textContent = "Refund"; toast(err.message || "Couldn't refund it."); }
+}
