@@ -15,7 +15,9 @@ const TYPES = ["checkout.session.completed", "checkout.session.async_payment_suc
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) return json({ ok: false }, 503);
   const raw = await request.text();
-  if (env.STRIPE_WEBHOOK_SECRET && !(await validSignature(env.STRIPE_WEBHOOK_SECRET, request.headers.get("Stripe-Signature") || "", raw))) {
+  const whsec = String(env.STRIPE_WEBHOOK_SECRET || "").trim().replace(/^["']|["']$/g, "");
+  if (whsec && !(await validSignature(whsec, request.headers.get("Stripe-Signature") || "", raw))) {
+    console.error("webhook: bad signature", (request.headers.get("Stripe-Signature") || "").slice(0, 20), "secret length", whsec.length, "starts", whsec.slice(0, 6));
     return json({ error: "bad signature" }, 400);
   }
   let body;
