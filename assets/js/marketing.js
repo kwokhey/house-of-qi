@@ -210,7 +210,8 @@
       im.onerror = rej; im.src = url;
     });
   }
-  const inColl = (c) => D.items.filter((i) => (covered(c).includes(i) && (!c.max_price || i.price <= c.max_price)) || (c.extra || []).includes(i.id));
+  // collections are hand-picked only: just the pieces the admin ticked
+  const inColl = (c) => { const ids = [...(c.scope === "items" ? c.targets || [] : []), ...(c.extra || [])]; return D.items.filter((i) => ids.includes(i.id)); };
   const thumbOf = (i) => (i && i.image_v ? `/img/${encodeURIComponent(i.id)}.jpg?v=${i.image_v}` : i && typeof ART !== "undefined" ? ART.get(i.id, "sq", { stone: i.stone, variant: i.variant, type: i.type, size: i.size_mm || 8 }) : "");
   function collRow(c) {
     const items = inColl(c), cover = items.find((i) => i.id === c.cover) || items.find((i) => i.image_v) || items[0];
@@ -223,8 +224,8 @@
   /* ---------- collection editor ---------- */
   function openColl(c) {
     const isNew = !c;
-    c = c || { id: 0, name: "", zh: "", blurb: "", scope: "stones", targets: [], max_price: 0, cover: "", sort: (D.collections || []).length + 1, active: 1 };
-    let targets = new Set(c.scope === "price" ? [] : c.targets), q = "", range = c.scope === "price" ? [c.targets[0] || "", c.targets[1] || ""] : ["", ""];
+    c = c || { id: 0, name: "", zh: "", blurb: "", scope: "items", targets: [], max_price: 0, cover: "", sort: (D.collections || []).length + 1, active: 1 };
+    let targets = new Set([...(c.scope === "items" ? c.targets : []), ...(c.extra || [])]), q = "", range = c.scope === "price" ? [c.targets[0] || "", c.targets[1] || ""] : ["", ""];
     const d = $("#mEdit");
     d.innerHTML = `<form class="ed" id="kForm">
       <div class="ed-h"><b>${isNew ? "New collection" : esc(c.name)}</b><button type="button" class="link" data-x>Close</button></div>
@@ -233,10 +234,10 @@
         <label class="f"><span>Chinese name (optional)</span><input id="kZh" maxlength="30" value="${esc(c.zh)}" placeholder="e.g. 珍稀"></label>
       </div>
       <label class="f"><span>Short line (optional)</span><input id="kBlurb" maxlength="160" value="${esc(c.blurb)}" placeholder="e.g. Stones you rarely see, one piece each"></label>
-      <label class="f"><span>Pieces in this collection</span><select id="kScope">${[...SCOPES, ["price", "Price range"]].map(([v, l]) => `<option value="${v}"${c.scope === v ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <div class="f"><span>Pieces in this collection</span><small>Tick each piece yourself. Nothing is added automatically. You can also tick collections when editing a piece in Stock.</small><input type="hidden" id="kScope" value="items"></div>
       <div id="kPick"></div>
       <div class="grid-f">
-        <label class="f"><span>Only pieces up to (RM, optional)</span><input id="kMax" inputmode="decimal" value="${+c.max_price || ""}" placeholder="Any price"></label>
+        <input type="hidden" id="kMax" value="">
         <label class="f"><span>Order on the page</span><input id="kSort" inputmode="numeric" value="${+c.sort || 0}"></label>
       </div>
       <div class="f"><span>Cover photo</span>
@@ -264,7 +265,7 @@
     $("#kCovDel").onclick = () => { pendingCover = null; coverV = 0; c._removeCover = true; paintCover(); };
     paintCover();
     const scope = () => $("#kScope").value;
-    const rule = () => ({ ...rule0(), extra: c.extra || [] });
+    const rule = () => ({ ...rule0(), extra: [] });
     const rule0 = () => scope() === "price" ? { scope: "price", targets: range.map((x) => String(+x || 0)), max_price: 0 } : { scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 };
     const sum = () => {
       const items = inColl(rule());
@@ -274,7 +275,6 @@
     };
     const pick = () => {
       const sc = scope();
-      $("#kMax").closest("label").style.display = sc === "price" ? "none" : "";
       if (sc === "all") { $("#kPick").innerHTML = ""; return sum(); }
       if (sc === "price") {
         $("#kPick").innerHTML = `<div class="grid-f"><label class="f"><span>From (RM)</span><input id="kLo" inputmode="decimal" value="${+range[0] || ""}" placeholder="e.g. 500"></label><label class="f"><span>To (RM)</span><input id="kHi" inputmode="decimal" value="${+range[1] || ""}" placeholder="No limit"></label></div>`;

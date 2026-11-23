@@ -159,7 +159,7 @@
         };
         const box = $("#eColls"); if (!box) return;
         box.innerHTML = collections.length ? collections.map((c) => {
-          const a = c.scope !== "items" && auto(c), on = a || (c.scope === "items" ? c.targets : c.extra || []).includes(i.id);
+          const a = false, on = a || (c.scope === "items" ? c.targets : c.extra || []).includes(i.id);
           return `<label><input type="checkbox" data-cid="${c.id}" data-was="${on && !a ? 1 : 0}"${on ? " checked" : ""}${a ? " disabled" : ""}><span>${esc(c.name)}${c.zh ? ` <span class="zh">${esc(c.zh)}</span>` : ""}</span><small>${a ? "included automatically" : c.active ? "" : "hidden"}</small></label>`;
         }).join("") : '<small class="muted">No collections yet. Make one in the Marketing tab.</small>';
       } catch { const box = $("#eColls"); if (box) box.innerHTML = '<small class="muted">Couldn\'t load collections.</small>'; }

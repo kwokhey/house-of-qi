@@ -158,9 +158,9 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
   // curated collections (Marketing tab) with the pieces they hold right now
   const { results: cols } = await D.prepare("SELECT * FROM collections WHERE active = 1 ORDER BY sort, id").all();
   const collections = cols.map((c) => {
-    const rule = { scope: c.scope, targets: safeArr(c.targets) };
-    const extra = safeArr(c.extra);
-    const ids = products.filter((p) => (saleCovers(rule, p) && (!c.max_price || p.price <= c.max_price)) || extra.includes(p.id)).map((p) => p.id);
+    // hand-picked only: just the pieces the admin ticked. Never added automatically by stone, section or price.
+    const picked = [...(c.scope === "items" ? safeArr(c.targets) : []), ...safeArr(c.extra)];
+    const ids = products.filter((p) => picked.includes(p.id)).map((p) => p.id);
     const cover = ids.includes(c.cover) ? c.cover : ids.find((id) => products.find((p) => p.id === id).image) || ids[0];
     return { id: c.id, name: c.name, zh: c.zh, blurb: c.blurb, cover, coverImg: c.cover_v ? `img/coll-${c.id}.jpg?v=${c.cover_v}` : "", ids };
   }).filter((c) => c.ids.length);

@@ -112,18 +112,16 @@ export async function onRequestPost({ request, env }) {
   if (b.type === "collection") {
     const name = str(b.name, 50);
     if (!name) return json({ error: "Give the collection a name, e.g. Rare Finds." }, 400);
-    const scope = ["all", "collection", "stones", "items", "price"].includes(b.scope) ? b.scope : "stones";
-    let targets = scope === "all" ? [] : (Array.isArray(b.targets) ? b.targets : []).map((x) => str(x, 80)).filter(Boolean).slice(0, 300);
-    if (scope === "price") {
-      const lo = Math.max(0, num(targets[0])), hi = Math.max(0, num(targets[1]));
-      if (!lo && !hi) return json({ error: "Enter a price range (From and/or To)." }, 400);
-      if (hi && lo > hi) return json({ error: "The From price must be lower than the To price." }, 400);
-      targets = [String(lo), String(hi)];
+    // hand-picked only: the admin ticks each piece (here or in the Stock editor). Nothing is added automatically; an empty collection is fine.
+    const scope = "items";
+    let targets = [...new Set((Array.isArray(b.targets) ? b.targets : []).map((x) => str(x, 80)).filter(Boolean))].slice(0, 300);
+    if (targets.length) { // keep only real item IDs
+      const { results: have } = await D.prepare(`SELECT id FROM items WHERE id IN (${targets.map(() => "?").join(",")})`).bind(...targets).all();
+      const ok = new Set(have.map((r) => r.id)); targets = targets.filter((x) => ok.has(x));
     }
-    if (scope !== "all" && !targets.length) return json({ error: "Choose which stones or pieces are in this collection." }, 400);
-    const f = [name, str(b.zh, 30), str(b.blurb, 160), scope, JSON.stringify(targets), Math.max(0, num(b.max_price)), str(b.cover, 40), Math.floor(num(b.sort)), b.active === false ? 0 : 1];
+    const f = [name, str(b.zh, 30), str(b.blurb, 160), scope, JSON.stringify(targets), 0, str(b.cover, 40), Math.floor(num(b.sort)), b.active === false ? 0 : 1];
     const id = Math.floor(num(b.id));
-    if (id) await D.prepare("UPDATE collections SET name=?, zh=?, blurb=?, scope=?, targets=?, max_price=?, cover=?, sort=?, active=?, updated_at=? WHERE id=?").bind(...f, now, id).run();
+    if (id) await D.prepare("UPDATE collections SET name=?, zh=?, blurb=?, scope=?, targets=?, max_price=?, cover=?, sort=?, active=?, extra='[]', updated_at=? WHERE id=?").bind(...f, now, id).run();
     else await D.prepare("INSERT INTO collections (name, zh, blurb, scope, targets, max_price, cover, sort, active, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)").bind(...f, now, now).run();
     return json({ ok: true });
   }
@@ -133,7 +131,7 @@ export async function onRequestPost({ request, env }) {
     const id = Math.floor(num(b.id)), item = str(b.item, 80);
     const c = await D.prepare("SELECT * FROM collections WHERE id = ?").bind(id).first();
     if (!c || !item) return json({ error: "Collection not found." }, 404);
-    const field = c.scope === "items" ? "targets" : "extra";
+    const field = c.scope === "items" ? "targets" : "extra"; // older rule-based collections keep picks in extra until saved
     let list = []; try { list = JSON.parse(c[field] || "[]"); } catch {}
     list = list.filter((x) => x !== item);
     if (b.on) list.push(item);
