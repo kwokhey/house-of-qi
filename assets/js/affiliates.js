@@ -38,7 +38,7 @@
     const isNew = !a;
     a = a || { name: "", phone: "", code: "", comm_kind: "percent", comm_value: 10, disc_pct: 0, active: 1, note: "", totals: { orders: 0, unpaid: 0, earned: 0, amount: 0, pieces: 0 } };
     const d = $("#mEdit"), t = a.totals;
-    d.innerHTML = `<form class="ed" id="aForm">
+    d.innerHTML = `<form class="ed" id="aForm" novalidate>
       <div class="ed-h"><b>${isNew ? "New seller" : esc(a.name)}</b><button type="button" class="link" data-x>Close</button></div>
       ${isNew ? "" : `<div class="aff-stats"><div><span>You pay them</span><b>${RM(t.unpaid)}</b><small>commission</small></div><div><span>They owe you</span><b>${RM(t.owed || 0)}</b><small>for pieces they sold</small></div><div><span>Sales</span><b>${t.orders}</b><small>${t.pieces || 0} pcs · ${RM(t.amount)}</small></div></div>
       <div class="aff-links"><button type="button" class="btn ghost sm" data-c="shop">Copy shop link</button><button type="button" class="btn ghost sm" data-c="page">Copy seller page</button>${a.phone ? `<a class="btn ghost sm" target="_blank" rel="noopener" href="${esc(waLink(a))}">Send on WhatsApp</a>` : ""}${t.unpaid > 0 ? `<button type="button" class="btn gold sm" id="aPaid">Mark ${RM(t.unpaid)} as paid</button>` : ""}${t.owed > 0 ? `<button type="button" class="btn gold sm" id="aRecv">Mark ${RM(t.owed)} as received</button>` : ""}</div>
@@ -52,10 +52,10 @@
       <div class="f"><span>Commission</span></div>
       <div class="seg" role="radiogroup" aria-label="Commission type">${[["percent", "% of each sale"], ["fixed", "RM per piece"]].map(([k, l]) => `<label><input type="radio" name="aKind" value="${k}"${a.comm_kind === k ? " checked" : ""}><span>${l}</span></label>`).join("")}</div>
       <div class="grid-f">
-        <label class="f"><span id="aValL">Percent</span><input id="aVal" inputmode="decimal" value="${+a.comm_value || ""}" required></label>
+        <label class="f"><span id="aValL">Percent</span><input id="aVal" inputmode="decimal" value="${a.comm_value != null && a.comm_value !== "" ? +a.comm_value : ""}" placeholder="0"></label>
         <label class="f"><span>Note for yourself (optional)</span><input id="aNote" maxlength="200" value="${esc(a.note)}" placeholder="e.g. Sells at Sunday bazaar"></label>
       </div>
-      <div class="toggles"><label><input type="checkbox" id="aOn"${a.active ? " checked" : ""}> Seller is active (their link and code work)</label></div>
+      <div class="toggles"><label><input type="checkbox" id="affOn"${a.active ? " checked" : ""}> Seller is active (their link and code work)</label></div>
       <p class="m-sum" id="aSum"></p>
       <p class="err" id="aErr" hidden></p>
       <div class="ed-f"><button class="btn" type="submit">${isNew ? "Add seller" : "Save changes"}</button>${!isNew && !t.orders ? '<button type="button" class="link danger" id="aDel">Delete seller</button>' : ""}</div>
@@ -81,9 +81,9 @@
     };
     $("#aForm").onsubmit = async (e) => {
       e.preventDefault();
-      const body = { id: a.id, name: $("#aName").value, phone: $("#aPhone").value, code: $("#aCode").value, comm_kind: kind(), comm_value: $("#aVal").value, disc_pct: $("#aDisc").value, active: $("#aOn").checked, note: $("#aNote").value };
+      const body = { id: a.id, name: $("#aName").value, phone: $("#aPhone").value, code: $("#aCode").value, comm_kind: kind(), comm_value: $("#aVal").value, disc_pct: $("#aDisc").value, active: $("#affOn").checked, note: $("#aNote").value };
       try { await api("/api/admin/affiliates", { method: "POST", body: JSON.stringify(body) }); toast(isNew ? "Seller added. Open them to copy their link." : "Saved"); d.close(); load(); }
-      catch (x) { $("#aErr").textContent = x.message; $("#aErr").hidden = false; }
+      catch (x) { $("#aErr").textContent = x.message; $("#aErr").hidden = false; $("#aErr").scrollIntoView({ block: "center", behavior: "smooth" }); toast(x.message); }
     };
     if ($("#aDel")) $("#aDel").onclick = async () => {
       if ($("#aDel").dataset.sure !== "1") { $("#aDel").dataset.sure = "1"; $("#aDel").textContent = "Tap again to delete"; return; }
