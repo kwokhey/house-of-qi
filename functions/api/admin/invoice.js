@@ -22,7 +22,22 @@ export async function onRequestGet({ request, env }) {
   if (no) {
     const r = await D.prepare("SELECT * FROM invoices WHERE number = ?").bind(no).first();
     if (!r) return json({ error: "Invoice not found." }, 404);
-    return json({ invoice: { number: r.number, void: !!r.void, ...JSON.parse(r.data) } });
+    const d = JSON.parse(r.data);
+    // older invoices (before 23 Nov) only kept the price paid: work out the original price and the seller's discount
+    for (const l of d.lines || []) {
+      if (l.list || !l.mid) continue;
+      try {
+        const a = await D.prepare("SELECT a.code, a.disc_pct FROM aff_sales s JOIN affiliates a ON a.id = s.aff_id WHERE s.ref = ?").bind(`mv-${l.mid}`).first();
+        if (!a || !(a.disc_pct > 0)) continue;
+        const list = Math.round((l.rate / (1 - a.disc_pct / 100)) * 100) / 100;
+        if (list > l.rate + 0.004) { l.list = list; l.disc = `${a.code} ${+a.disc_pct}% off`; }
+      } catch {}
+    }
+    const r2 = (n) => Math.round(n * 100) / 100;
+    d.total = r2((d.lines || []).reduce((a, l) => a + l.qty * l.rate, 0));
+    d.subtotal = r2((d.lines || []).reduce((a, l) => a + l.qty * (l.list || l.rate), 0));
+    d.discount = r2(d.subtotal - d.total);
+    return json({ invoice: { number: r.number, void: !!r.void, ...d } });
   }
   const { results } = await D.prepare("SELECT number, void, data, created_at FROM invoices ORDER BY seq DESC LIMIT 1000").all();
   return json({ invoices: results.map((r) => {

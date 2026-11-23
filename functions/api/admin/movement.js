@@ -39,6 +39,7 @@ export async function onRequestPost({ request, env }) {
     const price = Number.isFinite(Number(b.price)) && b.price !== "" ? Number(b.price) : item.price;
     const aff = b.aff ? await D.prepare("SELECT * FROM affiliates WHERE id = ?").bind(Number(b.aff)).first() : null;
     if (b.aff && !aff) return json({ error: "That seller wasn't found. Please pick again." }, 400);
+    const discLabel = aff && aff.disc_pct > 0 ? `${aff.code} ${+aff.disc_pct}% off` : "Discount";
     const res = await D.batch([
       D.prepare("INSERT INTO movements (item_id, kind, qty, unit_price, unit_cost, channel, note, created_at) VALUES (?, 'sale', ?, ?, ?, ?, ?, ?)").bind(item.id, -qty, price, item.cost, channel || "Offline", aff ? [note, `Sold by ${aff.name}`].filter(Boolean).join(" · ").slice(0, 200) : note, now),
       D.prepare("UPDATE items SET stock = stock - ?, updated_at = ? WHERE id = ?").bind(qty, now, item.id),
@@ -46,11 +47,11 @@ export async function onRequestPost({ request, env }) {
     // invoice: made when "sold to" details were filled in
     const to = billTo(b.to);
     if (b.addTo) {
-      const number = await addToInvoice(D, b.addTo, { item, qty, price, movementId: res[0].meta.last_row_id, date: b.saleDate });
+      const number = await addToInvoice(D, b.addTo, { item, qty, price, movementId: res[0].meta.last_row_id, date: b.saleDate, disc: discLabel });
       if (!number) return json({ ok: true, warning: `Sale recorded, but invoice ${b.addTo} wasn't found, so it wasn't added. Use "Make invoice" in History.` });
       b.__invoice = number;
     } else if (to) {
-      const number = await createInvoice(D, { to, date: b.saleDate, terms: b.terms, item, qty, price, movementId: res[0].meta.last_row_id, channel: channel || "Offline", note });
+      const number = await createInvoice(D, { to, date: b.saleDate, terms: b.terms, item, qty, price, movementId: res[0].meta.last_row_id, channel: channel || "Offline", note, disc: discLabel });
       b.__invoice = number;
     }
     if (aff) await creditSale(D, aff, { ref: `mv-${res[0].meta.last_row_id}`, channel: channel || "Offline", detail: `${qty}× ${itemName(item)}${itemDetails(item) ? " · " + itemDetails(item) : ""}`, pieces: qty, amount: price * qty, created_at: now });

@@ -17,16 +17,18 @@ export function billTo(b) {
 }
 
 /** Creates the invoice row and links it to the sale. Returns the invoice number. */
-export async function createInvoice(D, { to, date, terms, item, qty, price, movementId, channel, note }) {
+// list price + discount label for a line (shown as original price, then the discount)
+const listOf = (item, price, disc) => { const list = Math.round((Number(item.price) || 0) * 100) / 100; return list > price + 0.004 ? { list, disc: s(disc, 60) } : {}; };
+
+export async function createInvoice(D, { to, date, terms, item, qty, price, movementId, channel, note, disc }) {
   const now = Date.now();
   const saleDate = dateOk(date) ? date : new Date(now + 8 * 3600e3).toISOString().slice(0, 10); // Malaysia date
   const desc = [itemName(item), itemDetails(item), `Item code: ${item.id}`].filter(Boolean).join("\n");
   const data = {
     to, date: saleDate, due: saleDate, terms: s(terms, 60) || "Paid in full", channel: s(channel, 40), note: s(note, 200),
-    lines: [{ date: saleDate, activity: "Sale", description: desc, qty, rate: price, mid: movementId || null }],
+    lines: [{ date: saleDate, activity: "Sale", description: desc, qty, rate: price, ...listOf(item, price, disc), mid: movementId || null }],
   };
-  data.subtotal = Math.round(qty * price * 100) / 100;
-  data.total = data.subtotal;
+  totals(data);
   const r = await D.prepare("INSERT INTO invoices (number, movement_id, data, created_at) VALUES (?, ?, ?, ?)").bind(`tmp-${now}-${Math.random()}`, movementId || null, JSON.stringify(data), now).run();
   const seq = r.meta.last_row_id;
   const number = `HQ-${String(seq).padStart(5, "0")}`;
@@ -38,14 +40,21 @@ export async function createInvoice(D, { to, date, terms, item, qty, price, move
 }
 
 const lineDesc = (item) => [itemName(item), itemDetails(item), `Item code: ${item.id}`].filter(Boolean).join("\n");
-const totals = (d) => { d.subtotal = Math.round(d.lines.reduce((a, l) => a + l.qty * l.rate, 0) * 100) / 100; d.total = d.subtotal; return d; };
+// subtotal at original prices, minus discounts, = total paid
+function totals(d) {
+  const r2 = (n) => Math.round(n * 100) / 100;
+  d.total = r2(d.lines.reduce((a, l) => a + l.qty * l.rate, 0));
+  d.subtotal = r2(d.lines.reduce((a, l) => a + l.qty * (l.list || l.rate), 0));
+  d.discount = r2(d.subtotal - d.total);
+  return d;
+}
 
 /** Adds another item's sale to an existing invoice (customer bought several pieces). Returns the number or null. */
-export async function addToInvoice(D, number, { item, qty, price, movementId, date }) {
+export async function addToInvoice(D, number, { item, qty, price, movementId, date, disc }) {
   const r = await D.prepare("SELECT * FROM invoices WHERE number = ? AND void = 0").bind(String(number || "").trim().toUpperCase()).first();
   if (!r) return null;
   const d = JSON.parse(r.data);
-  d.lines.push({ date: dateOk(date) ? date : d.date, activity: "Sale", description: lineDesc(item), qty, rate: price, mid: movementId || null });
+  d.lines.push({ date: dateOk(date) ? date : d.date, activity: "Sale", description: lineDesc(item), qty, rate: price, ...listOf(item, price, disc), mid: movementId || null });
   totals(d);
   await D.batch([
     D.prepare("UPDATE invoices SET data = ? WHERE seq = ?").bind(JSON.stringify(d), r.seq),

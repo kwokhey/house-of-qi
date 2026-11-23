@@ -83,7 +83,8 @@
   document.getElementById("barT").textContent = `Invoice ${inv.number}${inv.void ? " (VOID)" : ""}`;
   const t = inv.to || {};
   const bill = [t.company && t.name ? `${esc(t.company)}` : "", esc(t.name), t.address ? esc(t.address).replace(/\n/g, "<br>") : "", t.phone ? `Tel: ${esc(t.phone)}` : "", t.email ? esc(t.email) : "", t.attn ? `Attn to: ${esc(t.attn)}` : ""].filter(Boolean).join("<br>");
-  const rows = (inv.lines || []).map((l) => `<tr><td>${dmy(l.date)}</td><td>${esc(l.activity || "Sale")}</td><td class="desc">${esc(l.description)}</td><td class="c">${esc(l.qty)}</td><td class="r">${money(l.rate)}</td><td class="r">${money(l.qty * l.rate)}</td></tr>`).join("");
+  const rows = (inv.lines || []).map((l) => `<tr><td>${dmy(l.date)}</td><td>${esc(l.activity || "Sale")}</td><td class="desc">${esc(l.description)}</td><td class="c">${esc(l.qty)}</td><td class="r">${money(l.list || l.rate)}</td><td class="r">${money(l.qty * (l.list || l.rate))}</td></tr>`).join("");
+  const dl = [...new Set((inv.lines || []).filter((l) => l.list).map((l) => l.disc || "Discount"))];
   const paid = /paid/i.test(inv.terms || "");
   out.innerHTML = `<div class="page">
     ${inv.void ? '<div class="void">VOID</div>' : ""}
@@ -98,6 +99,7 @@
     <table class="items"><thead><tr><th style="width:13%">Date</th><th style="width:11%">Activity</th><th>Description</th><th class="c" style="width:7%">Qty</th><th class="r" style="width:12%">Rate</th><th class="r" style="width:13%">Amount</th></tr></thead>
       <tbody>${rows}</tbody></table>
     <div class="tot"><div><span class="lab">Subtotal</span><span>${money(inv.subtotal)}</span></div>
+      ${inv.discount > 0 ? `<div><span class="lab">Discount${dl.length === 1 && dl[0] !== "Discount" ? ` (${esc(dl[0])})` : ""}</span><span>−${money(inv.discount)}</span></div>` : ""}
       <div><span class="lab">Total</span><span>${money(inv.total)}</span></div>
       <div class="due"><span class="lab">Balance due</span><b>MYR ${money(paid ? 0 : inv.total)}</b></div></div>
     ${paid ? `<p class="note">Payment of MYR ${money(inv.total)} received with thanks.</p>` : ""}
