@@ -95,7 +95,7 @@ const gcard=(m,v='tall')=>`<button class="gc" data-open="${m.id}"${m.soldOut?' d
 const card=(m,label,v='tall')=>`<button class="pc" data-open="${m.id}"${m.soldOut?' data-out':''}><span class="pc-img"><img src="${img(m.id,v)}" alt="${m.name}" decoding="async">${label?`<span class="pc-rank">${label}</span>`:''}</span><span class="pc-name">${m.short||m.name}</span>${subLine(m)}<span>${priceHTML(m)}</span></button>`;
 function renderHome(){
   const W=WIDE.matches,h=CFG.hero||{},feat=BY[h.product]||CAT[0],best=CAT.filter(m=>m.best).sort((a,b)=>a.best-b.best),nov=CAT.filter(m=>m.nov),of=c=>CAT.filter(m=>c==='collectibles'?m.preorder:m.cat===c);
-  const head=(name,zh,n,unit='pieces')=>`<div class="sec-head"><h3 class="disp">${name}</h3>${zh?`<span class="zh">${esc(zh)}</span>`:''}<span class="count">${n} ${unit}</span></div>`;
+  const head=(name,zh,n,unit='pieces')=>`<div class="sec-head"><h3 class="disp">${name}</h3>${zh?`<span class="zh">${esc(zh)}</span>`:''}<span class="count">${n} ${n===1?unit.replace(/s$/,''):unit}</span></div>`;
   const [t1,t2]=(h.title||feat.name).split('|');
   const usedInts=Object.entries(INTENTS).filter(([k])=>CAT.some(m=>m.ints.includes(k)));
   const LIMIT=12,more=(id,n)=>n>LIMIT?`<button class="ghost show-all" data-act="showAll" data-sec="${id}">Show all ${n}</button>`:'',hid=i=>i>=LIMIT?' hidden data-more':'';

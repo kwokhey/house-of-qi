@@ -862,11 +862,10 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .sl-from{white-space:nowrap}
 
 /* ---------- sold out ---------- */
-[data-out] img{filter:grayscale(.85);opacity:.55}
 [data-out] .pc-img,[data-out] .gc-img,[data-out] .lead-img,[data-out] .ri-img{position:relative}
-[data-out] .pc-img::after,[data-out] .gc-img::after,[data-out] .lead-img::after,[data-out] .ri-img::after{content:"Sold out";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;white-space:nowrap;font:600 10px var(--f-body,sans-serif);letter-spacing:.2em;text-transform:uppercase;color:#F7EEE4;background:rgba(43,31,24,.82);padding:7px 12px;border-radius:2px;pointer-events:none}
+[data-out] .pc-img::after,[data-out] .gc-img::after,[data-out] .lead-img::after,[data-out] .ri-img::after{content:"Sold out";position:absolute;right:10px;top:10px;z-index:2;white-space:nowrap;font:600 10px var(--f-body,sans-serif);letter-spacing:.18em;text-transform:uppercase;color:#F7EEE4;background:rgba(43,31,24,.88);padding:6px 10px;border-radius:99px;pointer-events:none;box-shadow:0 2px 8px rgba(43,31,24,.18)}
+[data-out] .ri-img::after{right:6px;top:6px;font-size:8.5px;padding:4px 7px;letter-spacing:.12em}
 [data-out] .ri-add{display:none}
-[data-out] .pc-name,[data-out] .ri-name{opacity:.7}
 .vopt.out .vimg img{filter:grayscale(.85);opacity:.55}
 .vopt.out .vl,.vopt.out .vpz{opacity:.6}
 .vopt.out .v1{background:rgba(43,31,24,.82);color:#F7EEE4}
