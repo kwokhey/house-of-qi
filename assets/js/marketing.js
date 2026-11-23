@@ -45,9 +45,11 @@
     if (s.scope === "all") return "Whole shop";
     if (s.scope === "collection") return s.targets.map((t) => (COLLECTIONS.find((c) => c[0] === t) || [t, t])[1]).join(", ");
     if (s.scope === "stones") return s.targets.join(", ");
+    if (s.scope === "price") { const [lo, hi] = s.targets.map(Number); return lo && hi ? `${RM(lo)} – ${RM(hi)}` : lo ? `${RM(lo)} and up` : `up to ${RM(hi)}`; }
     return `${s.targets.length} chosen piece${s.targets.length === 1 ? "" : "s"}`;
   };
-  const covered = (s) => D.items.filter((i) => s.scope === "all" || (s.scope === "collection" && s.targets.includes(collectionOf(i))) || (s.scope === "stones" && s.targets.map((x) => x.toLowerCase()).includes(i.stone.toLowerCase())) || (s.scope === "items" && s.targets.includes(i.id)));
+  const covered = (s) => D.items.filter((i) => s.scope === "all" || (s.scope === "collection" && s.targets.includes(collectionOf(i))) || (s.scope === "stones" && s.targets.map((x) => x.toLowerCase()).includes(i.stone.toLowerCase())) || (s.scope === "items" && s.targets.includes(i.id)) || (s.scope === "price" && inRange(s.targets, i.price)));
+  const inRange = (t, price) => { const lo = +t[0] || 0, hi = +t[1] || 0; return price >= lo && (!hi || price <= hi); };
   const collectionOf = (i) => i.collection || (/pendant|necklace/i.test(i.type) ? "pendants" : "bracelets");
 
   /* ---------- page ---------- */
@@ -188,7 +190,7 @@
   function openColl(c) {
     const isNew = !c;
     c = c || { id: 0, name: "", zh: "", blurb: "", scope: "stones", targets: [], max_price: 0, cover: "", sort: (D.collections || []).length + 1, active: 1 };
-    let targets = new Set(c.targets), q = "";
+    let targets = new Set(c.scope === "price" ? [] : c.targets), q = "", range = c.scope === "price" ? [c.targets[0] || "", c.targets[1] || ""] : ["", ""];
     const d = $("#mEdit");
     d.innerHTML = `<form class="ed" id="kForm">
       <div class="ed-h"><b>${isNew ? "New collection" : esc(c.name)}</b><button type="button" class="link" data-x>Close</button></div>
@@ -197,7 +199,7 @@
         <label class="f"><span>Chinese name (optional)</span><input id="kZh" maxlength="30" value="${esc(c.zh)}" placeholder="e.g. 珍稀"></label>
       </div>
       <label class="f"><span>Short line (optional)</span><input id="kBlurb" maxlength="160" value="${esc(c.blurb)}" placeholder="e.g. Stones you rarely see, one piece each"></label>
-      <label class="f"><span>Pieces in this collection</span><select id="kScope">${SCOPES.map(([v, l]) => `<option value="${v}"${c.scope === v ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label class="f"><span>Pieces in this collection</span><select id="kScope">${[...SCOPES, ["price", "Price range"]].map(([v, l]) => `<option value="${v}"${c.scope === v ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <div id="kPick"></div>
       <div class="grid-f">
         <label class="f"><span>Only pieces up to (RM, optional)</span><input id="kMax" inputmode="decimal" value="${+c.max_price || ""}" placeholder="Any price"></label>
@@ -228,7 +230,7 @@
     $("#kCovDel").onclick = () => { pendingCover = null; coverV = 0; c._removeCover = true; paintCover(); };
     paintCover();
     const scope = () => $("#kScope").value;
-    const rule = () => ({ scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 });
+    const rule = () => scope() === "price" ? { scope: "price", targets: range.map((x) => String(+x || 0)), max_price: 0 } : { scope: scope(), targets: [...targets], max_price: +$("#kMax").value || 0 };
     const sum = () => {
       const items = inColl(rule());
       $("#kSum").textContent = `${items.length} piece${items.length === 1 ? "" : "s"} in stock will show in this collection.`;
@@ -237,7 +239,14 @@
     };
     const pick = () => {
       const sc = scope();
+      $("#kMax").closest("label").style.display = sc === "price" ? "none" : "";
       if (sc === "all") { $("#kPick").innerHTML = ""; return sum(); }
+      if (sc === "price") {
+        $("#kPick").innerHTML = `<div class="grid-f"><label class="f"><span>From (RM)</span><input id="kLo" inputmode="decimal" value="${+range[0] || ""}" placeholder="e.g. 500"></label><label class="f"><span>To (RM)</span><input id="kHi" inputmode="decimal" value="${+range[1] || ""}" placeholder="No limit"></label></div>`;
+        $("#kLo").oninput = (e) => { range[0] = e.target.value; sum(); };
+        $("#kHi").oninput = (e) => { range[1] = e.target.value; sum(); };
+        return sum();
+      }
       let opts;
       if (sc === "collection") opts = COLLECTIONS.map(([v, l]) => [v, l, D.items.filter((i) => collectionOf(i) === v).length]).filter((o) => o[2]);
       else if (sc === "stones") opts = D.stones.map((x) => [x.stone, x.stone, x.n]);

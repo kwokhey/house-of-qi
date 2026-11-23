@@ -29,6 +29,7 @@ export function saleCovers(sale, p) {
   if (sale.scope === "collection") return t.includes(String(p.collection).toLowerCase());
   if (sale.scope === "stones") return t.includes(String(p.stone).toLowerCase());
   if (sale.scope === "items") return t.includes(String(p.id).toLowerCase());
+  if (sale.scope === "price") { const lo = Number(t[0]) || 0, hi = Number(t[1]) || 0; return p.price >= lo && (!hi || p.price <= hi); } // collections only
   return false;
 }
 
