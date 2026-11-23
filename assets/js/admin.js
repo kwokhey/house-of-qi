@@ -93,6 +93,7 @@ function card(o) {
       ${o.address.length ? `<span class="addr">${o.address.map(esc).join("<br>")}</span><button class="link" data-copy="${esc([o.name, ...o.address, o.phone].join("\n"))}">Copy address</button>` : ""}</div>
     <div class="act">${act}
       ${wa ? `<a class="btn ghost sm" href="${wa}" target="_blank" rel="noopener">WhatsApp customer</a>` : ""}
+      <a class="link" href="/api/admin/receipt?id=${encodeURIComponent(o.sessionId)}" target="_blank" rel="noopener">Email receipt</a>
       <button class="link" data-copy="${esc(trackLink(o))}">Copy tracking link</button>
       ${back ? `<button class="link undo" data-a="${back}" data-undo="1">Undo</button>` : ""}
       <button class="link undo" data-hide="${esc(o.sessionId)}" title="For test or refunded orders. The payment record stays in Stripe.">Remove from list</button></div>
