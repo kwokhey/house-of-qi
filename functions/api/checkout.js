@@ -121,7 +121,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
 
   order.lines.forEach((l, i) => {
     const k = `line_items[${i}]`;
-    const desc = [l.product.details || "", ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    const desc = [l.product.sizeOpts ? "" : l.product.details || "", ...l.chosen, l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     p.append(`${k}[quantity]`, String(l.qty));
     p.append(`${k}[price_data][currency]`, cur);
     p.append(`${k}[price_data][unit_amount]`, String(Math.round(l.unit * 100)));
@@ -159,7 +159,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   const factor = order.promo?.discount ? 1 - order.promo.discount / order.subtotal : 1;
   // Each item's options, so the order page shows bead size, wrist size, add-ons
   order.lines.forEach((l, i) => {
-    const desc = [`${l.qty}× ${l.product.name}`, l.product.details || "", ...l.chosen, l.product.sale ? `Sale ${l.product.sale.percent}% off (was RM${l.product.was})` : "", l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
+    const desc = [`${l.qty}× ${l.product.name}`, l.product.sizeOpts ? "" : l.product.details || "", ...l.chosen, l.product.sale ? `Sale ${l.product.sale.percent}% off (was RM${l.product.was})` : "", l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     meta[`i${i + 1}`] = desc.slice(0, 500);
     if (!order.preorder) meta[`s${i + 1}`] = `${l.product.id}:${l.qty}:${Math.round(l.product.price * factor * 100) / 100}`; // used to deduct stock once paid (not for pre-orders)
   });
