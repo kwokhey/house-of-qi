@@ -43,11 +43,23 @@ export async function onRequestGet({ request, env }) {
     return json({ invoice: { number: r.number, void: !!r.void, ...d } });
   }
   const { results } = await D.prepare("SELECT number, void, data, created_at FROM invoices ORDER BY seq DESC LIMIT 1000").all();
+  // the first piece on each invoice: its "Sold through" and seller, so new pieces added to it can follow the same
+  const firstMid = {};
+  for (const r of results) { try { const m = (JSON.parse(r.data).lines || []).find((l) => l.mid); if (m) firstMid[r.number] = m.mid; } catch {} }
+  const mids = Object.values(firstMid);
+  const chOf = {}, affOf = {};
+  for (let k = 0; k < mids.length; k += 80) {
+    const part = mids.slice(k, k + 80), q = part.map(() => "?").join(",");
+    try { (await D.prepare(`SELECT id, channel FROM movements WHERE id IN (${q})`).bind(...part).all()).results.forEach((x) => (chOf[x.id] = x.channel)); } catch {}
+    try { (await D.prepare(`SELECT ref, aff_id FROM aff_sales WHERE ref IN (${q})`).bind(...part.map((x) => "mv-" + x)).all()).results.forEach((x) => (affOf[x.ref.slice(3)] = x.aff_id)); } catch {}
+  }
   return json({ invoices: results.map((r) => {
     const d = JSON.parse(r.data); const t = d.to || {};
+    const fm = firstMid[r.number];
+    const first = fm ? { channel: chOf[fm] || d.channel || "", aff: affOf[fm] || null } : { channel: d.channel || "", aff: null };
     const lines = (d.lines || []).map((l) => ({ name: String(l.description || "").split("\n")[0], code: (String(l.description || "").match(/Item code: (.*)$/m) || [])[1] || "", qty: l.qty }));
     return { number: r.number, void: !!r.void, date: d.date, to: t.name, company: t.company || "", phone: t.phone || "", email: t.email || "",
-      terms: d.terms || "", paid: /paid/i.test(d.terms || ""), channel: d.channel || "", total: d.total, pieces: lines.reduce((a, l) => a + (Number(l.qty) || 0), 0), lines, created_at: r.created_at };
+      terms: d.terms || "", paid: /paid/i.test(d.terms || ""), channel: d.channel || "", total: d.total, pieces: lines.reduce((a, l) => a + (Number(l.qty) || 0), 0), lines, created_at: r.created_at, first };
   }) });
 }
 

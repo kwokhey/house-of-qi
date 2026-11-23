@@ -255,11 +255,17 @@
       sel.innerHTML = `<option value="">New invoice</option>` + invoices.filter((v) => !v.void).slice(0, 40).map((v) => `<option value="${esc(v.number)}">Add to ${esc(v.number)} · ${esc(v.to || "")} · RM${Number(v.total || 0).toFixed(2)}</option>`).join("");
       sel.onchange = () => {
         $("#iNew").hidden = !!sel.value;
-        // adding to an existing invoice: use the same "Sold through" as that invoice
-        const v = invoices.find((x) => x.number === sel.value), ch = v && v.channel, m = $("#mCh");
-        if (!ch || !m) return;
-        if (CHANNELS.includes(ch)) { m.value = ch; $("#mChOF").hidden = true; }
-        else { m.value = "Other"; $("#mChOF").hidden = false; $("#mChO").value = ch; }
+        // adding to an existing invoice: follow its first piece (Sold through + seller, and the seller's discounted price)
+        const v = invoices.find((x) => x.number === sel.value), f = (v && v.first) || {}, ch = f.channel || (v && v.channel), m = $("#mCh");
+        if (ch && m) {
+          if (CHANNELS.includes(ch)) { m.value = ch; $("#mChOF").hidden = true; }
+          else { m.value = "Other"; $("#mChOF").hidden = false; $("#mChO").value = ch; }
+        }
+        const af = $("#mAff");
+        if (v && af && !$("#mAffF").hidden) {
+          const want = f.aff ? String(f.aff) : "";
+          if ([...af.options].some((o) => o.value === want) && af.value !== want) { af.value = want; af.onchange && af.onchange(); }
+        }
       };
     } catch {}
   };
