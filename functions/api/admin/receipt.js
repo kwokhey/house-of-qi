@@ -29,7 +29,8 @@ export async function onRequestGet({ request, env }) {
     const when = sent ? new Date(sent.at).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     const bar = `<div style="background:#3B2C23;color:#F8EEE7;padding:10px 16px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5">
       <b>Email receipt</b> · ${esc(m.subject)}<br>${sent ? `Sent to ${esc(m.to)} on ${esc(when)}` : `Not sent by email${m.to ? ` (customer email: ${esc(m.to)})` : ""}. This is how it looks.`}</div>`;
-    const html = /<body[^>]*>/.test(m.html) ? m.html.replace(/<body([^>]*)>/, (x) => x + bar) : bar + m.html;
+    let html = /<body[^>]*>/.test(m.html) ? m.html.replace(/<body([^>]*)>/, (x) => x + "<!--email_off-->" + bar) : "<!--email_off-->" + bar + m.html;
+    html = html.includes("</body>") ? html.replace("</body>", "<!--/email_off--></body>") : html + "<!--/email_off-->"; // keep addresses readable (no Cloudflare email hiding)
     return page(html.replace(/<title>[^<]*<\/title>/, "") .replace(/<head>/, `<head><title>Receipt ${esc(s.metadata?.order_no || "")}</title>`));
   } catch (e) {
     console.error("receipt", e.message);
