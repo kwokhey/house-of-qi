@@ -269,6 +269,21 @@
       if (!act.length || !$("#mAff")) return;
       $("#mAff").innerHTML = `<option value="">Nobody (House of Qi)</option>` + act.map((a) => `<option value="${a.id}">${esc(a.name)} · ${esc(a.code)}</option>`).join("");
       $("#mAffF").hidden = false;
+      // a seller whose code gives customers a discount: use the discounted price, like the website does
+      let auto = null;
+      $("#mAff").insertAdjacentHTML("afterend", '<small class="muted" id="mAffHint" hidden></small>');
+      $("#mAff").onchange = () => {
+        const a = act.find((x) => String(x.id) === $("#mAff").value), d = a ? +a.disc_pct || 0 : 0, pr = $("#mPrice"), h = $("#mAffHint");
+        if (!pr) return;
+        const base = +i.price || 0, cur = pr.value;
+        if (d > 0) {
+          if (auto === null || cur === auto) { auto = (Math.round(base * (100 - d)) / 100).toFixed(2); pr.value = auto; }
+          h.textContent = `${a.code} gives ${d}% off: RM${base.toFixed(2)} → RM${(Math.round(base * (100 - d)) / 100).toFixed(2)} per piece. Change the price if the customer paid something else.`; h.hidden = false;
+        } else {
+          if (auto !== null && cur === auto) pr.value = base;
+          auto = null; h.hidden = true;
+        }
+      };
     });
     $("#mQty").focus(); $("#mQty").select();
     $("#mGo").onclick = async () => {
