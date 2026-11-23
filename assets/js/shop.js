@@ -470,7 +470,7 @@ const fmtT=ts=>ts?new Date(ts).toLocaleString('en-MY',{day:'numeric',month:'shor
 function doneHTML(o){const pieces=o.items.reduce((t,i)=>t+i.qty,0);const idx={confirmed:0,packed:1,shipped:2,ready:2}[o.status]||0;const tm=[o.times?.confirmed,o.times?.packed,o.times?.shipped];
   const st=[['Order confirmed',o.paid?'Payment received':'Waiting for your bank to confirm'],['Cleansed & packed','Smudged, charged and gift wrapped'],o.pickup?['Ready for pick-up','We will WhatsApp you a time']:['Shipped','Tracking number sent to you']];
   return`<div class="done-in gx">
-  <div class="d-top rise" style="--d:.05s"><span class="chip"><i></i><span>${o.paid?'Order confirmed':'Payment processing'}</span></span><span class="eta">${o.pickup?'Pick-up<b>We will WhatsApp you</b>':'Dispatch<b>Within 1–2 working days</b>'}</span></div>
+  <div class="d-top rise" style="--d:.05s"><span class="chip"><i></i><span>${o.paid?'Order confirmed':'Payment processing'}</span></span>${o.pickup?'<span class="eta">Pick-up<b>We will WhatsApp you</b></span>':''}</div>
   <div class="seal"><svg viewBox="0 0 88 88"><circle class="sk-c" cx="44" cy="44" r="40" transform="rotate(-90 44 44)"/><circle class="sk-c2" cx="44" cy="44" r="34" transform="rotate(-90 44 44)"/><path class="sk-k" d="M30 45l9.5 9.5L59 34"/><path class="sk-d" d="M44 0l2.4 2.4L44 4.8 41.6 2.4z"/></svg></div>
   <h1 class="disp d-title">${titleLines(o.paid?['Thank you','for your order']:['Almost','there'],.55)}</h1>
   <div class="d-meta rise" style="--d:.95s"><span class="ordno">${esc(o.orderNo||'')}</span><span class="sep"></span><span class="meta2">${pieces} piece${pieces===1?'':'s'} · ${RM(o.total)}</span></div>

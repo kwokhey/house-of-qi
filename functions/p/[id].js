@@ -56,7 +56,7 @@ export async function onRequestGet({ request, env, params }) {
       <h1>${e2(nice)}</h1>${p.details ? `<p>${e2(p.details)}</p>` : ""}<p><strong>${rm(p.price)}</strong> · ${p.soldOut ? "Sold out" : "In stock"} · Item ${e2(p.id)}</p>
       <img src="${e2(image)}" alt="${e2(p.name)}" width="600" height="600"><p>${e2(desc)}</p>
       ${about ? `<h2>About ${e2(sName)}</h2><p>${e2(about)}</p><p><a href="/crystals/${info.slug}">More ${e2(sName)} pieces and meaning</a></p>` : ""}
-      <p>Natural gemstones may vary in colour, clarity and patterns. Dispatched in 1–2 working days; delivery RM10 West Malaysia, RM20 East Malaysia; 14-day returns. See <a href="/policies">shipping &amp; returns</a>.</p>`));
+      <p>Natural gemstones may vary in colour, clarity and patterns. Dispatched in 1–2 working days; delivery RM10 West Malaysia, RM20 East Malaysia; No returns or exchanges once sold. See <a href="/policies">shipping &amp; returns</a>.</p>`));
   } else {
     html = html.replace("</head>", '<meta name="robots" content="noindex"></head>');
   }
