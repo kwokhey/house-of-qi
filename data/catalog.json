@@ -124,12 +124,6 @@
       "name": "Gift Sets",
       "zh": "礼盒",
       "layout": "list"
-    },
-    {
-      "id": "collectibles",
-      "name": "Collectibles",
-      "zh": "收藏",
-      "layout": "grid"
     }
   ],
   "intentions": {
