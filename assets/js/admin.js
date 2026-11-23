@@ -94,7 +94,8 @@ function card(o) {
     <div class="act">${act}
       ${wa ? `<a class="btn ghost sm" href="${wa}" target="_blank" rel="noopener">WhatsApp customer</a>` : ""}
       <button class="link" data-copy="${esc(trackLink(o))}">Copy tracking link</button>
-      ${back ? `<button class="link undo" data-a="${back}" data-undo="1">Undo</button>` : ""}</div>
+      ${back ? `<button class="link undo" data-a="${back}" data-undo="1">Undo</button>` : ""}
+      <button class="link undo" data-hide="${esc(o.sessionId)}" title="For test or refunded orders. The payment record stays in Stripe.">Remove from list</button></div>
   </article>`;
 }
 
@@ -165,6 +166,15 @@ document.addEventListener("click", async (e) => {
   if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied"); } catch { toast("Couldn't copy. Select the text instead."); } return; }
   const bal = e.target.closest("[data-bal]");
   if (bal) { requestBalance(bal.closest(".oc"), bal); return; }
+  const h = e.target.closest("[data-hide]");
+  if (h) {
+    const no = h.closest(".oc")?.querySelector(".oc-no")?.textContent || "this order";
+    if (!confirm(`Remove ${no} from the order list?\n\nUse this for test or refunded orders. The payment record stays in Stripe.`)) return;
+    h.disabled = true;
+    try { await api("/api/admin/orders", { method: "POST", body: JSON.stringify({ action: "hide", id: h.dataset.hide }) }); h.closest(".oc").remove(); toast(`${no} removed`); }
+    catch (err) { h.disabled = false; toast(err.message || "Couldn't remove it."); }
+    return;
+  }
   const a = e.target.closest("[data-a]");
   if (a) { setStatus(a.closest(".oc"), a.dataset.a, !!a.dataset.undo); return; }
 });

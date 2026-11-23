@@ -1,6 +1,9 @@
 /**
  * GET  /api/admin/orders?after=cs_...   (login required)
  *   Lists paid orders from Stripe, newest first, 30 at a time.
+ * POST /api/admin/orders { action: "hide", id: "cs_..." }  removes one order from the admin lists
+ *   (e.g. an owner's test or a refunded order). Stripe keeps the payment record; nothing else changes.
+ *   { action: "unhide", id } brings it back.
  * POST /api/admin/orders { action: "clearTest" }   (test mode only)
  *   Hides every test order placed so far and takes its sales off the stock records.
  *   A piece goes back into stock unless a stock import has reset that item's count since.
@@ -22,11 +25,13 @@ export async function onRequestGet({ request, env }) {
 
   try { await syncSales(env); } catch (e) { console.error("sync", e.message); }
   const hiddenBefore = hasDB(env) ? Number(await getSetting(await db(env), "orders_hidden_before")) || 0 : 0;
+  const hiddenIds = new Set(hasDB(env) ? await hiddenList(env) : []);
   try {
     const list = await stripe(env, "checkout/sessions", { params: p });
     const orders = list.data
       .filter((s) => (s.metadata || {}).order_no) // only House of Qi shop orders
       .filter((s) => s.created > hiddenBefore) // test orders that were cleared
+      .filter((s) => !hiddenIds.has(s.id)) // single orders removed from the list
       .map((s) => toOrder(s, { full: true }));
     const last = list.data[list.data.length - 1];
     return json({ orders, more: list.has_more, next: last ? last.id : null, mode: env.STRIPE_SECRET_KEY.includes("_test_") ? "test" : "live" });
@@ -39,6 +44,15 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
   const b = await request.json().catch(() => ({}));
+  if (b.action === "hide" || b.action === "unhide") {
+    if (!hasDB(env)) return json({ error: "The database isn't connected yet." }, 503);
+    const id = String(b.id || "");
+    if (!/^cs_(test|live)_[A-Za-z0-9]+$/.test(id)) return json({ error: "Unknown order." }, 400);
+    const list = new Set(await hiddenList(env));
+    if (b.action === "hide") list.add(id); else list.delete(id);
+    await setSetting(await db(env), "orders_hidden_ids", JSON.stringify([...list].slice(-500)));
+    return json({ ok: true });
+  }
   if (b.action !== "clearTest") return json({ error: "Unknown action." }, 400);
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_SECRET_KEY.includes("_test_")) return json({ error: "Only test orders can be cleared, and the shop is taking real payments." }, 400);
   if (!hasDB(env)) return json({ error: "The stock database isn't connected yet." }, 503);
@@ -57,4 +71,8 @@ export async function onRequestPost({ request, env }) {
   await D.prepare("DELETE FROM aff_sales WHERE ref LIKE 'cs_test_%'").run();
   await setSetting(D, "orders_hidden_before", Math.floor(now / 1000));
   return json({ ok: true, cleared: results.length, restocked, kept });
+}
+
+async function hiddenList(env) {
+  try { const v = JSON.parse((await getSetting(await db(env), "orders_hidden_ids")) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
 }
