@@ -52,6 +52,7 @@ export async function onRequestPost({ request, env }) {
 
   // Coupon code (checked again here, so the price can't be changed in the browser)
   let promo = null;
+  if (body?.coupon && order.preorder) return json({ error: "Discount codes can't be used on pre-orders.", coupon: false }, 400);
   if (body?.coupon) {
     promo = await checkCoupon(env, body.coupon, order);
     if (promo.error) return json({ error: promo.error, coupon: false }, 400);
@@ -83,7 +84,7 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "We couldn't open the payment page. Please try again in a moment." }, 502);
   }
   // hold the pieces for this customer while they pay (released on payment, cancel, or after HOLD_MIN minutes)
-  if (hasDB(env)) {
+  if (hasDB(env) && !order.preorder) {
     try {
       const D = await db(env), exp = Date.now() + HOLD_MIN * 60 * 1000, per = {};
       for (const l of order.lines) per[l.product.id] = (per[l.product.id] || 0) + l.qty;
@@ -124,7 +125,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
     p.append(`${k}[quantity]`, String(l.qty));
     p.append(`${k}[price_data][currency]`, cur);
     p.append(`${k}[price_data][unit_amount]`, String(Math.round(l.unit * 100)));
-    p.append(`${k}[price_data][product_data][name]`, l.product.name);
+    p.append(`${k}[price_data][product_data][name]`, order.preorder ? `${l.product.name} · Pre-order 50% deposit` : l.product.name);
     if (desc) p.append(`${k}[price_data][product_data][description]`, desc.slice(0, 500));
     // Stripe can show real photos (JPG/PNG/WebP) on its payment page
     if (l.product.image && !/\.svg$/i.test(l.product.image)) {
@@ -136,7 +137,7 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   // Delivery: the customer already picked it on our site, so we pass exactly one option
   const s = order.ship, r = "shipping_options[0][shipping_rate_data]";
   p.append(`${r}[type]`, "fixed_amount");
-  p.append(`${r}[display_name]`, [s.label, order.weightNote, order.count > 1 ? `${order.count} pieces` : ""].filter(Boolean).join(" · ").slice(0, 100));
+  p.append(`${r}[display_name]`, (order.preorder ? `${s.label} · delivery fee is paid with the balance` : [s.label, order.weightNote, order.count > 1 ? `${order.count} pieces` : ""].filter(Boolean).join(" · ")).slice(0, 100));
   p.append(`${r}[fixed_amount][amount]`, String(Math.round(order.fee * 100)));
   p.append(`${r}[fixed_amount][currency]`, cur);
   if (s.days) {
@@ -153,20 +154,21 @@ function buildSessionParams(catalog, order, origin, orderNo) {
   if (order.promo && !order.promo.aff) { meta.coupon = order.promo.code; meta.coupon_off = order.promo.freeShip ? "free delivery" : String(order.promo.discount); }
   if (order.promo?.aff && order.promo.discount) meta.coupon_off = String(order.promo.discount);
   if (order.aff) { meta.aff = String(order.aff.id); meta.aff_code = order.aff.code; }
+  if (order.preorder) { meta.preorder = "1"; meta.balance = String(order.balance); meta.balance_ship = String(order.balanceFee); meta.full_total = String(order.fullSubtotal); meta.balance_status = "due"; }
   // what each piece actually sold for after sale + code (for profit figures on the Stock page)
   const factor = order.promo?.discount ? 1 - order.promo.discount / order.subtotal : 1;
   // Each item's options, so the order page shows bead size, wrist size, add-ons
   order.lines.forEach((l, i) => {
     const desc = [`${l.qty}× ${l.product.name}`, l.product.details || "", ...l.chosen, l.product.sale ? `Sale ${l.product.sale.percent}% off (was RM${l.product.was})` : "", l.note ? `Note: ${l.note}` : ""].filter(Boolean).join(" · ");
     meta[`i${i + 1}`] = desc.slice(0, 500);
-    meta[`s${i + 1}`] = `${l.product.id}:${l.qty}:${Math.round(l.product.price * factor * 100) / 100}`; // used to deduct stock once paid
+    if (!order.preorder) meta[`s${i + 1}`] = `${l.product.id}:${l.qty}:${Math.round(l.product.price * factor * 100) / 100}`; // used to deduct stock once paid (not for pre-orders)
   });
   for (const [key, val] of Object.entries(meta)) {
     p.append(`metadata[${key}]`, val);
     p.append(`payment_intent_data[metadata][${key}]`, val);
   }
   if (order.promo?.stripeCoupon) p.append("discounts[0][coupon]", order.promo.stripeCoupon);
-  p.append("payment_intent_data[description]", `House of Qi order ${orderNo}`);
+  p.append("payment_intent_data[description]", order.preorder ? `House of Qi pre-order ${orderNo} (50% deposit)` : `House of Qi order ${orderNo}`);
   p.append("client_reference_id", orderNo);
 
   p.append("mode", "payment");

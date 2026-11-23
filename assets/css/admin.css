@@ -308,3 +308,13 @@ textarea:focus{outline:none;border-color:var(--gold)}
 @media (max-width:640px){.inv-row{grid-template-columns:1fr auto}.inv-a{grid-column:1/-1;display:flex;gap:10px;align-items:baseline}}
 .h-k.gift{background:#F3E1EA;color:#8A3D63}
 .s-flags em.gf{background:#F3E1EA;color:#8A3D63}
+
+/* pre-orders */
+.pill.po{background:#f3e3c7;color:#7a5520;margin-left:6px}
+.po-box{background:#fbf1e2;border:1px solid #ecd6b2;border-radius:12px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5}
+.po-box.paid{background:#eef5ea;border-color:#cfe2c5}
+.po-box .po-st{display:block;color:#7a6658;font-size:13px}
+.po-box .po-act{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+.po-box small{display:block;color:#7a6658;font-size:12px}
+.po-wait{color:#8a2c1f}
+.toggles input[type=checkbox]{flex:none}

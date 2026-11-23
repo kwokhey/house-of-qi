@@ -72,6 +72,14 @@ export function priceOrder(catalog, items, shipKey) {
   const subtotal = round2(lines.reduce((t, l) => t + l.unit * l.qty, 0));
   const count = lines.reduce((t, l) => t + l.qty, 0);
   const fee = shipFee(ship, count);
+  // pre-orders are checked out on their own: 50% deposit now, the other 50% + delivery when the piece is ready
+  const pre = lines.filter((l) => l.product.preorder).length;
+  if (pre && pre < lines.length) return { error: "Pre-order pieces are checked out on their own. Please pay for the other pieces first, or remove them from your bag." };
+  if (pre) {
+    for (const l of lines) { l.full = l.unit; l.unit = round2(l.unit / 2); }
+    const deposit = round2(lines.reduce((t, l) => t + l.unit * l.qty, 0));
+    return { lines, ship, shipKey, subtotal: deposit, fullSubtotal: subtotal, fee: 0, balanceFee: fee, preorder: true, balance: round2(subtotal - deposit + fee), count, weightNote: weightNote(ship, count), total: deposit };
+  }
   return { lines, ship, shipKey, subtotal, fee, count, weightNote: weightNote(ship, count), total: round2(subtotal + fee) };
 }
 

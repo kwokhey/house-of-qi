@@ -8,7 +8,7 @@
 import { stripe, json } from "../_lib/stripe.js";
 import { db, hasDB } from "../_lib/db.js";
 import { recordSession } from "../_lib/inventory.js";
-import { notifyOrder } from "../_lib/notify.js";
+import { notifyOrder, balancePaidAlert } from "../_lib/notify.js";
 
 const TYPES = ["checkout.session.completed", "checkout.session.async_payment_succeeded"];
 
@@ -29,7 +29,17 @@ export async function onRequestPost({ request, env }) {
   p.append("expand[]", "line_items");
   p.append("expand[]", "payment_intent");
   const s = await stripe(env, `checkout/sessions/${sid}`, { params: p });
-  if (s.payment_status !== "paid" || !hasDB(env)) return json({ ok: true, paid: s.payment_status === "paid" });
+  if (s.payment_status !== "paid") return json({ ok: true, paid: false });
+  // a pre-order balance was paid: mark the original order, tell the team
+  if ((s.metadata || {}).hq_balance) {
+    const m = s.metadata, u = new URLSearchParams();
+    u.append("metadata[balance_status]", "paid");
+    u.append("metadata[balance_paid_at]", String(s.created || Math.floor(Date.now() / 1000)));
+    try { if (/^pi_/.test(m.parent_pi || "")) await stripe(env, `payment_intents/${m.parent_pi}`, { method: "POST", params: u }); } catch (e) { console.error("balance paid", e.message); }
+    try { if (hasDB(env)) await balancePaidAlert(env, await db(env), s); } catch (e) { console.error("balance alert", e.message); }
+    return json({ ok: true, balance: true });
+  }
+  if (!hasDB(env)) return json({ ok: true, paid: true });
   const D = await db(env);
   try { await recordSession(D, s); } catch (e) { console.error("stock", e.message); }
   let sent = false;

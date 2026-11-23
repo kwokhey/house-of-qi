@@ -51,7 +51,7 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
   const sums = [
     sumRow("Subtotal", rm(o.subtotal)),
     o.discount ? sumRow(`Discount${o.coupon ? ` · ${o.coupon}` : ""}`, "−" + rm(o.discount)) : "",
-    sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.shipping ? rm(o.shipping) : "Free"),
+    o.preorder ? sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.balanceShip ? "paid with the balance" : "Free") : sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.shipping ? rm(o.shipping) : "Free"),
   ].join("");
 
   const label = (t) => `<div style="font-family:${SANS};font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.gold};margin:0 0 8px">${t}</div>`;
@@ -78,7 +78,8 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
     </td></tr>
     <tr><td class="wrap" style="background:${C.card};border-radius:22px;padding:34px 34px 30px;border:1px solid ${C.line}">
       <div style="height:2px;width:56px;background:${C.gold};background-image:linear-gradient(115deg,#8F6834,#C79E5F 28%,#F1DCAA 46%,#C49A5B 62%,#94703A);margin:0 0 18px"></div>
-      ${label("New order")}
+      ${label(o.preorder ? "New pre-order · 50% deposit paid" : "New order")}
+      ${o.preorder ? `<div style="font-family:${SANS};font-size:14px;line-height:1.5;color:#8a2c1f;background:#fbe9e4;border-radius:12px;padding:10px 14px;margin:0 0 14px">Pre-order: only the deposit is paid. When the piece is ready, open the order in Admin → Orders and press <b>Request balance</b> (${rm(o.balance)}). Don't ship until the balance is paid.</div>` : ""}
       <div class="h1" style="font-family:${SERIF};font-size:36px;line-height:1.05;color:${C.ink};font-weight:500">Order ${esc(o.orderNo)}</div>
       <div style="font-family:${SANS};font-size:14px;color:${C.ink2};margin-top:8px">Paid ${esc(when)}</div>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:16px"><tr>
@@ -90,7 +91,8 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;border-top:1px solid ${C.line}">${itemRows}</table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">${sums}
         <tr><td colspan="2" style="padding:8px 0 0"><div style="height:1px;background:${C.line}"></div></td></tr>
-        ${sumRow("Total paid", rm(o.total), true)}
+        ${sumRow(o.preorder ? "Deposit paid today (50%)" : "Total paid", rm(o.total), true)}
+        ${o.preorder ? sumRow("Balance when ready", rm(o.balance)) : ""}
       </table>
 
       ${o.notes ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px"><tr><td style="background:${C.soft};border-left:3px solid ${C.gold};border-radius:4px 14px 14px 4px;padding:14px 16px">
@@ -115,10 +117,10 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
 </body></html>`;
   const text = [`House of Qi · New order ${o.orderNo} · ${rm(o.total)}`, `Paid ${when} · ${how}`, "",
     ...items.map((it) => `${it.qty} × ${it.name}${it.opt ? ` (${it.opt})` : ""}  ${rm(it.amount)}`), "",
-    `Subtotal ${rm(o.subtotal)}`, ...(o.discount ? [`Discount${o.coupon ? ` (${o.coupon})` : ""} -${rm(o.discount)}`] : []), `${o.pickup ? "Self pick-up" : `Delivery (${o.delivery})`} ${rm(o.shipping)}`, `Total paid ${rm(o.total)}`, "",
+    `Subtotal ${rm(o.subtotal)}`, ...(o.discount ? [`Discount${o.coupon ? ` (${o.coupon})` : ""} -${rm(o.discount)}`] : []), `${o.pickup ? "Self pick-up" : `Delivery (${o.delivery})`} ${rm(o.shipping)}`, `${o.preorder ? "Deposit paid (50%)" : "Total paid"} ${rm(o.total)}`, ...(o.preorder ? [`Balance when ready ${rm(o.balance)}`] : []), "",
     ...(o.notes ? [`Additional request: ${o.notes}`, ""] : []),
     `Customer: ${o.name} · ${o.phone} · ${o.email}`, o.pickup ? "Self pick-up" : `Deliver to: ${o.address.join(", ")}`, "", `Orders: ${site}/admin`].join("\n");
-  return { subject: `New order ${o.orderNo} · ${rm(o.total)} · ${items.map((i) => i.name).join(", ")}`.slice(0, 180), html, text, replyTo: o.email || undefined, paid: o.paid };
+  return { subject: `${o.preorder ? "New PRE-ORDER" : "New order"} ${o.orderNo} · ${rm(o.total)}${o.preorder ? " deposit" : ""} · ${items.map((i) => i.name).join(", ")}`.slice(0, 180), html, text, replyTo: o.email || undefined, paid: o.paid };
 }
 
 const REPLY_TO = "naomi@soleiltrinity.com";
@@ -134,7 +136,9 @@ export function customerEmail(s, { images = [], site = SITE } = {}) {
     return { name: it.name, qty: it.qty, amount: it.amount, opt, img: images[i] || `${site}/assets/img/logo-mark.png` };
   });
   const how = o.pickup ? "Self pick-up" : `Delivery · ${o.delivery || "Malaysia"}`;
-  const next = o.pickup
+  const next = o.preorder
+    ? `This is a pre-order. You've paid the 50% deposit today. When your piece is ready to pack, we'll send you a payment link by email and WhatsApp for the balance of ${rm(o.balance)}${o.balanceShip ? ` (includes the ${rm(o.balanceShip)} delivery fee)` : ""}. We ship as soon as the balance is paid.`
+    : o.pickup
     ? "We'll WhatsApp you to arrange a time to collect your piece."
     : "We'll pack your piece with care and send it out. We'll WhatsApp you the tracking number once it's on its way.";
   const itemRows = items.map((it) => `
@@ -153,7 +157,7 @@ export function customerEmail(s, { images = [], site = SITE } = {}) {
   const sums = [
     sumRow("Subtotal", rm(o.subtotal)),
     o.discount ? sumRow(`Discount${o.coupon ? ` · ${o.coupon}` : ""}`, "−" + rm(o.discount)) : "",
-    sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.shipping ? rm(o.shipping) : "Free"),
+    o.preorder ? sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.balanceShip ? "paid with the balance" : "Free") : sumRow(o.pickup ? "Self pick-up" : `Delivery · ${o.delivery}`, o.shipping ? rm(o.shipping) : "Free"),
   ].join("");
   const label = (t) => `<div style="font-family:${SANS};font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.gold};margin:0 0 8px">${t}</div>`;
   const address = o.pickup ? "Self pick-up<br>We'll WhatsApp you to arrange a time" : [o.name, ...o.address.map((x) => (x === "MY" ? "Malaysia" : x === "SG" ? "Singapore" : x))].filter(Boolean).map(esc).join("<br>");
@@ -176,7 +180,7 @@ export function customerEmail(s, { images = [], site = SITE } = {}) {
     </td></tr>
     <tr><td class="wrap" style="background:${C.card};border-radius:22px;padding:36px 34px 32px;border:1px solid ${C.line}">
       <div style="height:2px;width:56px;background:${C.gold};background-image:linear-gradient(115deg,#8F6834,#C79E5F 28%,#F1DCAA 46%,#C49A5B 62%,#94703A);margin:0 0 18px"></div>
-      ${label("Order confirmed")}
+      ${label(o.preorder ? "Pre-order confirmed" : "Order confirmed")}
       <div class="h1" style="font-family:${SERIF};font-size:38px;line-height:1.05;color:${C.ink};font-weight:500">Thank you, <i>${esc(first)}</i></div>
       <div style="font-family:${SANS};font-size:15px;line-height:1.7;color:${C.ink};margin-top:14px">
         Your crystals have found their way to you. Every House of Qi piece is chosen with care, and the one you picked is now set aside just for you.
@@ -185,13 +189,14 @@ export function customerEmail(s, { images = [], site = SITE } = {}) {
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px"><tr>
         <td style="background:${C.soft};border-radius:99px;padding:7px 14px;font-family:${SANS};font-size:13px;color:${C.ink}">Order ${esc(o.orderNo)}</td>
         <td width="8"></td>
-        <td style="background:${C.ink};border-radius:99px;padding:7px 14px;font-family:${SANS};font-size:13px;color:#fff">${rm(o.total)} paid · ${esc(when)}</td>
+        <td style="background:${C.ink};border-radius:99px;padding:7px 14px;font-family:${SANS};font-size:13px;color:#fff">${rm(o.total)} ${o.preorder ? "deposit " : ""}paid · ${esc(when)}</td>
       </tr></table>
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;border-top:1px solid ${C.line}">${itemRows}</table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">${sums}
         <tr><td colspan="2" style="padding:8px 0 0"><div style="height:1px;background:${C.line}"></div></td></tr>
-        ${sumRow("Total paid", rm(o.total), true)}
+        ${sumRow(o.preorder ? "Deposit paid today (50%)" : "Total paid", rm(o.total), true)}
+        ${o.preorder ? sumRow("Balance when ready", rm(o.balance)) : ""}
       </table>
 
       ${o.notes ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px"><tr><td style="background:${C.soft};border-left:3px solid ${C.gold};border-radius:4px 14px 14px 4px;padding:14px 16px">
@@ -227,10 +232,10 @@ export function customerEmail(s, { images = [], site = SITE } = {}) {
 </body></html>`;
   const text = [`Thank you, ${first}!`, `Your House of Qi order ${o.orderNo} is confirmed (${rm(o.total)} paid, ${when}).`, "",
     ...items.map((it) => `${it.qty} × ${it.name}${it.opt ? ` (${it.opt})` : ""}  ${rm(it.amount)}`), "",
-    `Subtotal ${rm(o.subtotal)}`, ...(o.discount ? [`Discount${o.coupon ? ` (${o.coupon})` : ""} -${rm(o.discount)}`] : []), `${o.pickup ? "Self pick-up" : `Delivery (${o.delivery})`} ${o.shipping ? rm(o.shipping) : "Free"}`, `Total paid ${rm(o.total)}`, "",
+    `Subtotal ${rm(o.subtotal)}`, ...(o.discount ? [`Discount${o.coupon ? ` (${o.coupon})` : ""} -${rm(o.discount)}`] : []), `${o.pickup ? "Self pick-up" : `Delivery (${o.delivery})`} ${o.preorder && o.balanceShip ? "paid with the balance" : o.shipping ? rm(o.shipping) : "Free"}`, `${o.preorder ? "Deposit paid (50%)" : "Total paid"} ${rm(o.total)}`, ...(o.preorder ? [`Balance when ready ${rm(o.balance)}`] : []), "",
     o.pickup ? "Self pick-up: we'll WhatsApp you to arrange a time." : `Delivering to: ${[o.name, ...o.address].filter(Boolean).join(", ")}`, "", next, "",
     `WhatsApp us: https://wa.me/${WA}`, "With love, the House of Qi family", site].join("\n");
-  return { subject: `Thank you for your order ${o.orderNo} · House of Qi`, html, text, to: o.email };
+  return { subject: `Thank you for your ${o.preorder ? "pre-order" : "order"} ${o.orderNo} · House of Qi`, html, text, to: o.email };
 }
 
 /** Send the customer's thank-you email once per order */
@@ -325,4 +330,50 @@ export function sampleEmail(images = []) {
   const m = orderEmail(s, { images });
   const note = `<div style="background:#3B2C23;color:#F8EEE7;text-align:center;padding:10px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase">Test email · sample only · no order was placed</div>`;
   return { subject: "[TEST] " + m.subject, html: m.html.replace(/<body([^>]*)>/, (x) => x + note), text: "TEST EMAIL · sample only, no order was placed.\n\n" + m.text };
+}
+
+/** Email to the customer with the link to pay the pre-order balance */
+export function balanceEmail({ name = "", orderNo = "", balance = 0, ship = 0, url = "", site = SITE }) {
+  const first = String(name).trim().split(/\s+/)[0] || "there";
+  const label = (t) => `<div style="font-family:${SANS};font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.gold};margin:0 0 8px">${t}</div>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
+<title>Your pre-order ${esc(orderNo)} is ready</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:${C.paper}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.paper}"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+<tr><td align="center" style="padding:6px 0 20px"><a href="${site}"><img src="${site}/assets/img/logo-full.png" width="104" alt="House of Qi" style="display:block;width:104px;height:auto;border:0"></a></td></tr>
+<tr><td style="background:${C.card};border-radius:22px;padding:36px 34px 32px;border:1px solid ${C.line}">
+  <div style="height:2px;width:56px;background:${C.gold};margin:0 0 18px"></div>
+  ${label("Your pre-order is ready")}
+  <div style="font-family:${SERIF};font-size:36px;line-height:1.05;color:${C.ink}">Good news, <i>${esc(first)}</i></div>
+  <div style="font-family:${SANS};font-size:15px;line-height:1.7;color:${C.ink};margin-top:14px">Your pre-order <b>${esc(orderNo)}</b> is ready to be packed. Please pay the remaining balance below and we'll send your piece out right away.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px">
+    <tr><td style="padding:4px 0;font-family:${SANS};font-size:14px;color:${C.ink2}">Remaining 50%</td><td align="right" style="font-family:${SANS};font-size:14px;color:${C.ink}">${rm(balance - ship)}</td></tr>
+    ${ship ? `<tr><td style="padding:4px 0;font-family:${SANS};font-size:14px;color:${C.ink2}">Delivery fee</td><td align="right" style="font-family:${SANS};font-size:14px;color:${C.ink}">${rm(ship)}</td></tr>` : ""}
+    <tr><td colspan="2"><div style="height:1px;background:${C.line};margin:6px 0"></div></td></tr>
+    <tr><td style="padding:4px 0;font-family:${SANS};font-size:16px;font-weight:600;color:${C.ink}">Balance to pay</td><td align="right" style="font-family:${SANS};font-size:16px;font-weight:600;color:${C.ink}">${rm(balance)}</td></tr>
+  </table>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:22px"><tr><td style="background:${C.ink};border-radius:99px"><a href="${esc(url)}" style="display:inline-block;padding:14px 26px;font-family:${SANS};font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#fff;text-decoration:none">Pay ${rm(balance)}</a></td></tr></table>
+  <div style="font-family:${SANS};font-size:12.5px;line-height:1.5;color:${C.ink2};margin-top:12px">This link works for 24 hours. If it has expired, just reply to this email or WhatsApp us and we'll send a new one.</div>
+  <div style="font-family:${SANS};font-size:13.5px;line-height:1.6;color:${C.ink2};margin-top:22px">With love and gratitude,<br><span style="font-family:${SERIF};font-size:20px;color:${C.ink}">The House of Qi family</span></div>
+</td></tr>
+<tr><td align="center" style="padding:20px 10px 4px;font-family:${SANS};font-size:12px;line-height:1.6;color:${C.ink2}"><span style="font-family:${SERIF};font-size:15px;letter-spacing:.2em;color:${C.ink}">HOUSE OF QI</span><br><a href="${site}" style="color:${C.ink2}">houseofqi.shop</a> · WhatsApp +60 12-908 9914<br><span style="font-size:11px">Soleil Trinity Infinite Resources Sdn. Bhd.</span></td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [`Good news, ${first}!`, `Your House of Qi pre-order ${orderNo} is ready to be packed.`, "", `Remaining 50%: ${rm(balance - ship)}`, ...(ship ? [`Delivery fee: ${rm(ship)}`] : []), `Balance to pay: ${rm(balance)}`, "", `Pay here (link works for 24 hours): ${url}`, "", "With love, the House of Qi family", site].join("\n");
+  return { subject: `Your pre-order ${orderNo} is ready · pay the balance · House of Qi`, html, text };
+}
+
+/** Tell the team a pre-order balance was paid (once per payment) */
+export async function balancePaidAlert(env, D, s) {
+  if (!env.RESEND_API_KEY || !D) return false;
+  if (!String(s.id).startsWith("cs_live_") && !env.NOTIFY_TEST) return false;
+  const claim = await D.prepare("INSERT OR IGNORE INTO notified (sid, at) VALUES (?, ?)").bind(s.id, Date.now()).run();
+  if (!claim.meta || !claim.meta.changes) return false;
+  const no = (s.metadata || {}).hq_balance || "", c = s.customer_details || {}, amt = (s.amount_total || 0) / 100;
+  const body = `Balance paid for pre-order ${no}: ${rm(amt)}${c.name ? ` by ${c.name}` : ""}. The order is fully paid. You can pack and ship it now.`;
+  const html = `<div style="font-family:${SANS};background:${C.paper};padding:24px"><div style="max-width:520px;margin:auto;background:${C.card};border-radius:18px;padding:26px;border:1px solid ${C.line}"><div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.gold}">Pre-order balance paid</div><div style="font-family:${SERIF};font-size:30px;color:${C.ink};margin:8px 0">${esc(no)} · ${rm(amt)}</div><div style="font-size:15px;line-height:1.6;color:${C.ink}">${esc(body)}</div><div style="margin-top:16px"><a href="${SITE}/admin" style="color:${C.ink}">Open Admin → Orders</a></div></div></div>`;
+  const r = await sendTeam(env, D, { subject: `Balance paid · pre-order ${no} · ${rm(amt)} · ready to ship`, html, text: body, replyTo: c.email || undefined });
+  if (!r.ok) await D.prepare("DELETE FROM notified WHERE sid = ?").bind(s.id).run();
+  return r.ok;
 }

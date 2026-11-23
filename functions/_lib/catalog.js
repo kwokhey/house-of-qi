@@ -44,9 +44,12 @@ export function rowToProduct(r, settings) {
     details,
     collection: r.collection || (earring ? "earrings" : ring ? "rings" : pendant ? "pendants" : "bracelets"),
     price: r.price,
-    stock: r.stock,
+    // pre-order: always orderable (no stock limit), customer pays a 50% deposit now and the rest when it is ready
+    preorder: !!r.preorder,
+    preorderNote: r.preorder ? (r.preorder_note || "") : "",
+    stock: r.preorder ? 99 : r.stock,
     grams: gramsOf(r),
-    soldOut: r.stock <= 0,
+    soldOut: r.preorder ? false : r.stock <= 0,
     // a real photo from the Stock tab wins; otherwise a showcase sample (data/catalog.json → samplePhotos), else drawn art
     image: r.image_v ? `img/${encodeURIComponent(r.id)}.jpg?v=${r.image_v}` : (settings.samplePhotos && settings.samplePhotos[r.id]) || "",
     // extra angles, shown after the main photo in the product view
@@ -99,7 +102,7 @@ export async function buildCatalog(env, origin, { includeHidden = false } = {}) 
       const { results: H } = await D.prepare("SELECT item_id, SUM(qty) AS q FROM holds WHERE expires > ? GROUP BY item_id").bind(Date.now()).all();
       const held = Object.fromEntries(H.map((h) => [h.item_id, h.q]));
       for (const p of products) {
-        const q = held[p.id]; if (!q || p.soldOut) continue;
+        const q = held[p.id]; if (!q || p.soldOut || p.preorder) continue;
         const left = (p.stock || 0) - q;
         if (left <= 0) { p.reserved = true; p.soldOut = true; p.stock = 0; } else p.stock = left;
       }

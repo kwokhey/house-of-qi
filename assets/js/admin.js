@@ -70,11 +70,23 @@ function card(o) {
   } else {
     act = `<p class="sent">${o.status === "ready" ? "Ready for pick-up" : `Sent${o.courier ? ` with <b>${esc(o.courier)}</b>` : ""}${o.tracking ? ` · Tracking <b>${esc(o.tracking)}</b>` : ""}`} · ${when(o.times.shipped)}</p>`;
   }
+  const due = o.preorder && o.balanceStatus !== "paid";
+  if (due && (o.status === "packed" || o.status === "confirmed")) {
+    if (o.status === "packed") act = `<p class="sent po-wait">Waiting for the balance. Ship once it's paid.</p>`;
+  }
+  const po = o.preorder ? `<div class="po-box${due ? "" : " paid"}">
+      <b>Pre-order</b> · deposit ${RM(o.total)} paid · balance ${RM(o.balance)}${o.balanceShip ? ` (incl. delivery ${RM(o.balanceShip)})` : ""}
+      <span class="po-st">${o.balanceStatus === "paid" ? `Balance paid${o.balancePaidAt ? ` · ${when(o.balancePaidAt)}` : ""}` : o.balanceStatus === "requested" ? `Link sent${o.balanceAt ? ` · ${when(o.balanceAt)}` : ""} · waiting for payment` : "Balance not requested yet"}</span>
+      ${due ? `<div class="po-act"><button class="btn gold sm" data-bal="1">${o.balanceStatus === "requested" ? "Send a new balance link" : "Request balance"}</button>
+        ${o.balanceUrl ? `<button class="link" data-copy="${esc(o.balanceUrl)}">Copy payment link</button>` : ""}</div>
+        <small>Press when the piece is ready. The customer gets an email with a payment link (valid 24 hours), and you can WhatsApp it too.</small>` : ""}
+    </div>` : "";
   const back = { packed: "confirmed", shipped: "packed", ready: "packed" }[o.status];
   return `<article class="oc" data-s="${o.status}" data-pi="${esc(o.paymentIntent)}">
-    <div class="oc-h"><span class="oc-no">${esc(o.orderNo)}</span><span class="pill">${LABEL[o.status]}</span><time>${when(o.created)}</time></div>
+    <div class="oc-h"><span class="oc-no">${esc(o.orderNo)}</span><span class="pill">${LABEL[o.status]}</span>${o.preorder ? `<span class="pill po">Pre-order</span>` : ""}<time>${when(o.created)}</time></div>
     <div class="oc-c"><b>${esc(o.name)}</b>${o.phone ? `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : ""}${o.email ? `<span>${esc(o.email)}</span>` : ""}</div>
     <ul>${items}</ul>
+    ${po}
     ${o.notes ? `<div class="note">Additional request: ${esc(o.notes)}</div>` : ""}
     ${o.coupon ? `<div class="note promo">Code <b>${esc(o.coupon)}</b>${o.discount ? ` · −${RM(o.discount)}` : " · free delivery"}</div>` : ""}
     ${regionWarn(o)}<div class="deliv"><span><b>${esc(o.delivery || (o.pickup ? "Self pick-up" : "Delivery"))}</b></span><span class="tot">${RM(o.total)}</span>
@@ -130,6 +142,20 @@ async function setStatus(art, status, undo) {
   } catch (e) { toast(e.message); art.querySelectorAll("button").forEach((b) => (b.disabled = false)); }
 }
 
+async function requestBalance(art, btn) {
+  const o = ORDERS.find((x) => x.paymentIntent === art.dataset.pi);
+  if (!o) return;
+  if (!confirm(`Send ${o.name || "the customer"} a link to pay the balance of ${RM(o.balance)} for ${o.orderNo}?`)) return;
+  btn.disabled = true;
+  try {
+    const d = await api("/api/admin/balance", { method: "POST", body: JSON.stringify({ sessionId: o.sessionId }) });
+    o.balanceStatus = "requested"; o.balanceUrl = d.url; o.balanceAt = Date.now();
+    render();
+    toast(d.emailed ? `Payment link emailed to ${d.email}` : "Payment link made (email not sent). Copy it or WhatsApp it.");
+    if (d.whatsapp) window.open(d.whatsapp, "_blank", "noopener");
+  } catch (e) { toast(e.message); btn.disabled = false; }
+}
+
 document.addEventListener("click", async (e) => {
   const tb = e.target.closest("#tabs button");
   if (tb) { openTab(tb.dataset.tab); return; }
@@ -137,6 +163,8 @@ document.addEventListener("click", async (e) => {
   if (f) { FILTER = f.dataset.f; render(); return; }
   const c = e.target.closest("[data-copy]");
   if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied"); } catch { toast("Couldn't copy. Select the text instead."); } return; }
+  const bal = e.target.closest("[data-bal]");
+  if (bal) { requestBalance(bal.closest(".oc"), bal); return; }
   const a = e.target.closest("[data-a]");
   if (a) { setStatus(a.closest(".oc"), a.dataset.a, !!a.dataset.undo); return; }
 });
