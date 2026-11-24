@@ -7,7 +7,7 @@
  */
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB } from "../../_lib/db.js";
-import { stripe, json } from "../../_lib/stripe.js";
+import { stripe, stripeKeys, json } from "../../_lib/stripe.js";
 
 export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
@@ -30,8 +30,10 @@ export async function onRequestPost({ request, env }) {
     try {
       const q = new URLSearchParams({ query: `metadata['parent_pi']:'${pi.id}' AND status:'succeeded'` });
       q.append("expand[]", "data.latest_charge");
-      const r = await stripe(env, "payment_intents/search", { params: q });
-      pis.push(...(r.data || []));
+      for (const key of stripeKeys(env)) { // the balance may have been paid into either account
+        const r = await stripe(env, "payment_intents/search", { params: q, key });
+        pis.push(...(r.data || []));
+      }
     } catch (e) { console.error("balance search", e.message); }
   }
 

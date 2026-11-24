@@ -7,10 +7,31 @@
 const API = "https://api.stripe.com/v1/";
 const VERSION = "2024-06-20";
 
-export async function stripe(env, path, { method = "GET", params } = {}) {
+/**
+ * Two Stripe accounts (since 25 Nov 2026): STRIPE_SECRET_KEY is House of Qi's own account (new orders);
+ * STRIPE_OLD_SECRET_KEY is the earlier shared Soleil Trinity account, kept so older orders still load,
+ * refund and collect balances. A request for one object that the new account doesn't have
+ * ("No such …") is tried again on the old account.
+ */
+export function stripeKeys(env) {
+  return [...new Set([env.STRIPE_SECRET_KEY, env.STRIPE_OLD_SECRET_KEY].filter(Boolean))];
+}
+
+export async function stripe(env, path, { method = "GET", params, key } = {}) {
+  try {
+    return await stripeOnce(key || env.STRIPE_SECRET_KEY, path, { method, params });
+  } catch (e) {
+    if (!key && env.STRIPE_OLD_SECRET_KEY && env.STRIPE_OLD_SECRET_KEY !== env.STRIPE_SECRET_KEY && e.code === "resource_missing") {
+      return stripeOnce(env.STRIPE_OLD_SECRET_KEY, path, { method, params });
+    }
+    throw e;
+  }
+}
+
+async function stripeOnce(secret, path, { method = "GET", params } = {}) {
   const init = {
     method,
-    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "Stripe-Version": VERSION },
+    headers: { Authorization: `Bearer ${secret}`, "Stripe-Version": VERSION },
   };
   let url = API + path;
   if (params && method === "GET") url += (url.includes("?") ? "&" : "?") + params.toString();
@@ -23,6 +44,7 @@ export async function stripe(env, path, { method = "GET", params } = {}) {
   if (!res.ok) {
     const err = new Error(data?.error?.message || "Stripe request failed");
     err.status = res.status;
+    err.code = data?.error?.code || "";
     throw err;
   }
   return data;

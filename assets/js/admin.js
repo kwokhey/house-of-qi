@@ -115,6 +115,7 @@ async function load(more = false) {
   try {
     const d = await api("/api/admin/orders" + (more && NEXT ? `?after=${encodeURIComponent(NEXT)}` : ""));
     ORDERS = more ? ORDERS.concat(d.orders) : d.orders;
+    ORDERS.sort((a, b) => b.created - a.created); // two Stripe accounts: keep newest first
     NEXT = d.more ? d.next : null;
     $("#mode").hidden = d.mode !== "test";
     $("#clearTest").hidden = d.mode !== "test";

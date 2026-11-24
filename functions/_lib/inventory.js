@@ -5,7 +5,7 @@
  * It runs automatically when the shop, the thank-you screen or the order page loads.
  */
 import { db, hasDB, getSetting, setSetting } from "./db.js";
-import { stripe } from "./stripe.js";
+import { stripe, stripeKeys } from "./stripe.js";
 import { creditSale } from "./affiliates.js";
 
 /** Item ids and quantities stored on the session, e.g. metadata s1 = "LRM-1001:1" */
@@ -71,19 +71,22 @@ export async function syncSales(env, { force = false } = {}) {
   const since = Math.max(Number(await getSetting(D, "sync_since")) || 0, Math.floor(now / 1000) - 2 * 86400);
   // orders before a cleared test-order list, or before "Start over" in Stock, don't count towards stock again
   const hiddenBefore = Math.max(Number(await getSetting(D, "orders_hidden_before")) || 0, Number(await getSetting(D, "stock_reset_at")) || 0);
-  let after = null, newest = since, recorded = 0;
-  for (let page = 0; page < 2; page++) {
-    const p = new URLSearchParams({ limit: "50", status: "complete" });
-    p.set("created[gte]", String(since - 3600));
-    if (after) p.set("starting_after", after);
-    const list = await stripe(env, "checkout/sessions", { params: p });
-    for (const s of list.data) {
-      if (s.created > newest) newest = s.created; // move forward past every checkout seen, ours or not
-      if (!s.metadata?.order_no || s.created <= hiddenBefore) continue;
-      recorded += await recordSession(D, s);
+  let newest = since, recorded = 0;
+  for (const key of stripeKeys(env)) { // House of Qi's own account, and the earlier shared one
+    let after = null;
+    for (let page = 0; page < 2; page++) {
+      const p = new URLSearchParams({ limit: "50", status: "complete" });
+      p.set("created[gte]", String(since - 3600));
+      if (after) p.set("starting_after", after);
+      const list = await stripe(env, "checkout/sessions", { params: p, key });
+      for (const s of list.data) {
+        if (s.created > newest) newest = s.created; // move forward past every checkout seen, ours or not
+        if (!s.metadata?.order_no || s.created <= hiddenBefore) continue;
+        recorded += await recordSession(D, s);
+      }
+      if (!list.has_more) break;
+      after = list.data[list.data.length - 1].id;
     }
-    if (!list.has_more) break;
-    after = list.data[list.data.length - 1].id;
   }
   await setSetting(D, "sync_since", newest);
   return recorded;

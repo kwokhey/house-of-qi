@@ -4,22 +4,25 @@
  *   POST /api/track  { order, email }    (typed in on the Track page)
  * Returns progress and items only, never the address or payment details.
  */
-import { stripe, toOrder, json } from "../_lib/stripe.js";
+import { stripe, stripeKeys, toOrder, json } from "../_lib/stripe.js";
 
 const ORDER_RE = /^HQ-\d{6}-[A-Z0-9]{4}$/;
 
 async function findSession(env, orderNo) {
-  const q = new URLSearchParams({ query: `metadata['order_no']:'${orderNo}'`, limit: "1" });
-  const found = await stripe(env, "payment_intents/search", { params: q });
-  const pi = found.data[0];
-  if (!pi) return null;
-  const p = new URLSearchParams({ payment_intent: pi.id, limit: "1" });
-  p.append("expand[]", "data.line_items");
-  const list = await stripe(env, "checkout/sessions", { params: p });
-  const s = list.data[0];
-  if (!s) return null;
-  s.payment_intent = pi;
-  return s;
+  for (const key of stripeKeys(env)) { // House of Qi's own account, then the earlier shared one
+    const q = new URLSearchParams({ query: `metadata['order_no']:'${orderNo}'`, limit: "1" });
+    const found = await stripe(env, "payment_intents/search", { params: q, key });
+    const pi = found.data[0];
+    if (!pi) continue;
+    const p = new URLSearchParams({ payment_intent: pi.id, limit: "1" });
+    p.append("expand[]", "data.line_items");
+    const list = await stripe(env, "checkout/sessions", { params: p, key });
+    const s = list.data[0];
+    if (!s) continue;
+    s.payment_intent = pi;
+    return s;
+  }
+  return null;
 }
 
 async function lookup(env, orderNo, check) {

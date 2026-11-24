@@ -28,11 +28,27 @@ export async function onRequestGet({ request, env }) {
   const hiddenIds = new Set(hasDB(env) ? await hiddenList(env) : []);
   try {
     const list = await stripe(env, "checkout/sessions", { params: p });
+    const keep = (s) => (s.metadata || {}).order_no && s.created > hiddenBefore && !hiddenIds.has(s.id);
     const orders = list.data
-      .filter((s) => (s.metadata || {}).order_no) // only House of Qi shop orders
-      .filter((s) => s.created > hiddenBefore) // test orders that were cleared
-      .filter((s) => !hiddenIds.has(s.id)) // single orders removed from the list
+      .filter(keep) // only House of Qi shop orders, not cleared tests or removed orders
       .map((s) => toOrder(s, { full: true }));
+    // House of Qi moved to its own Stripe account on 25 Nov 2026. Orders before that stay in the earlier
+    // shared account and no new ones arrive there, so they're all shown on the first page.
+    if (!after && env.STRIPE_OLD_SECRET_KEY && env.STRIPE_OLD_SECRET_KEY !== env.STRIPE_SECRET_KEY) {
+      try {
+        let cur = "";
+        for (let page = 0; page < 5; page++) {
+          const q = new URLSearchParams(p); q.set("limit", "100");
+          if (hiddenBefore) q.set("created[gt]", String(hiddenBefore));
+          if (cur) q.set("starting_after", cur);
+          const old = await stripe(env, "checkout/sessions", { params: q, key: env.STRIPE_OLD_SECRET_KEY });
+          orders.push(...old.data.filter(keep).map((s) => toOrder(s, { full: true })));
+          if (!old.has_more || !old.data.length) break;
+          cur = old.data[old.data.length - 1].id;
+        }
+        orders.sort((a, b) => b.created - a.created);
+      } catch (e) { console.error("orders (earlier account)", e.message); }
+    }
     const last = list.data[list.data.length - 1];
     return json({ orders, more: list.has_more, next: last ? last.id : null, mode: env.STRIPE_SECRET_KEY.includes("_test_") ? "test" : "live" });
   } catch (e) {

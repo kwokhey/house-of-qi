@@ -8,7 +8,7 @@
  */
 import { isAdmin } from "../../_lib/auth.js";
 import { db, hasDB, getSetting, itemName, itemDetails } from "../../_lib/db.js";
-import { stripe, toOrder, json } from "../../_lib/stripe.js";
+import { stripe, stripeKeys, toOrder, json } from "../../_lib/stripe.js";
 
 const KL = 8 * 3600 * 1000;
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -33,6 +33,7 @@ export async function onRequestGet({ request, env }) {
       try { const v = JSON.parse((await getSetting(D, "orders_hidden_ids")) || "[]"); if (Array.isArray(v)) hidden = new Set(v); } catch {}
     }
     try {
+     for (const key of stripeKeys(env)) { // House of Qi's own account and the earlier shared one
       let after = "";
       for (let page = 0; page < 30; page++) {
         const p = new URLSearchParams({ limit: "100", status: "complete" });
@@ -41,7 +42,7 @@ export async function onRequestGet({ request, env }) {
         p.append("expand[]", "data.line_items");
         p.append("expand[]", "data.payment_intent.latest_charge");
         if (after) p.set("starting_after", after);
-        const list = await stripe(env, "checkout/sessions", { params: p });
+        const list = await stripe(env, "checkout/sessions", { params: p, key });
         for (const s of list.data) {
           const md = s.metadata || {};
           if (s.payment_status !== "paid") continue;
@@ -69,6 +70,7 @@ export async function onRequestGet({ request, env }) {
         if (!list.has_more || !list.data.length) break;
         after = list.data[list.data.length - 1].id;
       }
+     }
     } catch (e) {
       console.error("sales online", e.message);
       onlineError = "Couldn't load website orders from Stripe.";

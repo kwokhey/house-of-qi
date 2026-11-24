@@ -15,8 +15,13 @@ const TYPES = ["checkout.session.completed", "checkout.session.async_payment_suc
 export async function onRequestPost({ request, env }) {
   if (!env.STRIPE_SECRET_KEY) return json({ ok: false }, 503);
   const raw = await request.text();
-  const whsec = String(env.STRIPE_WEBHOOK_SECRET || "").trim().replace(/^["']|["']$/g, "");
-  if (whsec && !(await validSignature(whsec, request.headers.get("Stripe-Signature") || "", raw))) {
+  // one signing secret per Stripe account (House of Qi's own, and the earlier shared one)
+  const clean = (x) => String(x || "").trim().replace(/^["']|["']$/g, "");
+  const secrets = [clean(env.STRIPE_WEBHOOK_SECRET), clean(env.STRIPE_OLD_WEBHOOK_SECRET)].filter(Boolean);
+  const whsec = secrets[0] || "";
+  let okSig = !secrets.length;
+  for (const sec of secrets) if (await validSignature(sec, request.headers.get("Stripe-Signature") || "", raw)) { okSig = true; break; }
+  if (!okSig) {
     console.error("webhook: bad signature", (request.headers.get("Stripe-Signature") || "").slice(0, 20), "secret length", whsec.length, "starts", whsec.slice(0, 6));
     return json({ error: "bad signature" }, 400);
   }
