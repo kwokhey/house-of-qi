@@ -29,7 +29,7 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
   const when = new Date(o.created).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
   const items = o.items.map((it, i) => {
     const opt = (it.options || "").split(" · ").slice(1).filter((x) => !/^Note:/.test(x)).join(" · ");
-    return { name: it.name, qty: it.qty, amount: it.amount, opt, img: images[i] || `${site}/assets/img/logo-mark.png` };
+    return { name: it.name, id: it.id || "", qty: it.qty, amount: it.amount, opt, img: images[i] || `${site}/assets/img/logo-mark.png` };
   });
   const wa = o.phone ? `https://wa.me/${o.phone.replace(/\D/g, "")}` : "";
   const how = o.pickup ? "Self pick-up" : `Delivery · ${o.delivery || "Malaysia"}`;
@@ -41,6 +41,7 @@ export function orderEmail(s, { images = [], site = SITE } = {}) {
       </td>
       <td style="padding:14px 10px 14px 0;border-bottom:1px solid ${C.line};vertical-align:top;font-family:${SANS}">
         <div style="font-family:${SERIF};font-size:20px;line-height:1.15;color:${C.ink}">${esc(it.name)}</div>
+        ${it.id ? `<div style="display:inline-block;margin-top:5px;padding:1px 8px;border-radius:6px;background:${C.soft};font-family:Menlo,Consolas,monospace;font-size:13px;font-weight:600;color:${C.ink}">${esc(it.id)}</div>` : ""}
         ${it.opt ? `<div style="font-size:13px;color:${C.ink2};margin-top:3px">${esc(it.opt)}</div>` : ""}
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:${C.gold};margin-top:6px">Qty ${esc(it.qty)}</div>
       </td>
