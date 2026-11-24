@@ -296,6 +296,7 @@ export async function itemImages(env, D, s, site = SITE) {
 export async function notifyOrder(env, D, s) {
   if (!env.RESEND_API_KEY || !D || !s || s.payment_status !== "paid") return false;
   if (!String(s.id).startsWith("cs_live_") && !env.NOTIFY_TEST) return false; // only real orders
+  if (!(s.metadata || {}).order_no) return false; // only House of Qi orders (the Stripe account is shared)
   try { await notifyCustomer(env, D, s); } catch (e) { console.error("customer email", e && e.message); } // the customer's thank-you (once)
   const claim = await D.prepare("INSERT OR IGNORE INTO notified (sid, at) VALUES (?, ?)").bind(s.id, Date.now()).run();
   if (!claim.meta || !claim.meta.changes) return false; // already sent

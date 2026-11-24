@@ -32,6 +32,8 @@ export async function onRequestPost({ request, env }) {
   p.append("expand[]", "payment_intent");
   const s = await stripe(env, `checkout/sessions/${sid}`, { params: p });
   if (s.payment_status !== "paid") return json({ ok: true, paid: false });
+  // the Stripe account is shared with another business: only House of Qi payments are handled here
+  if (!(s.metadata || {}).order_no && !(s.metadata || {}).hq_balance) return json({ ok: true, ignored: "not a House of Qi payment" });
   // a pre-order balance was paid: mark the original order, tell the team
   if ((s.metadata || {}).hq_balance) {
     const m = s.metadata, u = new URLSearchParams();
