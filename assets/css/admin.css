@@ -326,3 +326,4 @@ textarea:focus{outline:none;border-color:var(--gold)}
 a.link{text-decoration:none;display:inline-block}
 .fld{display:flex;flex-direction:column;gap:6px;margin:14px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep)}.fld input{font:15px var(--f-body);padding:10px 12px;border:1px solid rgba(160,120,70,.35);border-radius:8px;background:#fff;max-width:240px;letter-spacing:0;text-transform:none;color:inherit}
 .pill.rf{background:#e9e2dc;color:#7a6a5e}.sent.refunded{color:#7a6a5e}
+.iid{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:6px;background:#efe3d6;color:#5a4636;font:600 13px/1.6 ui-monospace,Menlo,monospace;letter-spacing:.02em;vertical-align:1px}

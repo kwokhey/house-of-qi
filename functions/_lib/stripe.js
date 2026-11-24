@@ -40,6 +40,7 @@ export function toOrder(s, { full = false } = {}) {
   const items = (s.line_items?.data || []).map((li, i) => ({
     name: li.description,
     options: sm[`i${i + 1}`] || "",
+    id: String(sm[`s${i + 1}`] || "").split(":")[0] || sm[`p${i + 1}`] || "", // the piece's item ID (for packing)
     qty: li.quantity,
     amount: (li.amount_subtotal ?? li.amount_total) / 100,
   }));

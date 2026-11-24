@@ -57,7 +57,7 @@ function waLink(o) {
 function card(o) {
   const items = o.items.map((it) => {
     const opts = (it.options || "").replace(/^\d+× [^·]*·?\s*/, "");
-    return `<li><span>${it.qty}× ${esc(it.name)}${opts ? `<small>${esc(opts)}</small>` : ""}</span><span>${RM(it.amount)}</span></li>`;
+    return `<li><span>${it.qty}× ${esc(it.name)}${it.id ? ` <b class="iid">${esc(it.id)}</b>` : ""}${opts ? `<small>${esc(opts)}</small>` : ""}</span><span>${RM(it.amount)}</span></li>`;
   }).join("");
   const wa = waLink(o);
   let act = "";
