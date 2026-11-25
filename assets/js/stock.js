@@ -296,7 +296,18 @@
     }[kind];
     box.innerHTML = f;
     if (kind === "sale") fillInvoices();
-    if (kind === "sale") $("#mCh").onchange = () => { const o = $("#mCh").value === "Other"; $("#mChOF").hidden = !o; if (o) $("#mChO").focus(); };
+    // "Other" + a seller: fill "Sold by <seller>" so the invoice shows who sold it (can be edited)
+    let autoBy = "";
+    const fillSoldBy = () => {
+      const ch = $("#mCh"), o = $("#mChO"), af = $("#mAff");
+      if (!ch || !o || ch.value !== "Other") return;
+      const opt = af && af.value ? af.options[af.selectedIndex] : null;
+      const name = opt ? opt.textContent.split(" · ")[0].replace(/\s*\(.*\)\s*$/, "").trim() : "";
+      if (o.value.trim() && o.value !== autoBy) return; // the person typed their own
+      autoBy = name ? `Sold by ${name}` : "";
+      o.value = autoBy;
+    };
+    if (kind === "sale") $("#mCh").onchange = () => { const o = $("#mCh").value === "Other"; $("#mChOF").hidden = !o; if (o) { fillSoldBy(); $("#mChO").focus(); } };
     if (kind === "sale") sellers().then((L) => {
       const act = L.filter((a) => a.active);
       if (!act.length || !$("#mAff")) return;
@@ -306,6 +317,7 @@
       let auto = null;
       $("#mAff").insertAdjacentHTML("afterend", '<small class="muted" id="mAffHint" hidden></small>');
       $("#mAff").onchange = () => {
+        fillSoldBy();
         const a = act.find((x) => String(x.id) === $("#mAff").value), d = a ? +a.disc_pct || 0 : 0, pr = $("#mPrice"), h = $("#mAffHint");
         if (!pr) return;
         const base = +i.price || 0, cur = pr.value;
