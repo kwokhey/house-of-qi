@@ -109,6 +109,25 @@ export async function onRequestPost({ request, env }) {
   if (!(await isAdmin(request, env))) return json({ error: "Please log in." }, 401);
   if (!hasDB(env)) return json({ error: "The database isn't connected yet." }, 503);
   const b = await request.json().catch(() => ({}));
+  if (b.action === "invoiceChannel") {
+    // change "Sold through" on chosen invoices only (and their sales)
+    const to = String(b.to || "").trim().slice(0, 40);
+    const nums = (Array.isArray(b.numbers) ? b.numbers : []).map(String).filter((n) => /^HQ-\d{5}$/.test(n)).slice(0, 50);
+    if (!to || !nums.length) return json({ error: "Say which invoices, and the new label." }, 400);
+    const D = await db(env);
+    let sales = 0, invoices = 0;
+    for (const n of nums) {
+      const r = await D.prepare("SELECT seq, data FROM invoices WHERE number = ?").bind(n).first();
+      if (!r) continue;
+      let d; try { d = JSON.parse(r.data); } catch { continue; }
+      d.channel = to;
+      await D.prepare("UPDATE invoices SET data = ? WHERE seq = ?").bind(JSON.stringify(d), r.seq).run();
+      invoices++;
+      const mv = await D.prepare("UPDATE movements SET channel = ? WHERE kind = 'sale' AND invoice = ?").bind(to, n).run();
+      sales += mv.meta?.changes || 0;
+    }
+    return json({ ok: true, invoices, sales });
+  }
   if (b.action !== "renameChannel") return json({ error: "Unknown action." }, 400);
   const from = String(b.from || "").trim().slice(0, 40), to = String(b.to || "").trim().slice(0, 40);
   if (!from || !to) return json({ error: "Say which channel to change, and to what." }, 400);
